@@ -8,14 +8,6 @@ import (
 )
 
 func main() {
-	// Initialize the database connection using the configuration...
-	// DB, err := pgsql.InitDB(&pgsql.Config{
-	// 	DBHost:     os.Getenv("DB_HOST"),
-	// 	DBPort:     dbPort,
-	// 	DBUser:     os.Getenv("DB_USER"),
-	// 	DBPassword: os.Getenv("DB_PASSWORD"),
-	// 	DBName:     os.Getenv("DB_NAME"),
-	// })
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		DBHost:     "gp2-backend-rds.cxc4ic4mib6i.us-east-1.rds.amazonaws.com",
@@ -31,7 +23,7 @@ func main() {
 
 	// Ping the database to check if the connection is successful
 	sqlDB, err := DB.DB() // Get the raw SQL database instance
-	
+
 	if err != nil {
 		log.Fatalf("Error getting raw DB instance: %v", err)
 	}
