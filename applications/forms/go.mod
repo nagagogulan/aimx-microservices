@@ -2,9 +2,10 @@ module whatsdare.com/fullstack/aimx/backend
 
 go 1.23.1
 
-require github.com/PecozQ/aimx-library v0.0.2
+require github.com/PecozQ/aimx-library v0.0.4
 
 require (
+	github.com/go-kit/kit v0.13.0
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
