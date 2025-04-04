@@ -3,8 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/PecozQ/aimx-library/database/pgsql"
+	"github.com/PecozQ/aimx-library/domain/repository"
+	base "whatsdare.com/fullstack/aimx/backend"
+	com "whatsdare.com/fullstack/aimx/backend/common"
+	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
 func main() {
@@ -35,7 +42,27 @@ func main() {
 	} else {
 		fmt.Println("Database connection successful!")
 	}
+	err = pgsql.Migrate(DB)
+	if err != nil {
+		log.Fatalf("Could not migrate database: %v", err)
+		return
+	}
 
 	// Close the DB connection when done (deferred)
 	defer sqlDB.Close()
+
+	userRepo := repository.NewUserserviceRepositoryService(DB)
+	s := service.NewService(userRepo)
+	httpHandlers := base.MakeHTTPHandler(s)
+
+	httpServer := http.Server{
+		Addr:    ":" + strconv.Itoa(com.HttpPort),
+		Handler: http.TimeoutHandler(httpHandlers, time.Duration(com.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
+	}
+
+	fmt.Println("Info", "HTTP server started", "port", com.HttpPort)
+	err = httpServer.ListenAndServe()
+	if err != nil {
+		log.Fatalf("HTTP server failed: %v", err)
+	}
 }
