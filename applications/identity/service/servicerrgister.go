@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
@@ -11,8 +12,10 @@ import (
 
 type Service interface {
 	// User management
-	SendEmailOTP(ctx context.Context, req dto.UserAuthRequest) (*model.Response, error)
-	VerifyOTP(ctx context.Context, req *dto.UserAuthdetail) (string, error)
+	SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
+	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
+	RegisterAuth(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
+	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
 }
 type service struct {
 	UserRepo repository.UserRepositoryService
@@ -20,5 +23,6 @@ type service struct {
 }
 
 func NewService(UserRepo repository.UserRepositoryService) Service {
+	fmt.Println("db interface connected")
 	return &service{UserRepo: UserRepo}
 }

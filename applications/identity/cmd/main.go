@@ -17,13 +17,12 @@ import (
 func main() {
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "gp2-backend-rds.cxc4ic4mib6i.us-east-1.rds.amazonaws.com",
+		DBHost:     "localhost",
 		DBPort:     5432,
 		DBUser:     "postgres",
-		DBPassword: "SmartWork123",
-		DBName:     "postgres",
+		DBPassword: "SmartWork@123",
+		DBName:     "mylocaldb",
 	})
-
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
 	}

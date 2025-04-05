@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	middleware "github.com/PecozQ/aimx-library/middleware"
+	"github.com/PecozQ/aimx-library/domain/dto"
 	"whatsdare.com/fullstack/aimx/backend/common"
-	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
@@ -42,25 +41,54 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/scan", gin.WrapF(httptransport.NewServer(
+		endpoints.SendQREndpoint,
+		decodeSendQrcodeRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	router.POST("/scanverify", gin.WrapF(httptransport.NewServer(
+		endpoints.SendQRVerifyEndpoint,
+		decodeSendQrcodeVerifyRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 	return r
 }
 
 // Decode register api request...
 func decodeCreateUserRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request model.UserAuthRequest
+	var request *dto.UserAuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
+	fmt.Println("after decode", request)
 	// Extract Gin context
-	return middleware.RequestWithContext{Request: request}, nil
+	return &dto.UserAuthRequest{Email: request.Email}, nil
 }
 func decodeVerifyUserRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request model.UserAuthdetail
+	var request dto.UserAuthDetail
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
 	// Extract Gin context
-	return middleware.RequestWithContext{Request: request}, nil
+	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
+}
+func decodeSendQrcodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.UserAuthDetail
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	// Extract Gin context
+	return &dto.UserAuthDetail{Email: request.Email}, nil
+}
+func decodeSendQrcodeVerifyRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.UserAuthDetail
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	// Extract Gin context
+	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
 }
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

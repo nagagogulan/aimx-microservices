@@ -4,14 +4,18 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"net/smtp"
 	"os"
 	"time"
 
+	"database/sql"
+
 	com "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
-
+	"github.com/pquerna/otp/totp"
+	"github.com/skip2/go-qrcode"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -26,7 +30,8 @@ type SMTPConfig struct {
 	SMTPPort  string
 }
 
-func (s *service) SendEmailOTP(ctx context.Context, req dto.UserAuthRequest) (*model.Response, error) {
+func (s *service) SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error) {
+	fmt.Println("inside function")
 	if !com.ValidateEmail(req.Email) {
 		return nil, fmt.Errorf("invalid email format")
 	}
@@ -34,7 +39,7 @@ func (s *service) SendEmailOTP(ctx context.Context, req dto.UserAuthRequest) (*m
 	// Check if user exists
 
 	existinguser, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
-	if existinguser != nil {
+	if err == nil && existinguser != nil && existinguser.IsVerify {
 		return &model.Response{Message: "your User name alreay exited"}, nil
 	}
 
@@ -45,48 +50,57 @@ func (s *service) SendEmailOTP(ctx context.Context, req dto.UserAuthRequest) (*m
 	if req.Email != "" {
 		otpStore[req.Email] = otp
 	}
-
+	if existinguser != nil && existinguser.OTP != "" && !existinguser.IsVerify && existinguser.Email == req.Email {
+		errs := s.UserRepo.UpdateOTP(ctx, otp, existinguser.Email)
+		if errs != nil {
+			fmt.Println("new otp stroed error:", err)
+			return nil, err
+		}
+	}
 	errs := s.UserRepo.SaveOTP(ctx, req, otp)
 	if errs != nil {
 		fmt.Println("Failed to store OTP:", err)
-		return &model.Response{}, err
+		return nil, err
 	}
 
 	// Send OTP via email
 
 	if err := sendEmailOTPs(req.Email, otp); err != nil {
 		fmt.Println("Failed to send OTP")
-		return &model.Response{}, nil
+		return nil, nil
 	}
 	return &model.Response{Message: "OTP sent successfully"}, nil
 
 }
-func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthdetail) (string, error) {
+func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
 	res, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
-		return fmt.Sprintf("User not found or OTP not set."), err
+		return &model.Response{Message: "User not found or OTP not set."}, err
 	}
 
 	// Check OTP expiration (valid for 5 minutes)
-	if time.Since(res.CreatedAt) > 10*time.Minute {
+	if time.Since(res.ExpireOTP) > 1*time.Minute {
 		err := s.UserRepo.DeleteOTP(ctx, req.Email)
 		if err != nil {
-			return fmt.Sprintf("User not found or OTP not set."), err
+			return &model.Response{Message: "User not found or OTP not set."}, err
 		} // Remove expired OTP
-		return fmt.Sprintf("OTP expired."), nil
+		return &model.Response{Message: "OTP expired."}, nil
 	}
 
 	// Validate OTP
 	if res.OTP != req.OTP {
-		return fmt.Sprintf("Invalid OTP."), nil
+		return &model.Response{Message: "Invalid OTP."}, nil
 	}
-
-	// OTP is valid → Remove it from the database
-	errs := s.UserRepo.DeleteOTP(ctx, req.Email)
+	errs := s.UserRepo.UpdateVerifyStatus(ctx, req.Email)
 	if errs != nil {
-		return fmt.Sprintf("User not found or OTP not set."), err
+		return &model.Response{Message: "Update verify error"}, err
+	}
+	// OTP is valid → Remove it from the database
+	errors := s.UserRepo.DeleteOTP(ctx, req.Email)
+	if errors != nil {
+		return &model.Response{Message: "User not found or OTP not set."}, err
 	} // Remove expired OTP
-	return fmt.Sprintf("OTP Verified! User logged in successfully."), nil
+	return &model.Response{Message: "OTP Verified! User logged in successfully."}, nil
 }
 
 func generateOTP() string {
@@ -95,37 +109,98 @@ func generateOTP() string {
 }
 
 func sendEmailOTPs(s, otp string) error {
-	smtpcon := SMTPConfig{
-		FromEmail: os.Getenv("SMTP_EMAIL"), // Set your email in env variables
-		Password:  os.Getenv("SMTP_PASS"),  // Set your app password in env variables
-		SMTPHost:  "smtp.gmail.com",
-		SMTPPort:  "587",
-	}
-	auth := smtp.PlainAuth("", smtpcon.FromEmail, smtpcon.Password, smtpcon.SMTPHost)
+	from := "nithiyavel402@gmail.com"
+	password := "fykh tcjz emnc khed"
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	auth := smtp.PlainAuth("", from, password, smtpHost)
 	to := []string{s}
 
 	// Properly format the message
-	message := []byte(
-		"From: Nithya <nithiyavel402@gmail.com>\r\n" +
-			"To: " + s + "\r\n" +
-			"Subject: Your One-Time Password (OTP) for Verification\r\n" +
-			"MIME-Version: 1.0\r\n" +
-			"Content-Type: text/html; charset=UTF-8\r\n" +
-			"\r\n" +
-			"<html><body>" +
-			"<p>Dear User,</p>" +
-			"<p>Your One-Time Password (OTP) for verification is:</p>" +
-			"<h2 style='color:blue;'>" + otp + "</h2>" +
-			"<p>This OTP is valid for 10 minutes. Please do not share it with anyone.</p>" +
-			"<p>Thank you,<br><b>Your Company Name</b></p>" +
-			"</body></html>")
+	message := []byte("From: AI Community <nithiyavel402@gmail.com>\r\n" +
+		"To: " + s + "\r\n" +
+		"Subject: Your OTP Code for Login Verification\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n" +
+		"\r\n" +
+		"Your OTP is: " + otp)
 
 	// Send the email
-	err := smtp.SendMail(smtpcon.SMTPHost+":"+smtpcon.SMTPPort, auth, smtpcon.FromEmail, to, message)
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, message)
 	if err != nil {
 		fmt.Println("Error sending email:", err)
 		return err
 	}
 	fmt.Println("OTP sent successfully")
 	return nil
+}
+
+func (s *service) RegisterAuth(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error) {
+
+	existinguser, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	if existinguser != nil && existinguser.QRIsVerify {
+		return nil, fmt.Errorf("2FA already verified")
+	}
+	// Generate a new TOTP secret for the user
+	secret, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "MySecureApp",
+		AccountName: req.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Store the secret in the database
+	req.Secret = secret.Secret()
+	err = s.UserRepo.UpdateScreteKey(ctx, req)
+	if err != nil {
+		fmt.Println("Failed to store OTP:", err)
+		return nil, err
+	}
+
+	// Ensure "qrcodes" directory exists
+	qrDir := "./qrcodes"
+	if _, err := os.Stat(qrDir); os.IsNotExist(err) {
+		err = os.Mkdir(qrDir, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Generate QR code image
+	qrCodePath := fmt.Sprintf("%s/%s.png", qrDir, req.Email)
+	err = qrcode.WriteFile(secret.URL(), qrcode.Medium, 256, qrCodePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate QR code: %w", err)
+	}
+
+	// Return the response struct
+	return &model.UserAuthResponse{
+		Message: "Scan this QR code in your Authenticator App.",
+		QRURL:   secret.URL(),
+		QRImage: qrCodePath,
+	}, nil
+}
+
+func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
+	// Get the user's stored secret and OTP from DB
+	userData, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
+	if err != nil {
+		log.Println("Failed to fetch user details:", err)
+		return &model.Response{Message: "Failed to fetch user details"}, err
+	}
+	if err == sql.ErrNoRows {
+		return &model.Response{Message: "User not registered"}, err
+	} else if err != nil {
+		return &model.Response{Message: "Database error"}, err
+	}
+
+	// Validate OTP
+	if !totp.Validate(req.OTP, userData.Secret) {
+		return &model.Response{Message: "Invalid OTP"}, nil
+	}
+
+	return &model.Response{Message: "OTP verified successfully"}, nil
 }
