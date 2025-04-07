@@ -173,7 +173,7 @@ func (s *service) RegisterAuth(ctx context.Context, req *dto.UserAuthDetail) (*m
 	qrCodePath := fmt.Sprintf("%s/%s.png", qrDir, req.Email)
 	err = qrcode.WriteFile(secret.URL(), qrcode.Medium, 256, qrCodePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate QR code: %w", err)
+		return nil, fmt.Errorf("Failed to generate QR code: %w", err)
 	}
 
 	// Return the response struct
@@ -200,6 +200,11 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	// Validate OTP
 	if !totp.Validate(req.OTP, userData.Secret) {
 		return &model.Response{Message: "Invalid OTP"}, nil
+	}
+	err = s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+	if err != nil {
+		fmt.Println("Failed to Scan QR code verify Status:", err)
+		return nil, err
 	}
 
 	return &model.Response{Message: "OTP verified successfully"}, nil
