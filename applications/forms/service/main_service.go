@@ -9,7 +9,7 @@ import (
 
 type Service interface {
 	CreateTemplate(ctx context.Context, template entity.Template) (*entity.Template, error)
-	GetTemplateByID(ctx context.Context, id string) (*entity.Template, error)
+	GetTemplateByType(ctx context.Context, doc_type int) (*entity.Template, error)
 }
 
 type service struct {

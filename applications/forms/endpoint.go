@@ -4,20 +4,21 @@ import (
 	"context"
 	"time"
 
+	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
-	"whatsdare.com/fullstack/aimx/backend/common"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Endpoints struct {
-	createTemplateEndpoint  endpoint.Endpoint
+	CreateTemplateEndpoint  endpoint.Endpoint
 	GetTemplateByIDEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
-		createTemplateEndpoint: Middleware(makeCreateTemplateEndpoint(s), common.TimeoutMs),
+		CreateTemplateEndpoint: Middleware(makeCreateTemplateEndpoint(s), commonlib.TimeoutMs),
 		// GetTemplateByIDEndpoint: Middleware(makeGetTemplateByIDEndpoint(s), common.TimeoutMs),
 	}
 }
@@ -30,12 +31,12 @@ func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endp
 func makeCreateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		reqWithContext := request.(service.RequestWithContext)
-		req := reqWithContext.Request.(model.CreateUserRequest)
-		user, role, err := s.CreateUser(reqWithContext.Ctx, &req.User, req.LocationId)
+		req := reqWithContext.Request.(model.CreateTemplateRequest)
+		template, err := s.CreateTemplate(reqWithContext.Ctx, req.Template)
 		if err != nil {
 			return nil, err
 		}
-		return {}, nil
+		return template, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
 	}
 }
