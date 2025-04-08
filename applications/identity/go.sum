@@ -1,5 +1,5 @@
-github.com/PecozQ/aimx-library v0.0.37 h1:ZvCOWeWO7zBT3yNbdE5bNiR4fcLY1Yq4LUf1EIrQ2FU=
-github.com/PecozQ/aimx-library v0.0.37/go.mod h1:GYYBf0rBnsdcL6cXy+WB2XUb5ftKQBI+W8mTf0EAjv8=
+github.com/PecozQ/aimx-library v0.0.42 h1:NjU3/ijTDnytZy6Mtgjdv3nmSgSwFo8rtLwv7TrvY+w=
+github.com/PecozQ/aimx-library v0.0.42/go.mod h1:GYYBf0rBnsdcL6cXy+WB2XUb5ftKQBI+W8mTf0EAjv8=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc h1:biVzkmvwrH8WK8raXaxBx6fRVTlJILwEwQGL1I/ByEI=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=

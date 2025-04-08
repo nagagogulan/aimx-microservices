@@ -7,7 +7,7 @@ import (
 
 	"github.com/PecozQ/aimx-library/domain/dto"
 
-	"whatsdare.com/fullstack/aimx/backend/common"
+	"github.com/PecozQ/aimx-library/common"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
@@ -16,19 +16,17 @@ import (
 
 type Endpoints struct {
 	//User and Roles
-	CreateUserEndpoint   endpoint.Endpoint
-	verifyOTPEndpoint    endpoint.Endpoint
-	SendQREndpoint       endpoint.Endpoint
-	SendQRVerifyEndpoint endpoint.Endpoint
+	CreateUserEndpoint endpoint.Endpoint
+	verifyOTPEndpoint  endpoint.Endpoint
+	// SendQREndpoint       endpoint.Endpoint
+	// SendQRVerifyEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
 		//UserAndRole
-		CreateUserEndpoint:   Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
-		verifyOTPEndpoint:    Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
-		SendQREndpoint:       Middleware(makeSendQREndpoint(s), common.TimeoutMs),
-		SendQRVerifyEndpoint: Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
+		CreateUserEndpoint: Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
+		verifyOTPEndpoint:  Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
 	}
 }
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
@@ -40,7 +38,7 @@ func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		fmt.Println("after decode makeCreateUserEndpoint", request)
 		req := request.(*dto.UserAuthRequest)
-		res, err := s.SendEmailOTP(ctx, req)
+		res, err := s.LoginWithOTP(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -56,30 +54,6 @@ func makeVerifyotpEndpoint(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		return model.Response{Message: res.Message}, nil
-	}
-}
-
-func makeSendQREndpoint(s service.Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		fmt.Println("after decode makeCreateUserEndpoint", &request)
-		req := request.(*dto.UserAuthDetail)
-		res, err := s.RegisterAuth(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-		return model.UserAuthResponse{QRImage: res.QRImage, QRURL: res.QRURL}, nil
-	}
-}
-
-func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		fmt.Println("after decode makeCreateUserEndpoint", &request)
-		req := request.(*dto.UserAuthDetail)
-		res, err := s.VerifyTOTP(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-		return model.Response{Message: res.Message}, nil
+		return model.UserAuthResponse{Message: res.Message, QRURL: res.QRURL, QRImage: res.QRImage}, nil
 	}
 }

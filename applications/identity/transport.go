@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
-	"whatsdare.com/fullstack/aimx/backend/common"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
@@ -35,21 +35,9 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
-	router.POST("/verify", gin.WrapF(httptransport.NewServer(
+	router.POST("/otpverify", gin.WrapF(httptransport.NewServer(
 		endpoints.verifyOTPEndpoint,
 		decodeVerifyUserRequest,
-		encodeResponse,
-		options...,
-	).ServeHTTP))
-	router.POST("/scan", gin.WrapF(httptransport.NewServer(
-		endpoints.SendQREndpoint,
-		decodeSendQrcodeRequest,
-		encodeResponse,
-		options...,
-	).ServeHTTP))
-	router.POST("/scanverify", gin.WrapF(httptransport.NewServer(
-		endpoints.SendQRVerifyEndpoint,
-		decodeSendQrcodeVerifyRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -74,22 +62,7 @@ func decodeVerifyUserRequest(ctx context.Context, r *http.Request) (interface{},
 	// Extract Gin context
 	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
 }
-func decodeSendQrcodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request dto.UserAuthDetail
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-	// Extract Gin context
-	return &dto.UserAuthDetail{Email: request.Email}, nil
-}
-func decodeSendQrcodeVerifyRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request dto.UserAuthDetail
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-	// Extract Gin context
-	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
-}
+
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)

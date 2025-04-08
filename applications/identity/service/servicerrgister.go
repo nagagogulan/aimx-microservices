@@ -12,10 +12,8 @@ import (
 
 type Service interface {
 	// User management
-	SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
-	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
-	RegisterAuth(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
-	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
+	LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
+	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
 }
 type service struct {
 	UserRepo repository.UserRepositoryService
