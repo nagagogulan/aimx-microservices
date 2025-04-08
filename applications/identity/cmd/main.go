@@ -10,7 +10,7 @@ import (
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	base "whatsdare.com/fullstack/aimx/backend"
-	com "whatsdare.com/fullstack/aimx/backend/common"
+	"whatsdare.com/fullstack/aimx/backend/common"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
@@ -55,11 +55,11 @@ func main() {
 	httpHandlers := base.MakeHTTPHandler(s)
 
 	httpServer := http.Server{
-		Addr:    ":" + strconv.Itoa(com.HttpPort),
-		Handler: http.TimeoutHandler(httpHandlers, time.Duration(com.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
+		Addr:    ":" + strconv.Itoa(common.HttpPort),
+		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
 	}
 
-	fmt.Println("Info", "HTTP server started", "port", com.HttpPort)
+	fmt.Println("Info", "HTTP server started", "port", common.HttpPort)
 	err = httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)

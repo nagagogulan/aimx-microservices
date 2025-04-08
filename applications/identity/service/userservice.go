@@ -39,7 +39,10 @@ func (s *service) SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	// Check if user exists
 
 	existinguser, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
-	if err == nil && existinguser != nil && existinguser.IsVerify {
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	if existinguser != nil && existinguser.IS_MFP_Enable && existinguser.Email == req.Email {
 		return &model.Response{Message: "your User name alreay exited"}, nil
 	}
 
@@ -50,19 +53,19 @@ func (s *service) SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if req.Email != "" {
 		otpStore[req.Email] = otp
 	}
-	if existinguser != nil && existinguser.OTP != "" && !existinguser.IsVerify && existinguser.Email == req.Email {
+	if existinguser != nil && existinguser.OTP == "" && !existinguser.IS_MFP_Enable && existinguser.Email == req.Email {
 		errs := s.UserRepo.UpdateOTP(ctx, otp, existinguser.Email)
 		if errs != nil {
 			fmt.Println("new otp stroed error:", err)
 			return nil, err
 		}
+	} else {
+		errs := s.UserRepo.SaveOTP(ctx, req, otp)
+		if errs != nil {
+			fmt.Println("Failed to store OTP:", err)
+			return nil, err
+		}
 	}
-	errs := s.UserRepo.SaveOTP(ctx, req, otp)
-	if errs != nil {
-		fmt.Println("Failed to store OTP:", err)
-		return nil, err
-	}
-
 	// Send OTP via email
 
 	if err := sendEmailOTPs(req.Email, otp); err != nil {
@@ -75,9 +78,8 @@ func (s *service) SendEmailOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
 	res, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
-		return &model.Response{Message: "User not found or OTP not set."}, err
+		return nil, fmt.Errorf("User Not Found : %w", err)
 	}
-
 	// Check OTP expiration (valid for 5 minutes)
 	if time.Since(res.ExpireOTP) > 1*time.Minute {
 		err := s.UserRepo.DeleteOTP(ctx, req.Email)
@@ -141,7 +143,7 @@ func (s *service) RegisterAuth(ctx context.Context, req *dto.UserAuthDetail) (*m
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
 
-	if existinguser != nil && existinguser.QRIsVerify {
+	if existinguser != nil && existinguser.IS_MFP_Enable {
 		return nil, fmt.Errorf("2FA already verified")
 	}
 	// Generate a new TOTP secret for the user
