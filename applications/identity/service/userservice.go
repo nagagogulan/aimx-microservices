@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"math/big"
 	"net/smtp"
 	"time"
@@ -80,7 +81,6 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 
 }
 func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error) {
-	fmt.Println("heeloooo 1")
 	res, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
 		fmt.Errorf("User Not Found : %w", err)
@@ -144,37 +144,6 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 			QRImage: qrCodeBase64,
 		}, nil
 	}
-	if !res.IS_MFA_Enabled {
-		// if !totp.Validate(req.OTP, res.Secret) {
-		// 	return &model.UserAuthResponse{Message: "Invalid OTP"}, nil
-		// }
-		isValid, err := totp.ValidateCustom(
-			req.OTP,
-			res.Secret,
-			time.Now().UTC(),
-			totp.ValidateOpts{
-				Period:    30,
-				Skew:      1,
-				Digits:    otp.DigitsSix,
-				Algorithm: otp.AlgorithmSHA1,
-			})
-
-		if err != nil {
-			fmt.Println("TOTP validation error:", err)
-			return &model.UserAuthResponse{Message: "OTP validation error"}, err
-		}
-		if !isValid {
-			fmt.Println("Invalid OTP from user")
-			return &model.UserAuthResponse{Message: "Invalid OTP"}, nil
-		}
-		err = s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
-		if err != nil {
-			fmt.Println("Failed to Scan QR code verify Status:", err)
-			return nil, err
-		}
-		return &model.UserAuthResponse{Message: "OTP verified successfully"}, nil
-
-	}
 	return nil, nil
 }
 
@@ -207,4 +176,38 @@ func sendEmailOTPs(s, otp string) error {
 	}
 	fmt.Println("OTP sent successfully")
 	return nil
+}
+
+func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
+	// Get the user's stored secret and OTP from DB
+	userData, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
+	if err != nil {
+		log.Println("Failed to fetch user details:", err)
+		return &model.Response{Message: "Failed to fetch user details"}, err
+	}
+	isValid, err := totp.ValidateCustom(
+		req.OTP,
+		userData.Secret,
+		time.Now().UTC(),
+		totp.ValidateOpts{
+			Period:    30,
+			Skew:      1,
+			Digits:    otp.DigitsSix,
+			Algorithm: otp.AlgorithmSHA1,
+		})
+
+	if err != nil {
+		fmt.Println("TOTP validation error:", err)
+		return &model.Response{Message: "OTP validation error"}, err
+	}
+	if !isValid {
+		fmt.Println("Invalid OTP from user")
+		return &model.Response{Message: "Invalid OTP"}, nil
+	}
+	err = s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+	if err != nil {
+		fmt.Println("Failed to Scan QR code verify Status:", err)
+		return nil, err
+	}
+	return &model.Response{Message: "OTP verified successfully"}, nil
 }

@@ -14,6 +14,7 @@ type Service interface {
 	// User management
 	LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
 	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
+	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
 }
 type service struct {
 	UserRepo repository.UserRepositoryService

@@ -19,14 +19,15 @@ type Endpoints struct {
 	CreateUserEndpoint endpoint.Endpoint
 	verifyOTPEndpoint  endpoint.Endpoint
 	// SendQREndpoint       endpoint.Endpoint
-	// SendQRVerifyEndpoint endpoint.Endpoint
+	SendQRVerifyEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
 		//UserAndRole
-		CreateUserEndpoint: Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
-		verifyOTPEndpoint:  Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
+		CreateUserEndpoint:   Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
+		verifyOTPEndpoint:    Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
+		SendQRVerifyEndpoint: Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
 	}
 }
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
@@ -55,5 +56,16 @@ func makeVerifyotpEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 		return model.UserAuthResponse{Message: res.Message, QRURL: res.QRURL, QRImage: res.QRImage}, nil
+	}
+}
+func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		fmt.Println("after decode makeCreateUserEndpoint", &request)
+		req := request.(*dto.UserAuthDetail)
+		res, err := s.VerifyTOTP(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return model.Response{Message: res.Message}, nil
 	}
 }

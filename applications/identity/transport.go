@@ -41,6 +41,12 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/totpverify", gin.WrapF(httptransport.NewServer(
+		endpoints.SendQRVerifyEndpoint,
+		decodeVerifyTOTPUserRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 	return r
 }
 
@@ -55,6 +61,14 @@ func decodeCreateUserRequest(ctx context.Context, r *http.Request) (interface{},
 	return &dto.UserAuthRequest{Email: request.Email}, nil
 }
 func decodeVerifyUserRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.UserAuthDetail
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	// Extract Gin context
+	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
+}
+func decodeVerifyTOTPUserRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request dto.UserAuthDetail
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
