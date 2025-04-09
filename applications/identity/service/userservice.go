@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -43,9 +44,8 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if err != nil {
 		fmt.Errorf("failed to check user: %w", err)
 	}
-
 	if existingUser != nil && existingUser.IS_MFA_Enabled {
-		return &model.Response{Message: "User already exists with 2FA enabled"}, nil
+		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: existingUser.IS_MFA_Enabled}, nil
 	}
 
 	// If user does not exist, save OTP as new record
@@ -57,7 +57,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		}
 	} else {
 		// If user exists but doesn't have an OTP and MFP is disabled, update OTP
-		if existingUser != nil && existingUser.OTP == "" && !existingUser.IS_MFA_Enabled {
+		if existingUser != nil && !existingUser.IS_MFA_Enabled {
 			err := s.UserRepo.UpdateOTP(ctx, otp, existingUser.Email)
 			if err != nil {
 				fmt.Println("Failed to update OTP:", err)
@@ -77,7 +77,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		return nil, fmt.Errorf("failed to send OTP")
 	}
 
-	return &model.Response{Message: "OTP sent successfully"}, nil
+	return &model.Response{Message: "OTP sent successfully", IS_MFA_Enabled: false}, nil
 
 }
 func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error) {
@@ -86,7 +86,7 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		fmt.Errorf("User Not Found : %w", err)
 	}
 	if res != nil && req.Email != res.Email {
-		return &model.UserAuthResponse{Message: "Invalid Username."}, nil
+		return &model.UserAuthResponse{Message: "Invalid Username."}, errors.New("Invalid Username.")
 	}
 	if res != nil && !res.IS_MFA_Enabled && res.OTP != "" {
 		fmt.Println("heeloooo 2")
@@ -141,6 +141,7 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		qrCodeBase64 := base64.StdEncoding.EncodeToString(qrCodeBytes)
 
 		return &model.UserAuthResponse{
+			Message: "OTP Verified!",
 			QRImage: qrCodeBase64,
 		}, nil
 	}
@@ -209,5 +210,5 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		fmt.Println("Failed to Scan QR code verify Status:", err)
 		return nil, err
 	}
-	return &model.Response{Message: "OTP verified successfully"}, nil
+	return &model.Response{Message: "OTP verified successfully", Secret: userData.Secret}, nil
 }

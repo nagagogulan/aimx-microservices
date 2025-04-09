@@ -22,7 +22,9 @@ type UserAuthResponse struct {
 	QRImage string `json:"qr_image"`
 }
 type Response struct {
-	Message string `json:"message"`
+	Message        string `json:"message"`
+	IS_MFA_Enabled bool   `json:"is_mfa_enabled"`
+	Secret         string `json:"secret"`
 }
 
 func (UserAuthDetail) TableName() string {

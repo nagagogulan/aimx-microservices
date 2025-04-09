@@ -43,7 +43,7 @@ func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		return model.Response{Message: res.Message}, nil
+		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled}, nil
 	}
 }
 
