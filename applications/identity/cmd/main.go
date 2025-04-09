@@ -17,11 +17,11 @@ import (
 func main() {
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "165.22.220.122",
+		DBHost:     "localhost",
 		DBPort:     5432,
-		DBUser:     "myappuser",
+		DBUser:     "postgres",
 		DBPassword: "SmartWork@123",
-		DBName:     "myappdb",
+		DBName:     "mylocaldb",
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
@@ -56,7 +56,7 @@ func main() {
 
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(common.HttpPort),
-		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
+		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
 	fmt.Println("Info", "HTTP server started", "port", common.HttpPort)

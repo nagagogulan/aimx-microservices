@@ -184,8 +184,8 @@ func generateOTP() string {
 }
 
 func sendEmailOTPs(s, otp string) error {
-	from := "nithiyavel402@gmail.com"
-	password := "fykh tcjz emnc khed"
+	from := "priyadharshini.twilight@gmail.com"
+	password := "rotk reak madc kwkf"
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	auth := smtp.PlainAuth("", from, password, smtpHost)
