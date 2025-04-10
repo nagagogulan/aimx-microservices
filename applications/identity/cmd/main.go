@@ -20,7 +20,7 @@ func main() {
 		DBHost:     "localhost",
 		DBPort:     5432,
 		DBUser:     "postgres",
-		DBPassword: "SmartWork@123",
+		DBPassword: "Admin",
 		DBName:     "mylocaldb",
 	})
 	if err != nil {

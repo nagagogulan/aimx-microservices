@@ -13,6 +13,8 @@ import (
 
 	com "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/middleware"
+	"github.com/gofrs/uuid"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
@@ -88,8 +90,10 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 	if res != nil && req.Email != res.Email {
 		return &model.UserAuthResponse{Message: "Invalid Username."}, errors.New("Invalid Username.")
 	}
-	if res != nil && !res.IS_MFA_Enabled && res.OTP != "" {
-		fmt.Println("heeloooo 2")
+	if req.OTP!=res.OTP{
+		return &model.UserAuthResponse{Message: "Invalid OTP."}, errors.New("Invalid OTP.")
+	}
+	if res != nil && !res.IS_MFA_Enabled && res.Secret == "" {
 		if time.Since(res.ExpireOTP) > 5*time.Minute {
 			err := s.UserRepo.DeleteOTP(ctx, req.Email)
 			if err != nil {
@@ -129,11 +133,12 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		// Encode the QR code bytes to a Base64 string
 		qrCodeBase64 := base64.StdEncoding.EncodeToString(qrCodeBytes)
 		if res.OTP != "" && res.OTP == req.OTP && req.Email == res.Email {
-			return &model.UserAuthResponse{Message: "OTP Verified!", QRURL: secret.URL(), QRImage: qrCodeBase64}, nil
+			return &model.UserAuthResponse{Message: "OTP Verified!", QRURL: req.Secret, QRImage: qrCodeBase64}, nil
 		}
 		return &model.UserAuthResponse{Message: "Invalid OTP."}, nil
 
-	} else if res != nil && res.Secret != "" && !res.IS_MFA_Enabled && res.OTP == "" {
+	} else if res != nil && res.Secret != "" && !res.IS_MFA_Enabled {
+		fmt.Println("screate key already generated")
 		qrCodeBytes, err := qrcode.Encode(res.Secret, qrcode.Medium, 256)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate QR code: %w", err)
@@ -142,6 +147,7 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 
 		return &model.UserAuthResponse{
 			Message: "OTP Verified!",
+			QRURL: res.Secret,
 			QRImage: qrCodeBase64,
 		}, nil
 	}
@@ -210,5 +216,9 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		fmt.Println("Failed to Scan QR code verify Status:", err)
 		return nil, err
 	}
-	return &model.Response{Message: "OTP verified successfully", Secret: userData.Secret}, nil
+	jwtToken, err := middleware.GenerateJWT(req.Email)
+	if err != nil {
+		return "",nil
+	}
+	return &model.Response{Message: "OTP verified successfully",JWTToken:jwtToken}, nil
 }

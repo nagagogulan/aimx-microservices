@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -9,16 +10,22 @@ import (
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"whatsdare.com/fullstack/aimx/backend/model"
+	"errors"
 )
 
 type Endpoints struct {
 	CreateTemplateEndpoint  endpoint.Endpoint
 	GetTemplateByIDEndpoint endpoint.Endpoint
+	UpdateTemplateEndpoint  endpoint.Endpoint
+	DeleteTemplateEndpoint  endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
-		CreateTemplateEndpoint: Middleware(makeCreateTemplateEndpoint(s), commonlib.TimeoutMs),
+		CreateTemplateEndpoint:  Middleware(makeCreateTemplateEndpoint(s), commonlib.TimeoutMs),
+		GetTemplateByIDEndpoint: Middleware(makeGetTemplateByTypeEndpoint(s), commonlib.TimeoutMs),
+		UpdateTemplateEndpoint:  Middleware(makeUpdateTemplateEndpoint(s), commonlib.TimeoutMs),
+		DeleteTemplateEndpoint:  Middleware(makeDeleteTemplateEndpoint(s), commonlib.TimeoutMs),
 		// GetTemplateByIDEndpoint: Middleware(makeGetTemplateByIDEndpoint(s), common.TimeoutMs),
 	}
 }
@@ -30,13 +37,67 @@ func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endp
 
 func makeCreateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		reqWithContext := request.(service.RequestWithContext)
-		req := reqWithContext.Request.(model.CreateTemplateRequest)
-		template, err := s.CreateTemplate(reqWithContext.Ctx, req.Template)
+		req := request.(*model.TemplateRequest)
+		template, err := s.CreateTemplate(ctx, req.Template)
 		if err != nil {
 			return nil, err
 		}
 		return template, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
+	}
+}
+func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		fmt.Println("$$$$$$$$$$$$$$$$$$$$$$", request)
+
+		req, ok := request.(*model.ParamRequest)
+		if !ok {
+			return nil, errors.New("params error")
+		}
+
+		if req.ID != "" {
+			// If ID is present, prioritize lookup by ID
+			template, err := s.GetTemplateByType(ctx, 0, req.ID)
+			if err != nil {
+				return nil, err // or wrap as needed
+			}
+			return template, nil
+		}
+
+		if req.Type != 0 {
+			// If ID is not present, use Type
+			template, err := s.GetTemplateByType(ctx, req.Type, "")
+			if err != nil {
+				return nil, errors.New("Template Not found") // or wrap as needed
+			}
+			return template, nil
+		}
+
+		return nil, errors.New("either ID or Type must be provided")
+	}
+	
+}
+func makeUpdateTemplateEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*model.TemplateRequest)
+		fmt.Println("Template ID:", req.Template.ID.Hex())
+
+		template, err := s.UpdateTemplate(ctx, req.Template.ID.Hex(), req.Template)
+		if err != nil {
+			return nil, err
+		}
+		return template, nil
+	}
+}
+func makeDeleteTemplateEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		reqWithContext := request.(service.RequestWithContext)
+		req := reqWithContext.Request.(model.TemplateRequest)
+
+		err := s.DeleteTemplate(reqWithContext.Ctx, req.ID)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]string{"message": "Template deleted successfully"}, nil
 	}
 }

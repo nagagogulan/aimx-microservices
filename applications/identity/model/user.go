@@ -25,6 +25,7 @@ type Response struct {
 	Message        string `json:"message"`
 	IS_MFA_Enabled bool   `json:"is_mfa_enabled"`
 	Secret         string `json:"secret"`
+	JWTToken string `jwtToken`
 }
 
 func (UserAuthDetail) TableName() string {
