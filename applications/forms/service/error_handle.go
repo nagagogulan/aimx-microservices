@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	errcom "github.com/PecozQ/aimx-library/errors"
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v5/pgconn"
 )
