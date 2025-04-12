@@ -91,13 +91,17 @@ func makeUpdateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 }
 func makeDeleteTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		reqWithContext := request.(service.RequestWithContext)
-		req := reqWithContext.Request.(model.TemplateRequest)
-
-		err := s.DeleteTemplate(reqWithContext.Ctx, req.ID)
-		if err != nil {
-			return nil, err
+		req, ok := request.(*model.ParamRequest)
+		if !ok {
+			return nil, errors.New("params error")
 		}
-		return map[string]string{"message": "Template deleted successfully"}, nil
+
+		// If ID is present, prioritize lookup by ID
+		res, err := s.DeleteTemplate(ctx, req.ID)
+		if err != nil {
+			return nil, err // or wrap as needed
+		}
+
+		return &model.Response{Message: res.Message}, nil
 	}
 }

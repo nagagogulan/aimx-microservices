@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
+	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
-	errorlib "github.com/PecozQ/aimx-library/errors"
-	middleware "github.com/PecozQ/aimx-library/middleware"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+
 	//"github.com/gorilla/mux"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -41,8 +41,8 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 	// Get Template by ID
 	router.GET("/template", gin.WrapF(httptransport.NewServer(
-		endpoints.GetTemplateByIDEndpoint, // ✅ changed from GetTemplateByTypeEndpoint
-		decodeGetTemplateByTypeRequest,    // ✅ updated to match GetTemplateByID
+		endpoints.GetTemplateByIDEndpoint,
+		decodeGetTemplateByTypeRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -56,7 +56,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	// Delete Template
-	router.DELETE("/template/:id", gin.WrapF(httptransport.NewServer(
+	router.DELETE("/template", gin.WrapF(httptransport.NewServer(
 		endpoints.DeleteTemplateEndpoint,
 		decodeDeleteTemplateRequest,
 		encodeResponse,
@@ -73,29 +73,10 @@ func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	// Extract Gin context
-	// newCtx, err := commonlib.ExtractGinContext(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	return &model.TemplateRequest{ID: request.ID, Template: request.Template}, nil
 }
 func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	// query := r.URL.Query()
-	// idStr := query.Get("id")
-	// typeStr := query.Get("type")
-	 
-	// if typeStr == "" {
-	// 	return nil, fmt.Errorf("missing 'type' query parameter")
-	// }
-
-	// typeInt, err := strconv.Atoi(typeStr)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("invalid 'type' query parameter: %v", err)
-	// }
-	// vars := mux.Vars(r)     // get path params
-	// typeStr := vars["type"] 
-	id := strings.Trim(r.URL.Query().Get("id"), `"`) // remove quotes if passed in URL
+	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
 
 	req := &model.ParamRequest{}
@@ -124,18 +105,18 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	fmt.Println("$$$$$$$$$$$$$$$$$$$$$$", request)
 	return &request, nil
 }
 func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request model.TemplateRequest
-	ginCtx, err := commonlib.ExtractGinContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
+	req := &model.ParamRequest{}
 
-	return middleware.RequestWithContext{Ctx: ginCtx, Request: request.ID}, nil
+	if id != "" {
+		req.ID = id
+	}
+	return req, nil
 }
+
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)

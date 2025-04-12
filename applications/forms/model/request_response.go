@@ -19,6 +19,9 @@ type Template struct {
 	Template entity.Template `json:"template"` // Updated template payload
 }
 type ParamRequest struct {
-	ID string `json:"id"`
-	Type int `json:"type"`
+	ID   string `json:"id"`
+	Type int    `json:"type"`
+}
+type Response struct {
+	Message string `json:"message"`
 }

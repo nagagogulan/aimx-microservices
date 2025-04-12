@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
+	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 func (s *service) CreateTemplate(ctx context.Context, template entity.Template) (*entity.Template, error) {
@@ -40,19 +42,19 @@ func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*
 func (s *service) UpdateTemplate(ctx context.Context, id string, template entity.Template) (*entity.Template, error) {
 	updatedTemplate, err := s.templateRepo.UpdateTemplate(ctx, id, template)
 	if err != nil {
-		if errors.Is(err, ErrRecordNotFound) {
-			commonrepo.LogMessage(s.logger, commonrepo.Error, "Tempalteget", commonrepo.ErrGroupNotFound.Error(), nil, "Template", claims.UserID)
-			return commonrepo.ErrGroupNotFound
+		if errors.Is(err, errors.New(errorlib.ErrRecordNotFound)) {
+			commonlib.LogMessage(s.logger, commonlib.Error, "Tempalteget", err.Error(), nil, "Template", id)
+			return nil, errors.New(errorlib.ErrRecordNotFound)
 		}
 		return nil, err
 	}
 	return updatedTemplate, nil
 }
-func (s *service) DeleteTemplate(ctx context.Context, id string) error {
+func (s *service) DeleteTemplate(ctx context.Context, id string) (*model.Response, error) {
 	err := s.templateRepo.DeleteTemplate(ctx, id)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "DeleteTemplate", err.Error(), err, "id", id)
-		return err
+		return nil, err
 	}
-	return nil
+	return &model.Response{Message: "Successfully Template deleted"}, nil
 }

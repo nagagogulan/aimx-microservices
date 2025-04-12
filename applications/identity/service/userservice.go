@@ -210,7 +210,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		time.Now().UTC(),
 		totp.ValidateOpts{
 			Period:    30,
-			Skew:      1,
+			Skew:      3,
 			Digits:    otp.DigitsSix,
 			Algorithm: otp.AlgorithmSHA1,
 		})
