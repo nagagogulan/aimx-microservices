@@ -14,7 +14,8 @@ func ErrorHandlingMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		response, err := next(ctx, request)
 		if err != nil {
-			return nil, err
+			appErr := FromError(err)
+			return nil, appErr
 		}
 		return response, nil
 	}

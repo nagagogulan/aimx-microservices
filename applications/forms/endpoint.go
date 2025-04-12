@@ -9,8 +9,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
-	"whatsdare.com/fullstack/aimx/backend/model"
 	"errors"
+
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Endpoints struct {
@@ -48,7 +49,6 @@ func makeCreateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 }
 func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		fmt.Println("$$$$$$$$$$$$$$$$$$$$$$", request)
 
 		req, ok := request.(*model.ParamRequest)
 		if !ok {
@@ -75,7 +75,7 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 
 		return nil, errors.New("either ID or Type must be provided")
 	}
-	
+
 }
 func makeUpdateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {

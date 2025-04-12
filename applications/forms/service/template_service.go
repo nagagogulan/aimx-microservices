@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"errors"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 )
+
 func (s *service) CreateTemplate(ctx context.Context, template entity.Template) (*entity.Template, error) {
 	createdTemplate, err := s.templateRepo.CreateTemplate(ctx, template)
 	if err != nil {
@@ -16,39 +16,34 @@ func (s *service) CreateTemplate(ctx context.Context, template entity.Template) 
 	}
 	return createdTemplate, err
 }
-
-func (s *service) GetTemplateByType(ctx context.Context, Type int,id string) (*entity.Template, error) {
-	if id!=""{
-		template, err := s.templateRepo.GetTemplateBYID(ctx,id)
+func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*entity.Template, error) {
+	if id != "" {
+		template, err := s.templateRepo.GetTemplateById(ctx, id)
 		if err != nil {
-			fmt.Println("****************************")
-			//commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", err.Error(), err, "type", Type)
+			commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", err.Error(), err, "id", Type)
 			return nil, errors.New("Template Not Found")
 		}
 		return template, nil
 	}
-	if Type>0{
-		template, errs := s.templateRepo.GetTemplateBytype(ctx, Type)
+	if Type > 0 {
+		template, errs := s.templateRepo.GetTemplateByType(ctx, Type)
 		if errs != nil {
-			fmt.Println("****************************")
-			//commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", err.Error(), err, "type", Type)
-			return nil, errors.New("Template Not Found")
+			commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", errs.Error(), errs, "type", Type)
+			return nil, errs
 		}
-		if template==nil{
-			return nil, errors.New("Template Not Found")
-		}
+
 		return template, nil
 
 	}
-	return nil,nil
-	
+	return nil, nil
 }
 func (s *service) UpdateTemplate(ctx context.Context, id string, template entity.Template) (*entity.Template, error) {
-	fmt.Println("OOOOOOOOOOOOOOOOOOOOOOO", id)
-
 	updatedTemplate, err := s.templateRepo.UpdateTemplate(ctx, id, template)
 	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "UpdateTemplate", err.Error(), err, "id", template.ID, "template", template)
+		if errors.Is(err, ErrRecordNotFound) {
+			commonrepo.LogMessage(s.logger, commonrepo.Error, "Tempalteget", commonrepo.ErrGroupNotFound.Error(), nil, "Template", claims.UserID)
+			return commonrepo.ErrGroupNotFound
+		}
 		return nil, err
 	}
 	return updatedTemplate, nil

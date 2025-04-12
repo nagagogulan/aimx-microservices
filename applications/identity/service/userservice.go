@@ -4,17 +4,16 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"net/smtp"
 	"time"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	com "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/middleware"
-	"github.com/gofrs/uuid"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
@@ -35,7 +34,7 @@ type SMTPConfig struct {
 func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error) {
 	fmt.Println("inside function")
 	if !com.ValidateEmail(req.Email) {
-		return nil, fmt.Errorf("invalid email format")
+		return nil, errcom.ErrInvalidEmail
 	}
 
 	// Generate OTP & Secret Key
@@ -88,22 +87,22 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		fmt.Errorf("User Not Found : %w", err)
 	}
 	if res != nil && req.Email != res.Email {
-		return &model.UserAuthResponse{Message: "Invalid Username."}, errors.New("Invalid Username.")
+		return nil, NewCustomError(errcom.ErrInvalidEmail, err)
 	}
-	if req.OTP!=res.OTP{
-		return &model.UserAuthResponse{Message: "Invalid OTP."}, errors.New("Invalid OTP.")
+	if req.OTP != res.OTP {
+		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
 	}
 	if res != nil && !res.IS_MFA_Enabled && res.Secret == "" {
 		if time.Since(res.ExpireOTP) > 5*time.Minute {
 			err := s.UserRepo.DeleteOTP(ctx, req.Email)
 			if err != nil {
-				return &model.UserAuthResponse{Message: "User not found or OTP not set."}, err
+				return nil, NewCustomError(errcom.ErrNotFound, err)
 			}
-			return &model.UserAuthResponse{Message: "OTP expired."}, nil
+			return nil, NewCustomError(errcom.ErrOTPExpired, err)
 		}
 		errors := s.UserRepo.DeleteOTP(ctx, req.Email)
 		if errors != nil {
-			return &model.UserAuthResponse{Message: "User not found or OTP not set."}, err
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		if res != nil && res.IS_MFA_Enabled {
 			return nil, fmt.Errorf("2FA already verified")
@@ -135,19 +134,31 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		if res.OTP != "" && res.OTP == req.OTP && req.Email == res.Email {
 			return &model.UserAuthResponse{Message: "OTP Verified!", QRURL: req.Secret, QRImage: qrCodeBase64}, nil
 		}
-		return &model.UserAuthResponse{Message: "Invalid OTP."}, nil
+		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
 
 	} else if res != nil && res.Secret != "" && !res.IS_MFA_Enabled {
-		fmt.Println("screate key already generated")
-		qrCodeBytes, err := qrcode.Encode(res.Secret, qrcode.Medium, 256)
+		fmt.Println("Secret key already generated, regenerating QR code...")
+
+		// Build the otpauth URI
+		appName := "AI Community Portal" // replace with your app name
+		userEmail := res.Email           // or use a username/identifier
+
+		otpURL := fmt.Sprintf(
+			"otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30",
+			appName, userEmail, res.Secret, appName,
+		)
+
+		// Generate the QR code
+		qrCodeBytes, err := qrcode.Encode(otpURL, qrcode.Medium, 256)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate QR code: %w", err)
 		}
+
 		qrCodeBase64 := base64.StdEncoding.EncodeToString(qrCodeBytes)
 
 		return &model.UserAuthResponse{
 			Message: "OTP Verified!",
-			QRURL: res.Secret,
+			QRURL:   otpURL,
 			QRImage: qrCodeBase64,
 		}, nil
 	}
@@ -190,8 +201,9 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	userData, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
 		log.Println("Failed to fetch user details:", err)
-		return &model.Response{Message: "Failed to fetch user details"}, err
+		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
+	qrverifystatus := userData.IS_MFA_Enabled
 	isValid, err := totp.ValidateCustom(
 		req.OTP,
 		userData.Secret,
@@ -205,20 +217,28 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 
 	if err != nil {
 		fmt.Println("TOTP validation error:", err)
-		return &model.Response{Message: "OTP validation error"}, err
+		return nil, NewCustomError(errcom.ErrFieldValidation, err)
 	}
 	if !isValid {
 		fmt.Println("Invalid OTP from user")
-		return &model.Response{Message: "Invalid OTP"}, nil
+		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
 	}
-	err = s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+	if !userData.IS_MFA_Enabled {
+		qrverify, err := s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+		if err != nil {
+			fmt.Println("Failed to Scan QR code verify Status:", err)
+			return nil, err
+		}
+		qrverifystatus = qrverify.IS_MFA_Enabled
+	}
+
+	auth := middleware.TokenDetails{ // already UUID, no need to parse
+		Email: req.Email,
+	}
+	jwtToken, err := middleware.GenerateJWT(&auth)
 	if err != nil {
-		fmt.Println("Failed to Scan QR code verify Status:", err)
 		return nil, err
 	}
-	jwtToken, err := middleware.GenerateJWT(req.Email)
-	if err != nil {
-		return "",nil
-	}
-	return &model.Response{Message: "OTP verified successfully",JWTToken:jwtToken}, nil
+	fmt.Println("***************", jwtToken)
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: qrverifystatus}, nil
 }
