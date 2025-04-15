@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"log"
-	"time"
 	"net/http"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -14,8 +14,8 @@ func ErrorHandlingMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		response, err := next(ctx, request)
 		if err != nil {
-			// appErr := FromError(err)
-			return nil, err
+			appErr := FromError(err)
+			return nil, appErr
 		}
 		return response, nil
 	}
@@ -62,6 +62,7 @@ func CORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
 type RequestWithContext struct {
 	Ctx     context.Context
 	Request interface{}

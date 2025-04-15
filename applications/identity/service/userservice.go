@@ -12,6 +12,7 @@ import (
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	com "github.com/PecozQ/aimx-library/common"
+	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/pquerna/otp"
@@ -53,14 +54,15 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if existingUser == nil {
 		err := s.UserRepo.SaveOTP(ctx, req, otp)
 		if err != nil {
-			fmt.Println("Failed to store OTP:", err)
-			return nil, fmt.Errorf("failed to store OTP: %w", err)
+			commonlib.LogMessage(s.logger, commonlib.Error, "Createuser", err.Error(), err, "CreateBy", req.Email)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 	} else {
 		// If user exists but doesn't have an OTP and MFP is disabled, update OTP
 		if existingUser != nil && !existingUser.IS_MFA_Enabled {
 			err := s.UserRepo.UpdateOTP(ctx, otp, existingUser.Email)
 			if err != nil {
+				commonlib.LogMessage(s.logger, commonlib.Error, "Update OTP", err.Error(), err, "UpdateOTP", req.Email)
 				fmt.Println("Failed to update OTP:", err)
 				return nil, fmt.Errorf("failed to update OTP: %w", err)
 			}
