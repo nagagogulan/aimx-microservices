@@ -12,6 +12,8 @@ import (
 
 	"errors"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
+
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -127,7 +129,6 @@ func makeCreateFormEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		fmt.Println("$$$$$$$$$$$$$$$$$$$$$$", request)
 
 		req, ok := request.(*model.ParamRequest)
 		if !ok {
@@ -147,7 +148,7 @@ func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		// }
 		formList, err := s.GetFormByType(ctx, req.Type)
 		if err != nil {
-			return nil, errors.New("Template Not found") // or wrap as needed
+			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
 		}
 		return formList, nil
 	}

@@ -94,8 +94,7 @@ func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 
 // Decode register api request...
 func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-
-	var request dto.FormDTO
+	var request dto.TemplateDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
@@ -148,7 +147,6 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	// typeStr := vars["type"]
 	// id := strings.Trim(r.URL.Query().Get("id"), `"`) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
-
 	req := &model.ParamRequest{}
 
 	// if id != "" {

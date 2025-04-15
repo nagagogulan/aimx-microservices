@@ -12,6 +12,7 @@ import (
 //		ID string `json:"id"`
 //	}
 type TemplateRequest struct {
+	ID       string          `json:"id"`
 	Template entity.Template `json:"template"` // Updated template payload
 }
 

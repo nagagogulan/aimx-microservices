@@ -10,6 +10,7 @@ import (
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
+	fmt.Println("******************************************", form)
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdForm)
@@ -19,27 +20,15 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 }
 
 func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormDTO, error) {
-	// if id != "" {
-	// 	template, err := s.templateRepo.GetTemplateById(ctx, id)
-	// 	if err != nil {
-	// 		fmt.Println("****************************")
-	// 		//commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", err.Error(), err, "type", Type)
-	// 		return nil, errors.New("Template Not Found")
-	// 	}
-	// 	return template, nil
-	// }
-	// if Type > 0 {
-	formList, errs := s.formRepo.GetFormByType(ctx, doc_type)
-	if errs != nil {
-		fmt.Println("****************************")
-		commonlib.LogMessage(s.logger, commonlib.Error, "GetForms", errs.Error(), errs, "type", doc_type)
-		return nil, apperrors.ErrNotFound
+
+	formList, err := s.formRepo.GetFormByType(ctx, doc_type)
+	if err != nil {
+		fmt.Println("))))))))))))))))))))))))))))))))", err)
+		//commonlib.LogMessage(s.logger, commonlib.Error, "GetForms", err.Error(), err, "type", doc_type)
+		return nil, err
 	}
 	if commonlib.IsEmpty(formList) {
 		return nil, apperrors.ErrNotFound
 	}
 	return formList, nil
-
-	// }
-	// return nil, nil
 }
