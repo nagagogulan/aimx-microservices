@@ -81,7 +81,9 @@ func main() {
 	//collection := db.Collection("templates")
 
 	templateRepo := repository.NewTemplateRepository(db)
-	s := service.NewService(templateRepo)
+	formRepo := repository.NewFormRepository(db)
+
+	s := service.NewService(templateRepo, formRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{

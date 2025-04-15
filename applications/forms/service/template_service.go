@@ -39,6 +39,7 @@ func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*
 	}
 	return nil, nil
 }
+
 func (s *service) UpdateTemplate(ctx context.Context, id string, template entity.Template) (*entity.Template, error) {
 	updatedTemplate, err := s.templateRepo.UpdateTemplate(ctx, id, template)
 	if err != nil {
