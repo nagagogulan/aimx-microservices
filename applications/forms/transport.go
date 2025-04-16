@@ -80,6 +80,14 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	// Update Template
+	router.PUT("/form/update", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateFormEndpoint,
+		decodeUpdateFormRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -176,6 +184,16 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 	}
 	return &request, nil
 }
+
+func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.UpdateFormRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return &request, nil
+}
+
 func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	req := &model.ParamRequest{}
