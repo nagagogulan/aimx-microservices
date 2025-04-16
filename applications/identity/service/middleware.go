@@ -14,7 +14,8 @@ func ErrorHandlingMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		response, err := next(ctx, request)
 		if err != nil {
-			return nil, err
+			appErr := FromError(err)
+			return nil, appErr
 		}
 		return response, nil
 	}
@@ -48,7 +49,7 @@ func TimeoutMiddleware(d time.Duration) endpoint.Middleware {
 }
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

@@ -4,6 +4,26 @@ import (
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 )
 
-type CreateTemplateRequest struct {
-	Template entity.Template `json:"template"`
+// type CreateTemplateRequest struct {
+// 	Template entity.Template `json:"template"`
+// }
+
+//	type TemplateRequest struct {
+//		ID string `json:"id"`
+//	}
+type TemplateRequest struct {
+	ID       string          `json:"id"`
+	Template entity.Template `json:"template"` // Updated template payload
+}
+
+type Template struct {
+	Template entity.Template `json:"template"` // Updated template payload
+}
+
+type ParamRequest struct {
+	ID   string `json:"id"`
+	Type int    `json:"type"`
+}
+type Response struct {
+	Message string `json:"message"`
 }

@@ -16,7 +16,7 @@ import (
 
 func MakeHTTPHandler(s service.Service) http.Handler {
 	fmt.Println("connect http handuler")
-	options := []httptransport.ServerOption{}
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(service.EncodeError)}
 
 	r := gin.New()
 	endpoints := NewEndpoint(s)
@@ -33,7 +33,7 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		endpoints.CreateUserEndpoint,
 		decodeCreateUserRequest,
 		encodeResponse,
-		options...,
+		httptransport.ServerErrorEncoder(service.ErrorEncoder),
 	).ServeHTTP))
 	router.POST("/otpverify", gin.WrapF(httptransport.NewServer(
 		endpoints.verifyOTPEndpoint,

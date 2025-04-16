@@ -5,14 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
+	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
-	errorlib "github.com/PecozQ/aimx-library/errors"
-	middleware "github.com/PecozQ/aimx-library/middleware"
+	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+
+	//"github.com/gorilla/mux"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -36,22 +41,149 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	// Get Template by ID
+	router.GET("/template", gin.WrapF(httptransport.NewServer(
+		endpoints.GetTemplateByIDEndpoint,
+		decodeGetTemplateByTypeRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Update Template
+	router.PUT("/template/update", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateTemplateEndpoint,
+		decodeUpdateTemplateRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Delete Template
+	router.DELETE("/template", gin.WrapF(httptransport.NewServer(
+		endpoints.DeleteTemplateEndpoint,
+		decodeDeleteTemplateRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	router.POST("/form/create", gin.WrapF(httptransport.NewServer(
+		endpoints.CreateFormEndpoint,
+		decodeCreateFormRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Get Template by ID
+	router.GET("/form", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormByTypeEndpoint, // ✅ changed from GetTemplateByTypeEndpoint
+		decodeGetFormByTypeRequest,      // ✅ updated to match GetTemplateByID
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
 
 // Decode register api request...
 func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request model.CreateTemplateRequest
+
+	var request entities.Template
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+// Decode register api request...
+func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.TemplateDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
 	// Extract Gin context
-	newCtx, err := commonlib.ExtractGinContext(ctx)
-	if err != nil {
+	// newCtx, err := commonlib.ExtractGinContext(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	return &dto.FormDTO{Type: request.Type, Sections: request.Sections, Fields: request.Fields}, nil
+}
+func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
+	typeStr := r.URL.Query().Get("type")
+
+	req := &model.ParamRequest{}
+
+	if id != "" {
+		req.ID = id
+	}
+
+	if typeStr != "" {
+		typeInt, err := strconv.Atoi(typeStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid 'type' param: %v", err)
+		}
+		req.Type = typeInt
+	}
+
+	if req.ID == "" && req.Type == 0 {
+		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
+	}
+
+	return req, nil
+}
+
+func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	// query := r.URL.Query()
+	// idStr := query.Get("id")
+	// typeStr := query.Get("type")
+
+	// if typeStr == "" {
+	// 	return nil, fmt.Errorf("missing 'type' query parameter")
+	// }
+
+	// typeInt, err := strconv.Atoi(typeStr)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("invalid 'type' query parameter: %v", err)
+	// }
+	// vars := mux.Vars(r)     // get path params
+	// typeStr := vars["type"]
+	// id := strings.Trim(r.URL.Query().Get("id"), `"`) // remove quotes if passed in URL
+	typeStr := r.URL.Query().Get("type")
+	req := &model.ParamRequest{}
+
+	// if id != "" {
+	// 	req.ID = id
+	// }
+
+	if typeStr != "" {
+		typeInt, err := strconv.Atoi(typeStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid 'type' param: %v", err)
+		}
+		req.Type = typeInt
+	}
+
+	if req.ID == "" && req.Type == 0 {
+		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
+	}
+
+	return req, nil
+}
+func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request model.TemplateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	return middleware.RequestWithContext{Ctx: newCtx, Request: request}, nil
+	return &request, nil
+}
+func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
+	req := &model.ParamRequest{}
+
+	if id != "" {
+		req.ID = id
+	}
+	return req, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
