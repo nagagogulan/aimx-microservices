@@ -89,10 +89,10 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeUpdateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*model.TemplateRequest)
-		fmt.Println("Template ID:", req.Template.ID.Hex())
+		req := request.(entities.Template)
+		fmt.Println("Template ID:", req.ID.Hex())
 
-		template, err := s.UpdateTemplate(ctx, req.Template.ID.Hex(), req.Template)
+		template, err := s.UpdateTemplate(ctx, req.ID.Hex(), req)
 		if err != nil {
 			return nil, err
 		}

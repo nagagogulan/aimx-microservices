@@ -169,12 +169,12 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	return req, nil
 }
 func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request model.TemplateRequest
+	var request entities.Template
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	return &request, nil
+	return request, nil
 }
 func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
