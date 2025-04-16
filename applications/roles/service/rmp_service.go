@@ -14,7 +14,8 @@ type RMPService interface {
 	UpdateRMP(ctx context.Context, req *dto.UpdateRMPRequest) (*dto.RMPResponse, error)
 	DeleteRMP(ctx context.Context, id uuid.UUID) error
 	ListRMP(ctx context.Context) ([]dto.RMPResponse, error)
-	GetModulesAndPermissionsByRoleID(ctx context.Context, roleID uuid.UUID) ([]dto.RMPResponse, error)
+	GetModulesAndPermissionsByRoleID(ctx context.Context, roleID uuid.UUID) (*dto.GroupedRMPResponse, error)
+	FlexibleBulkCreateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error)
 
 }
 
@@ -46,7 +47,12 @@ func (s *rmpService) ListRMP(ctx context.Context) ([]dto.RMPResponse, error) {
 	return s.repo.GetAllRMP(ctx)
 }
 
-func (s *rmpService) GetModulesAndPermissionsByRoleID(ctx context.Context, roleID uuid.UUID) ([]dto.RMPResponse, error) {
+func (s *rmpService) GetModulesAndPermissionsByRoleID(ctx context.Context, roleID uuid.UUID) (*dto.GroupedRMPResponse, error) {
 	return s.repo.GetModulesAndPermissionsByRoleID(ctx, roleID)
+}
+
+
+func (s *rmpService) FlexibleBulkCreateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error) {
+	return s.repo.FlexibleBulkCreateRMP(ctx, req)
 }
 

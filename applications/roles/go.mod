@@ -3,7 +3,7 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.168
+	github.com/PecozQ/aimx-library v0.0.172
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gofrs/uuid v4.4.0+incompatible
