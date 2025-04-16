@@ -11,6 +11,7 @@ import (
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
@@ -85,11 +86,11 @@ func MakeHttpHandler(s service.Service) http.Handler {
 // Decode register api request...
 func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 
-	var request model.TemplateRequest
+	var request entities.Template
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	return &model.TemplateRequest{ID: request.ID, Template: request.Template}, nil
+	return request, nil
 }
 
 // Decode register api request...

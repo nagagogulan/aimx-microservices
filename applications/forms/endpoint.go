@@ -7,6 +7,7 @@ import (
 
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
@@ -47,8 +48,8 @@ func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endp
 
 func makeCreateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*model.TemplateRequest)
-		template, err := s.CreateTemplate(ctx, req.Template)
+		req := request.(entities.Template)
+		template, err := s.CreateTemplate(ctx, req)
 		if err != nil {
 			return nil, err
 		}
