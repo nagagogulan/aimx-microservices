@@ -53,4 +53,15 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
 	return formTypes, nil
+
+func (s *service) UpdateForm(ctx context.Context, id string, status string) (bool, error) {
+	updatedForm, err := s.formRepo.UpdateForm(ctx, id, status)
+	if err != nil {
+		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {
+			commonlib.LogMessage(s.logger, commonlib.Error, "FormUpdate", err.Error(), nil, "form", id)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
+		}
+		return nil, err
+	}
+	return updatedForm, nil
 }

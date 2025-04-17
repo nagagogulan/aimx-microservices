@@ -22,6 +22,7 @@ type Service interface {
 
 	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
+	UpdateForm(ctx context.Context, id string, status string) (bool, error)
 }
 
 type service struct {

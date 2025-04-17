@@ -35,6 +35,7 @@ type RoleEndpoints struct {
 	DeleteRMP  endpoint.Endpoint
 	ListRMPs   endpoint.Endpoint
 	GetModulesAndPermissionsByRoleID endpoint.Endpoint
+	FlexibleBulkCreateRMP endpoint.Endpoint
 
 }
 
@@ -72,7 +73,8 @@ func NewRoleEndpoints(
 		UpdateRMP:  wrap(serviceWrapperTyped[dto.UpdateRMPRequest, dto.RMPResponse](rmpService.UpdateRMP)),
 		DeleteRMP:  wrapUUIDOnly(rmpService.DeleteRMP),
 		ListRMPs:   wrapListTyped(rmpService.ListRMP),
-		GetModulesAndPermissionsByRoleID: wrapUUIDList(rmpService.GetModulesAndPermissionsByRoleID),
+		GetModulesAndPermissionsByRoleID: wrapUUIDStruct(rmpService.GetModulesAndPermissionsByRoleID),
+		FlexibleBulkCreateRMP: wrapListPointerTyped(rmpService.FlexibleBulkCreateRMP),
 
 	}
 }
@@ -129,6 +131,27 @@ func wrapUUIDList[T any](f func(context.Context, uuid.UUID) ([]T, error)) endpoi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		id := request.(uuid.UUID)
 		list, err := f(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		var result []interface{}
+		for _, item := range list {
+			result = append(result, item)
+		}
+		return result, nil
+	}
+}
+
+func wrapUUIDStruct[Res any](f func(context.Context, uuid.UUID) (*Res, error)) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return f(ctx, request.(uuid.UUID))
+	}
+}
+
+func wrapListPointerTyped[Req any, Res any](f func(context.Context, *Req) ([]Res, error)) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*Req)
+		list, err := f(ctx, req)
 		if err != nil {
 			return nil, err
 		}

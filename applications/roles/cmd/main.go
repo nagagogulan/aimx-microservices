@@ -18,11 +18,16 @@ import (
 func main() {
 	// Database config - you can make this dynamic via env vars
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "localhost",
-		DBPort:     5432,
-		DBUser:     "postgres",
-		DBPassword: "password@123",
-		DBName:     "localDb",
+		// DBHost:     "localhost",
+		// DBPort:     5432,
+		// DBUser:     "postgres",
+		// DBPassword: "password@123",
+		// DBName:     "localDb",
+		DBHost:     "18.142.238.70",
+        DBPort:     5432,
+        DBUser:     "myappuser",
+        DBPassword: "SmartWork@123",
+        DBName:     "aimxdb",
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)

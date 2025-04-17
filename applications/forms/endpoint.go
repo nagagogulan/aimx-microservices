@@ -28,6 +28,7 @@ type Endpoints struct {
 	GetFormByTypeEndpoint  endpoint.Endpoint
 	CreateFormTypeEndpoint endpoint.Endpoint
 	GetFormTypeEndpoint    endpoint.Endpoint
+	updateFormEndpoint     endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -42,6 +43,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetFormByTypeEndpoint:  Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
 		CreateFormTypeEndpoint: Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
 		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
+		updateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -103,6 +105,7 @@ func makeUpdateTemplateEndpoint(s service.Service) endpoint.Endpoint {
 		return template, nil
 	}
 }
+
 func makeDeleteTemplateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(*model.ParamRequest)
@@ -123,12 +126,26 @@ func makeDeleteTemplateEndpoint(s service.Service) endpoint.Endpoint {
 func makeCreateFormEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*dto.FormDTO)
-		template, err := s.CreateForm(ctx, *req)
+		form, err := s.CreateForm(ctx, *req)
 		if err != nil {
 			return nil, err
 		}
-		return template, nil
+		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
+	}
+}
+
+func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.UpdateFormRequest)
+		fmt.Println("Form ID:", req.ID)
+		fmt.Println("Form Status:", req.Status)
+
+		form, err := s.UpdateForm(ctx, req.ID, req.Status)
+		if err != nil {
+			return nil, err
+		}
+		return form, nil
 	}
 }
 
