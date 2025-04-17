@@ -13,21 +13,25 @@ import (
 
 type Service interface {
 	CreateTemplate(ctx context.Context, template entity.Template) (*entity.Template, error)
-	GetTemplateByType(ctx context.Context, Type int, id string) (*entity.Template, error)
+	GetTemplateByType(ctx context.Context, Type string, id string) (*entity.Template, error)
 	UpdateTemplate(ctx context.Context, id string, template entity.Template) (*entity.Template, error)
 	DeleteTemplate(ctx context.Context, id string) (*model.Response, error)
 
 	CreateForm(ctx context.Context, forms dto.FormDTO) (*dto.FormDTO, error)
-	GetFormByType(ctx context.Context, form_type int) ([]*dto.FormDTO, error)
+	GetFormByType(ctx context.Context, form_type string) ([]*dto.FormDTO, error)
+
+	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
+	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 }
 
 type service struct {
 	templateRepo repository.TemplateRepositoryService
 	formRepo     repository.FormRepositoryService
+	formTypeRepo repository.FormTypeRepositoryService
 	logger       kitlog.Logger
 }
 
-func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService) Service {
+func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService) Service {
 	fmt.Println("db interface connected")
-	return &service{templateRepo: templateRepo, formRepo: formRepo}
+	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo}
 }

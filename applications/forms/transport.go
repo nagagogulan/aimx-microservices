@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
@@ -79,6 +78,20 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/formtype/create", gin.WrapF(httptransport.NewServer(
+		endpoints.CreateFormTypeEndpoint,
+		decodeCreateFormTypeRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Get Template by ID
+	router.GET("/formtype/list", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormTypeEndpoint, // ✅ changed from GetTemplateByTypeEndpoint
+		decodeGetFormTypeRequest,      // ✅ updated to match GetTemplateByID
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -106,9 +119,21 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	// }
 	return &dto.FormDTO{Type: request.Type, Sections: request.Sections, Fields: request.Fields}, nil
 }
+func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request dto.FormType
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	// Extract Gin context
+	// newCtx, err := commonlib.ExtractGinContext(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	return &request, nil
+}
 func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
-	typeStr := r.URL.Query().Get("type")
+	typeStr := strings.TrimSpace(r.URL.Query().Get("type"))
 
 	req := &model.ParamRequest{}
 
@@ -117,14 +142,11 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	}
 
 	if typeStr != "" {
-		typeInt, err := strconv.Atoi(typeStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid 'type' param: %v", err)
-		}
-		req.Type = typeInt
+
+		req.Type = typeStr
 	}
 
-	if req.ID == "" && req.Type == 0 {
+	if req.ID == "" && req.Type == "" {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 
@@ -155,18 +177,19 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	// }
 
 	if typeStr != "" {
-		typeInt, err := strconv.Atoi(typeStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid 'type' param: %v", err)
-		}
-		req.Type = typeInt
+
+		req.Type = typeStr
 	}
 
-	if req.ID == "" && req.Type == 0 {
+	if req.ID == "" && req.Type == "" {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 
 	return req, nil
+}
+func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+
+	return nil, nil
 }
 func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request entities.Template

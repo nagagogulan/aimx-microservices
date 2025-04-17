@@ -24,8 +24,10 @@ type Endpoints struct {
 	UpdateTemplateEndpoint  endpoint.Endpoint
 	DeleteTemplateEndpoint  endpoint.Endpoint
 
-	CreateFormEndpoint    endpoint.Endpoint
-	GetFormByTypeEndpoint endpoint.Endpoint
+	CreateFormEndpoint     endpoint.Endpoint
+	GetFormByTypeEndpoint  endpoint.Endpoint
+	CreateFormTypeEndpoint endpoint.Endpoint
+	GetFormTypeEndpoint    endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -36,8 +38,10 @@ func NewEndpoint(s service.Service) Endpoints {
 		DeleteTemplateEndpoint:  Middleware(makeDeleteTemplateEndpoint(s), commonlib.TimeoutMs),
 		// GetTemplateByIDEndpoint: Middleware(makeGetTemplateByIDEndpoint(s), common.TimeoutMs),
 
-		CreateFormEndpoint:    Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
-		GetFormByTypeEndpoint: Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormEndpoint:     Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
+		GetFormByTypeEndpoint:  Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormTypeEndpoint: Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
+		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -67,14 +71,14 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 
 		if req.ID != "" {
 			// If ID is present, prioritize lookup by ID
-			template, err := s.GetTemplateByType(ctx, 0, req.ID)
+			template, err := s.GetTemplateByType(ctx, "", req.ID)
 			if err != nil {
 				return nil, err // or wrap as needed
 			}
 			return template, nil
 		}
 
-		if req.Type != 0 {
+		if req.Type != "" {
 			// If ID is not present, use Type
 			template, err := s.GetTemplateByType(ctx, req.Type, "")
 			if err != nil {
@@ -148,6 +152,27 @@ func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		// 	return template, nil
 		// }
 		formList, err := s.GetFormByType(ctx, req.Type)
+		if err != nil {
+			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
+		}
+		return formList, nil
+	}
+}
+func makeCreateFormTypeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.FormType)
+		formtype, err := s.CreateFormType(ctx, *req)
+		if err != nil {
+			return model.FormTypeResponse{Error: err.Error()}, nil
+		}
+		return &model.FormType{ID: formtype.ID, Name: formtype.Name}, nil
+		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
+	}
+}
+
+func makeGetFormTypeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		formList, err := s.GetAllFormTypes(ctx)
 		if err != nil {
 			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
 		}

@@ -2,6 +2,7 @@ package model
 
 import (
 	entity "github.com/PecozQ/aimx-library/domain/entities"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // type CreateTemplateRequest struct {
@@ -22,8 +23,16 @@ type Template struct {
 
 type ParamRequest struct {
 	ID   string `json:"id"`
-	Type int    `json:"type"`
+	Type string `json:"type"`
 }
 type Response struct {
 	Message string `json:"message"`
+}
+type FormType struct {
+	ID   primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Name string             `bson:"name" json:"name"`
+}
+type FormTypeResponse struct {
+	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
 }

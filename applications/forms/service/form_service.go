@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -17,7 +18,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormDTO, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type string) ([]*dto.FormDTO, error) {
 
 	formList, err := s.formRepo.GetFormByType(ctx, doc_type)
 	if err != nil {
@@ -28,4 +29,28 @@ func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormD
 		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
 	return formList, nil
+}
+func (s *service) CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error) {
+	existing, err := s.formTypeRepo.GetFormTypeByName(ctx, formtype.Name)
+	if err == nil && existing != nil {
+		return nil, errors.New("Form Type Already Exists")
+	}
+	createdFormType, err := s.formTypeRepo.CreateFormType(ctx, &formtype)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdFormType)
+		return nil, err
+	}
+	return createdFormType, err
+}
+
+func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
+	formTypes, err := s.formTypeRepo.GetAllFormTypes(ctx)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "GetAllFormTypes", err.Error(), err)
+		return nil, NewCustomError(errcom.ErrNotFound, err)
+	}
+	if commonlib.IsEmpty(formTypes) {
+		return nil, NewCustomError(errcom.ErrNotFound, err)
+	}
+	return formTypes, nil
 }
