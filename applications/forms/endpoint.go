@@ -73,7 +73,7 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 
 		if req.ID != "" {
 			// If ID is present, prioritize lookup by ID
-			template, err := s.GetTemplateByType(ctx, "", req.ID)
+			template, err := s.GetTemplateByType(ctx, 0, req.ID)
 			if err != nil {
 				return nil, err // or wrap as needed
 			}

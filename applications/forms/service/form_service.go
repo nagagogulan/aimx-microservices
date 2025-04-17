@@ -18,7 +18,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type string) ([]*dto.FormDTO, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormDTO, error) {
 
 	formList, err := s.formRepo.GetFormByType(ctx, doc_type)
 	if err != nil {

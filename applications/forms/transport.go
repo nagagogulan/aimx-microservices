@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
@@ -149,12 +150,17 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 		req.ID = id
 	}
 
-	if typeStr != "" {
-
-		req.Type = typeStr
+	typeInt, err := strconv.Atoi(typeStr)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
 	}
 
-	if req.ID == "" && req.Type == "" {
+	if typeInt > 0 {
+		req.Type = typeInt
+	}
+
+	if req.ID == "" && req.Type > 0 {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 
@@ -184,12 +190,18 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	// 	req.ID = id
 	// }
 
-	if typeStr != "" {
-
-		req.Type = typeStr
+	typeInt, err := strconv.Atoi(typeStr)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
 	}
 
-	if req.ID == "" && req.Type == "" {
+	if typeInt > 0 {
+
+		req.Type = typeInt
+	}
+
+	if req.ID == "" && req.Type > 0 {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 

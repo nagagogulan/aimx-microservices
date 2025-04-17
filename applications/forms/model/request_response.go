@@ -23,7 +23,7 @@ type Template struct {
 
 type ParamRequest struct {
 	ID   string `json:"id"`
-	Type string `json:"type"`
+	Type int    `json:"type"`
 }
 type Response struct {
 	Message string `json:"message"`

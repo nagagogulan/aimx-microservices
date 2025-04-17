@@ -18,7 +18,7 @@ func (s *service) CreateTemplate(ctx context.Context, template entity.Template) 
 	}
 	return createdTemplate, err
 }
-func (s *service) GetTemplateByType(ctx context.Context, Type string, id string) (*entity.Template, error) {
+func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*entity.Template, error) {
 	if id != "" {
 		template, err := s.templateRepo.GetTemplateById(ctx, id)
 		if err != nil {
