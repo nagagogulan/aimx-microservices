@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/smtp"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -93,5 +94,54 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 		}
 		return false, err
 	}
+
+	// Send email to Admin user
+	sendEmail("kavi@yopmail.com")
+
 	return updatedForm, nil
+}
+
+func sendEmail(receiverEmail string) error {
+	from := "priyadharshini.twilight@gmail.com"
+	password := "rotk reak madc kwkf"
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+	to := []string{receiverEmail}
+
+	// Properly format the message
+	// Properly format the HTML message
+	message := []byte("From: SingHealth <" + from + ">\r\n" +
+		"To: " + receiverEmail + "\r\n" +
+		"Subject: Organization Approved: Exciting News Inside!\r\n" +
+		"Content-Type: text/html; charset=UTF-8\r\n" +
+		"\r\n" +
+		"<html>" +
+		"<body style='font-family: Arial, sans-serif;'>" +
+		"  <div style='background-color: #f4f4f4; padding: 20px;'>" +
+		"    <h2 style='color: #2e6c8b;'>🎉 Congratulations! Your Organization Got Approved 🎉</h2>" +
+		"    <p>Dear <strong>" + receiverEmail + "</strong>,</p>" +
+		"    <p>We are thrilled to inform you that your organization has been approved!</p>" +
+		"    <p>What you need to do:</p>" +
+		"    <ul>" +
+		"      <li><strong>Login</strong> to your account.</li>" +
+		"      <li><strong>Check</strong> your organization information.</li>" +
+		"      <li><strong>Start using</strong> our platform to explore all the features available for your organization.</li>" +
+		"    </ul>" +
+		"    <p>We are excited to have you on board. If you have any questions, feel free to contact us anytime!</p>" +
+		"    <p>Best regards,</p>" +
+		"    <p><strong>SingHealth Team</strong></p>" +
+		"    <p style='color: #888;'>This is an automated email, please do not reply.</p>" +
+		"  </div>" +
+		"</body>" +
+		"</html>")
+
+	// Send the email
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, message)
+	if err != nil {
+		fmt.Println("Error sending email:", err)
+		return err
+	}
+	fmt.Println("Organization approval mail sent successfully")
+	return nil
 }
