@@ -80,7 +80,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 			}
 		}
 	}
-	if commonlib.ValueMapper(status, "OrganizationStatus", "ENUM_TO_HASH") == "APPROVED" {
+	if status == "APPROVED" {
 		orgreq.UserCount = 25
 		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
 		if err != nil {
@@ -96,13 +96,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 		}
 		return false, err
 	}
-
-	if commonlib.ValueMapper(status, "OrganizationStatus", "ENUM_TO_HASH") == "APPROVED" {
-		// Send email to Admin user
-		sendEmail(orgreq.Email, "APPROVED")
-	} else if commonlib.ValueMapper(status, "OrganizationStatus", "ENUM_TO_HASH") == "REJECTED" {
-		sendEmail(orgreq.Email, "REJECTED")
-	}
+	sendEmail(orgreq.Email, status)
 
 	return updatedForm, nil
 }
