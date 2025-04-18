@@ -142,7 +142,7 @@ func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interfac
 }
 func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
-	typeStr := strings.TrimSpace(r.URL.Query().Get("type"))
+	typeStr := r.URL.Query().Get("type")
 
 	req := &model.ParamRequest{}
 
@@ -153,7 +153,7 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	typeInt, err := strconv.Atoi(typeStr)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return nil, err
 	}
 
 	if typeInt > 0 {
@@ -168,43 +168,17 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 }
 
 func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	// query := r.URL.Query()
-	// idStr := query.Get("id")
-	// typeStr := query.Get("type")
-
-	// if typeStr == "" {
-	// 	return nil, fmt.Errorf("missing 'type' query parameter")
-	// }
-
-	// typeInt, err := strconv.Atoi(typeStr)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("invalid 'type' query parameter: %v", err)
-	// }
-	// vars := mux.Vars(r)     // get path params
-	// typeStr := vars["type"]
-	// id := strings.Trim(r.URL.Query().Get("id"), `"`) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
 	req := &model.ParamRequest{}
-
-	// if id != "" {
-	// 	req.ID = id
-	// }
-
 	typeInt, err := strconv.Atoi(typeStr)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return nil, err
 	}
 
 	if typeInt > 0 {
-
 		req.Type = typeInt
 	}
-
-	if req.ID == "" && req.Type > 0 {
-		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
-	}
-
 	return req, nil
 }
 func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {

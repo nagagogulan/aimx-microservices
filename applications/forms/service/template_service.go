@@ -27,7 +27,7 @@ func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*
 		}
 		return template, nil
 	}
-	if Type != "" {
+	if Type > 0 {
 		template, errs := s.templateRepo.GetTemplateByType(ctx, Type)
 		if errs != nil {
 			commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", errs.Error(), errs, "type", Type)

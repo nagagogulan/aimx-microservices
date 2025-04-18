@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -52,6 +53,7 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 	if commonlib.IsEmpty(formTypes) {
 		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
+	fmt.Println("**************************", formTypes)
 	return formTypes, nil
 }
 

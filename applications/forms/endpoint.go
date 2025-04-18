@@ -28,7 +28,7 @@ type Endpoints struct {
 	GetFormByTypeEndpoint  endpoint.Endpoint
 	CreateFormTypeEndpoint endpoint.Endpoint
 	GetFormTypeEndpoint    endpoint.Endpoint
-	updateFormEndpoint     endpoint.Endpoint
+	UpdateFormEndpoint     endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -43,7 +43,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetFormByTypeEndpoint:  Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
 		CreateFormTypeEndpoint: Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
 		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
-		updateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -80,7 +80,7 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 			return template, nil
 		}
 
-		if req.Type != "" {
+		if req.Type >= 0 {
 			// If ID is not present, use Type
 			template, err := s.GetTemplateByType(ctx, req.Type, "")
 			if err != nil {
@@ -140,8 +140,9 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.UpdateFormRequest)
 		fmt.Println("Form ID:", req.ID)
 		fmt.Println("Form Status:", req.Status)
+		strtype := req.ID.String()
 
-		form, err := s.UpdateForm(ctx, req.ID, req.Status)
+		form, err := s.UpdateForm(ctx, strtype, req.Status)
 		if err != nil {
 			return nil, err
 		}
@@ -151,23 +152,13 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req, ok := request.(*model.ParamRequest)
 		if !ok {
 			return nil, errors.New("params error")
 		}
-
 		if commonlib.IsEmpty(req) {
 			return nil, errors.New("Type must be provided")
 		}
-		// if req.ID != "" {
-		// 	// If ID is present, prioritize lookup by ID
-		// 	template, err := s.GetTemplateByType(ctx, 0, req.ID)
-		// 	if err != nil {
-		// 		return nil, err // or wrap as needed
-		// 	}
-		// 	return template, nil
-		// }
 		formList, err := s.GetFormByType(ctx, req.Type)
 		if err != nil {
 			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
