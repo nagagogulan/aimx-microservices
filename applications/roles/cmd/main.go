@@ -24,10 +24,10 @@ func main() {
 		// DBPassword: "password@123",
 		// DBName:     "localDb",
 		DBHost:     "18.142.238.70",
-        DBPort:     5432,
-        DBUser:     "myappuser",
-        DBPassword: "SmartWork@123",
-        DBName:     "aimxdb",
+		DBPort:     5432,
+		DBUser:     "myappuser",
+		DBPassword: "SmartWork@123",
+		DBName:     "aimxdb",
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
@@ -76,7 +76,7 @@ func main() {
 	// Start HTTP server
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(common.HttpPort),
-		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
+		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
 	fmt.Println("Info", "Role service HTTP server started", "port", common.HttpPort)
