@@ -80,7 +80,7 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 			return template, nil
 		}
 
-		if req.Type >= 0 {
+		if req.Type > 0 {
 			// If ID is not present, use Type
 			template, err := s.GetTemplateByType(ctx, req.Type, "")
 			if err != nil {
@@ -140,7 +140,7 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.UpdateFormRequest)
 		fmt.Println("Form ID:", req.ID)
 		fmt.Println("Form Status:", req.Status)
-		strtype := req.ID.String()
+		strtype := req.ID
 
 		form, err := s.UpdateForm(ctx, strtype, req.Status)
 		if err != nil {

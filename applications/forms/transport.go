@@ -140,6 +140,7 @@ func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interfac
 	// }
 	return &request, nil
 }
+
 func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
@@ -181,6 +182,7 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	}
 	return req, nil
 }
+
 func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	return nil, nil

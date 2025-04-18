@@ -31,6 +31,7 @@ func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormD
 	}
 	return formList, nil
 }
+
 func (s *service) CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error) {
 	existing, err := s.formTypeRepo.GetFormTypeByName(ctx, formtype.Name)
 	if err == nil && existing != nil {
@@ -58,6 +59,24 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 }
 
 func (s *service) UpdateForm(ctx context.Context, id string, status string) (bool, error) {
+
+	org, err := s.formRepo.GetFormById(ctx, id)
+	fmt.Println("The organization is givn eas: %v", org)
+	if err != nil {
+		return false, NewCustomError(errcom.ErrNotFound, err)
+	}
+
+	orgreq := &dto.CreateOrganizationRequest{
+		Name:      "",
+		Email:     "kavi@tesd.com",
+		UserCount: 25,
+	}
+	organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
+	if err != nil {
+		return false, NewCustomError(errcom.ErrNotFound, err)
+	}
+
+	fmt.Println("The organization is givn eas:", organizationId)
 	updatedForm, err := s.formRepo.UpdateForm(ctx, id, status)
 	if err != nil {
 		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {

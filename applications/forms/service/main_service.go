@@ -26,13 +26,15 @@ type Service interface {
 }
 
 type service struct {
-	templateRepo repository.TemplateRepositoryService
-	formRepo     repository.FormRepositoryService
-	formTypeRepo repository.FormTypeRepositoryService
-	logger       kitlog.Logger
+	templateRepo     repository.TemplateRepositoryService
+	formRepo         repository.FormRepositoryService
+	formTypeRepo     repository.FormTypeRepositoryService
+	organizationRepo repository.OrganizationRepositoryService
+	logger           kitlog.Logger
 }
 
-func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService) Service {
+func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
+	organizationRepo repository.OrganizationRepositoryService) Service {
 	fmt.Println("db interface connected")
-	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo}
+	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo, organizationRepo: organizationRepo}
 }

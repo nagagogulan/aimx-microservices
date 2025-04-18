@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -57,7 +58,42 @@ func main() {
 	// Ensure the MongoDB client disconnects once done
 	// defer client.Disconnect(context.Background())
 	// Set MongoDB URI
-	uri := "mongodb://localhost:27017" // replace with your MongoDB URI
+
+	DB, err := pgsql.InitDB(&pgsql.Config{
+		DBHost:     "18.142.238.70",
+		DBPort:     5432,
+		DBUser:     "myappuser",
+		DBPassword: "SmartWork@123",
+		DBName:     "aimxdb",
+	})
+	if err != nil {
+		log.Fatalf("Error initializing DB: %v", err)
+	}
+
+	// Ping the database to check if the connection is successful
+	sqlDB, err := DB.DB() // Get the raw SQL database instance
+
+	if err != nil {
+		log.Fatalf("Error getting raw DB instance: %v", err)
+	}
+
+	// Attempt to ping the database to check if it's alive
+	err = sqlDB.Ping()
+	if err != nil {
+		log.Fatalf("Failed to ping the database: %v", err)
+	} else {
+		fmt.Println("Database connection successful!")
+	}
+	err = pgsql.Migrate(DB)
+	if err != nil {
+		log.Fatalf("Could not migrate database: %v", err)
+		return
+	}
+
+	// Close the DB connection when done (deferred)
+	defer sqlDB.Close()
+
+	uri := "mongodb+srv://nithiyavelmurugan:W5Tzzye77q3KXOrm@cluster0.tpgmrey.mongodb.net/?retryWrites=true&tls=true&w=majority&appName=Cluster0" // replace with your MongoDB URI
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -83,8 +119,9 @@ func main() {
 	templateRepo := repository.NewTemplateRepository(db)
 	formRepo := repository.NewFormRepository(db)
 	formTypeRepo := repository.NewFormTypeRepo(db)
+	organizationRepo := repository.NewOrganizationRepositoryService(DB)
 
-	s := service.NewService(templateRepo, formRepo, formTypeRepo)
+	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{
