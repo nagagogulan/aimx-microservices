@@ -65,12 +65,20 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 	if err != nil {
 		return false, NewCustomError(errcom.ErrNotFound, err)
 	}
-
-	orgreq := &dto.CreateOrganizationRequest{
-		Name:      "",
-		Email:     "kavi@tesd.com",
-		UserCount: 25,
+	orgreq := &dto.CreateOrganizationRequest{}
+	for _, val := range org.Fields {
+		switch val.Label {
+		case "Organization Name":
+			if name, ok := val.Value.(string); ok {
+				orgreq.Name = name
+			}
+		case "Admin Email Address":
+			if email, ok := val.Value.(string); ok {
+				orgreq.Email = email
+			}
+		}
 	}
+	orgreq.UserCount = 25
 	organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
 	if err != nil {
 		return false, NewCustomError(errcom.ErrNotFound, err)
