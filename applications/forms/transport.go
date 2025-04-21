@@ -150,21 +150,20 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	if id != "" {
 		req.ID = id
 	}
-
-	typeInt, err := strconv.Atoi(typeStr)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, err
+	if typeStr != "" {
+		typeInt, err := strconv.Atoi(typeStr)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+		if typeInt > 0 {
+			req.Type = typeInt
+		}
 	}
 
-	if typeInt > 0 {
-		req.Type = typeInt
-	}
-
-	if req.ID == "" && req.Type > 0 {
+	if req.ID == "" && req.Type < 0 {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
-
 	return req, nil
 }
 

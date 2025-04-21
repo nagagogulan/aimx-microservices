@@ -17,37 +17,41 @@ import (
 func main() {
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "localhost",
+		// DBHost:     "localhost",
+		// DBPort:     5432,
+		// DBUser:     "postgres",
+		// DBPassword: "password@123",
+		// DBName:     "localDb",
+		DBHost:     "18.142.238.70",
 		DBPort:     5432,
-		DBUser:     "postgres",
+		DBUser:     "myappuser",
 		DBPassword: "SmartWork@123",
-		DBName:     "mylocaldb",
+		DBName:     "aimxdb",
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
 	}
 
-	// Ping the database to check if the connection is successful
-	sqlDB, err := DB.DB() // Get the raw SQL database instance
-
+	sqlDB, err := DB.DB()
 	if err != nil {
 		log.Fatalf("Error getting raw DB instance: %v", err)
 	}
 
-	// Attempt to ping the database to check if it's alive
 	err = sqlDB.Ping()
 	if err != nil {
 		log.Fatalf("Failed to ping the database: %v", err)
 	} else {
 		fmt.Println("Database connection successful!")
 	}
+	// Call Migration from Library
 	err = pgsql.Migrate(DB)
 	if err != nil {
-		log.Fatalf("Could not migrate database: %v", err)
-		return
+		log.Fatalf("Database migration failed: %v", err)
 	}
 
-	// Close the DB connection when done (deferred)
+	// Optional: migrate your role/module/permission/RMP tables here manually if needed
+	// err = DB.AutoMigrate(&model.Role{}, &model.Module{}, &model.Permission{}, &model.RoleModulePermission{})
+
 	defer sqlDB.Close()
 
 	userRepo := repository.NewUserserviceRepositoryService(DB)
