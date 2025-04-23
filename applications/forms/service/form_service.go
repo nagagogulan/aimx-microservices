@@ -9,6 +9,7 @@ import (
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
@@ -20,7 +21,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormDTO, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*model.FormDTO, error) {
 
 	formList, err := s.formRepo.GetFormByType(ctx, doc_type)
 	if err != nil {
@@ -30,7 +31,42 @@ func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*dto.FormD
 	if commonlib.IsEmpty(formList) {
 		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
-	return formList, nil
+	var result []*model.FormDTO
+
+	// Iterate over the formList to convert the data into the desired format
+	for _, form := range formList {
+		// Prepare sections
+		var sections []model.Section
+		for _, section := range form.Sections {
+			sections = append(sections, model.Section{
+				ID:       section.ID,
+				Label:    section.Label,
+				Position: section.Position,
+			})
+		}
+
+		// Prepare fields as a map
+		fields := make(map[string]interface{})
+		for _, field := range form.Fields {
+			fields[field.Label] = field.Value
+		}
+
+		// Create the final DTO with the new format
+		result = append(result, &model.FormDTO{
+			ID:             form.ID,
+			OrganizationID: form.OrganizationID,
+			Status:         form.Status,
+			CreatedAt:      form.CreatedAt,
+			UpdatedAt:      form.UpdatedAt,
+			Type:           form.Type,
+			Sections:       sections,
+			Fields:         fields,
+		})
+	}
+
+	fmt.Println("")
+
+	return result, nil
 }
 
 func (s *service) CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error) {

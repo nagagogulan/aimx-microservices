@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -35,4 +37,21 @@ type FormType struct {
 type FormTypeResponse struct {
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
+}
+
+type FormDTO struct {
+	ID             primitive.ObjectID     `json:"_id"`
+	OrganizationID string                 `json:"organization_id"`
+	Status         int                    `json:"status"`
+	CreatedAt      time.Time              `json:"created_at"`
+	UpdatedAt      time.Time              `json:"updated_at"`
+	Type           int                    `json:"type"`
+	Sections       []Section              `json:"sections"`
+	Fields         map[string]interface{} `json:"fields"`
+}
+
+type Section struct {
+	ID       int    `json:"id"`
+	Label    string `json:"label"`
+	Position int    `json:"position"`
 }
