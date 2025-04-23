@@ -21,9 +21,9 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*model.FormDTO, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) ([]*model.FormDTO, error) {
 
-	formList, err := s.formRepo.GetFormByType(ctx, doc_type)
+	formList, total, err := s.formRepo.GetFormByType(ctx, doc_type, page, limit)
 	if err != nil {
 		//commonlib.LogMessage(s.logger, commonlib.Error, "GetForms", err.Error(), err, "type", doc_type)
 		return nil, NewCustomError(errcom.ErrNotFound, err)
@@ -64,7 +64,7 @@ func (s *service) GetFormByType(ctx context.Context, doc_type int) ([]*model.For
 		})
 	}
 
-	fmt.Println("")
+	fmt.Println("", total)
 
 	return result, nil
 }
@@ -95,12 +95,12 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 	return formTypes, nil
 }
 
-func (s *service) UpdateForm(ctx context.Context, id string, status string) (bool, error) {
+func (s *service) UpdateForm(ctx context.Context, id string, status string) (*model.Response, error) {
 
 	org, err := s.formRepo.GetFormById(ctx, id)
 	fmt.Println("The organization is givn eas: %v", org)
 	if err != nil {
-		return false, NewCustomError(errcom.ErrNotFound, err)
+		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
 
 	orgreq := &dto.CreateOrganizationRequest{}
@@ -120,7 +120,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 		orgreq.UserCount = 25
 		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
 		if err != nil {
-			return false, NewCustomError(errcom.ErrNotFound, err)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		fmt.Println("The organization is givn eas:", organizationId)
 	}
@@ -128,13 +128,17 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (boo
 	if err != nil {
 		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {
 			commonlib.LogMessage(s.logger, commonlib.Error, "FormUpdate", err.Error(), nil, "form", id)
-			return false, NewCustomError(errcom.ErrNotFound, err)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
-		return false, err
+		return nil, err
 	}
 	sendEmail(orgreq.Email, status)
 
-	return updatedForm, nil
+	// Final response message
+	if status == "APPROVED" && updatedForm {
+		return &model.Response{Message: "Form successfully approved"}, nil
+	}
+	return &model.Response{Message: "Form rejected"}, nil
 }
 
 func sendEmail(receiverEmail string, status string) error {

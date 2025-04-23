@@ -24,8 +24,10 @@ type Template struct {
 }
 
 type ParamRequest struct {
-	ID   string `json:"id"`
-	Type int    `json:"type"`
+	ID       string `json:"id"`
+	Type     int    `json:"type"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
 }
 type Response struct {
 	Message string `json:"message"`

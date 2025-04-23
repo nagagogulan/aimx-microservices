@@ -18,8 +18,8 @@ type Service interface {
 	DeleteTemplate(ctx context.Context, id string) (*model.Response, error)
 
 	CreateForm(ctx context.Context, forms dto.FormDTO) (*dto.FormDTO, error)
-	GetFormByType(ctx context.Context, form_type int) ([]*dto.FormDTO, error)
-	UpdateForm(ctx context.Context, id string, status string) (bool, error)
+	GetFormByType(ctx context.Context, doc_type, page, limit int) ([]*model.FormDTO, error)
+	UpdateForm(ctx context.Context, id string, status string) (*model.Response, error)
 
 	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)

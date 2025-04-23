@@ -169,6 +169,9 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 
 func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	typeStr := r.URL.Query().Get("type")
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("pageSize")
+
 	req := &model.ParamRequest{}
 	typeInt, err := strconv.Atoi(typeStr)
 	if err != nil {
@@ -179,6 +182,18 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	if typeInt > 0 {
 		req.Type = typeInt
 	}
+	pages, err := strconv.Atoi(pageStr)
+	if err == nil && pages > 0 {
+		req.Page = pages
+	}
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err == nil && pageSize > 0 {
+		req.PageSize = pageSize
+	}
+	// page, pageSize := commonlib.ParsePaginationParams(r)
+	// req.Page = page
+	// req.PageSize = pageSize
 	return req, nil
 }
 
