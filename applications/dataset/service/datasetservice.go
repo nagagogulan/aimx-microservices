@@ -6,18 +6,20 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/PecozQ/aimx-library/common"
 	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Service interface {
 	//UploadFile(ctx context.Context, filePath string) (string, error)
-	UploadFile(ctx context.Context, filename string, content []byte) (*model.UploadResponse, error)
+	UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error)
 	GetFile(ctx context.Context, filePath string) ([]byte, string, error)
 	//GetFileList(ctx context.Context) ([]string, error)
-	DeleteFile(ctx context.Context, filename string) error
+	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
 }
 
 type fileService struct{}
@@ -26,28 +28,58 @@ func NewService() Service {
 	return &fileService{}
 }
 
-func (s *fileService) UploadFile(ctx context.Context, filename string, content []byte) (*model.UploadResponse, error) {
-	// Custom destination path
-	dir := "./Documents"
-
-	// Ensure the directory exists
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("unable to create upload dir: %w", err)
-	}
-	timestamp := time.Now().Format("20060102_150405")
-	originalName := filepath.Base(filename)
-
+func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
+	// claims, err := middleware.GetClaimsFromContext(ctx)
+	// if err != nil {
+	// 	return apperrors.ErrUnableToRetrieveClaims
+	// }
 	id, err := uuid.NewV4()
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
 	}
+	enumLabel := common.ValueMapper(req.Status, "FileFormat", "ENUM_TO_HASH")
+	//timestampStr := time.Now().UTC().Format("20060102T150405Z")
+	timestamp := time.Now().Format("20060102_150405")
+	validDatasetExtensions := map[string]bool{
+		"csv":  true,
+		"xlsx": true,
+		"zip":  true,
+	}
+	validImageExtensions := map[string]bool{
+		"jpg":  true,
+		"jpeg": true,
+		"png":  true,
+		"gif":  true,
+	}
+	ext := strings.ToLower(req.Extension)
+	var filePath string
+	switch enumLabel {
+	case 0:
+		if !validDatasetExtensions[ext] {
+			return nil, fmt.Errorf("invalid dataset file extension: only .csv and .xlsx allowed")
+		}
+		filePath = fmt.Sprintf("dataset/%s/sample/%s_%s", id.String(), timestamp, id.String())
+	case 1:
+		if !validImageExtensions[ext] {
+			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png, .gif allowed")
+		}
+		filePath = fmt.Sprintf("images/%s/%s_%s", "67788999", timestamp, "67788999")
+	case 2:
+		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
+	default:
+		return nil, fmt.Errorf("unsupported file format")
+	}
 
-	// Generate timestamped filename to avoid overwrite
-	newFileName := fmt.Sprintf("%s_%s_%s", timestamp, id, originalName)
-	path := filepath.Join(dir, newFileName)
+	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("unable to create upload dir: %w", err)
+	}
+	//originalName := filepath.Base(req.FileName)
 
-	// Write file to the path
-	if err := os.WriteFile(path, content, 0644); err != nil {
+	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id, req.Extension)
+
+	path := filepath.Join(filePath, newFileName)
+
+	if err := os.WriteFile(path, req.Content, 0644); err != nil {
 		return nil, fmt.Errorf("unable to write file: %w", err)
 	}
 
@@ -73,12 +105,15 @@ func (s *fileService) GetFile(ctx context.Context, filePath string) ([]byte, str
 
 	return content, fileName, nil
 }
-func (s *fileService) DeleteFile(ctx context.Context, filename string) error {
-	dir := "./Documents"
-	fullPath := filepath.Join(dir, filename)
+func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error {
 
-	if err := os.Remove(fullPath); err != nil {
-		return fmt.Errorf("unable to delete file %s: %w", filename, err)
+	if _, err := os.Stat(filepath.FilePath); os.IsNotExist(err) {
+		return fmt.Errorf("file does not exist: %s", filepath)
+	}
+
+	// Delete the file
+	if err := os.Remove(filepath.FilePath); err != nil {
+		return fmt.Errorf("unable to delete file %s: %w", filepath, err)
 	}
 	return nil
 }
