@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/PecozQ/aimx-library/domain/dto"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -42,7 +43,7 @@ type FormTypeResponse struct {
 }
 
 type FormDTO struct {
-	ID             primitive.ObjectID     `json:"_id"`
+	ID             primitive.ObjectID     `json:"id"`
 	OrganizationID string                 `json:"organization_id"`
 	Status         int                    `json:"status"`
 	CreatedAt      time.Time              `json:"created_at"`
@@ -56,4 +57,29 @@ type Section struct {
 	ID       int    `json:"id"`
 	Label    string `json:"label"`
 	Position int    `json:"position"`
+}
+
+// type GetFormResponse struct {
+// 	FormDtoData []*FormDTO `json:"formdtoData"`
+// 	PagingInfo  PagingInfo `json:"pagingInfo"`
+// }
+
+type PagingInfo struct {
+	TotalItems  int64 `json:"total_items"`
+	CurrentPage int   `json:"current_page"`
+	TotalPage   int   `json:"total_page"`
+	ItemPerPage int   `json:"item_per_page"`
+}
+type GetFormResponse struct {
+	FormDtoData []map[string]interface{} `json:"formdtoData"`
+	PagingInfo  PagingInfo               `json:"pagingInfo"`
+}
+type SearchFormsRequest struct {
+	Type        int             `json:"type"`
+	SearchParam dto.SearchParam `json:"searchparam"`
+}
+
+type SearchFormsResponse struct {
+	Forms []dto.FormDTO `json:"forms"`
+	Total int64         `json:"total"`
 }

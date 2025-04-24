@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/smtp"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
@@ -13,6 +14,31 @@ import (
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
+	// orgreq := &dto.CreateOrganizationRequest{}
+	// for _, val := range form.Fields {
+	// 	// switch val.Label {
+	// 	// case "Organization Name":
+	// 	// 	if name, ok := val.Value.(string); ok {
+	// 	// 		orgreq.Name = name
+	// 	// 	}
+	// 	// case "Admin Email Address":
+	// 	// 	if email, ok := val.Value.(string); ok {
+	// 	// 		orgreq.Email = email
+	// 	// 	}
+	// 	// }
+	// }
+	// domainParts := strings.Split(email, "@")
+	// if len(domainParts) < 2 {
+	// 	return fmt.Errorf("invalid email format")
+	// }
+	// orgDomain := domainParts[1]
+
+	// // Step 2: Fetch the organization by domain
+	// existingOrg, err := r.GetOrganizationByDomain(ctx, orgDomain)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to fetch organization by domain: %w", err)
+	// }
+
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdForm)
@@ -21,7 +47,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) ([]*model.FormDTO, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) (*model.GetFormResponse, error) {
 
 	formList, total, err := s.formRepo.GetFormByType(ctx, doc_type, page, limit)
 	if err != nil {
@@ -31,42 +57,41 @@ func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) 
 	if commonlib.IsEmpty(formList) {
 		return nil, NewCustomError(errcom.ErrNotFound, err)
 	}
-	var result []*model.FormDTO
+	//var result []*model.FormDTO
 
 	// Iterate over the formList to convert the data into the desired format
+	var flattenedData []map[string]interface{}
+
 	for _, form := range formList {
-		// Prepare sections
-		var sections []model.Section
-		for _, section := range form.Sections {
-			sections = append(sections, model.Section{
-				ID:       section.ID,
-				Label:    section.Label,
-				Position: section.Position,
-			})
+		// Base fields
+		entry := map[string]interface{}{
+			"id":              form.ID,
+			"organization_id": form.OrganizationID,
+			"status":          form.Status,
+			"created_at":      form.CreatedAt,
+			"updated_at":      form.UpdatedAt,
+			"type":            form.Type,
 		}
 
-		// Prepare fields as a map
-		fields := make(map[string]interface{})
+		// Add fields to the same map
 		for _, field := range form.Fields {
-			fields[field.Label] = field.Value
+			entry[field.Label] = field.Value
 		}
 
-		// Create the final DTO with the new format
-		result = append(result, &model.FormDTO{
-			ID:             form.ID,
-			OrganizationID: form.OrganizationID,
-			Status:         form.Status,
-			CreatedAt:      form.CreatedAt,
-			UpdatedAt:      form.UpdatedAt,
-			Type:           form.Type,
-			Sections:       sections,
-			Fields:         fields,
-		})
+		flattenedData = append(flattenedData, entry)
+	}
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	res := &model.GetFormResponse{
+		FormDtoData: flattenedData,
+		PagingInfo: model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
 	}
 
-	fmt.Println("", total)
-
-	return result, nil
+	return res, nil
 }
 
 func (s *service) CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error) {
@@ -215,4 +240,14 @@ func sendEmail(receiverEmail string, status string) error {
 	}
 	fmt.Println("Organization approval mail sent successfully")
 	return nil
+}
+func (s *service) GetFilteredFormsFilter(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error) {
+	fmt.Println("*************ggggg*******", formType, searchParam)
+	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, searchParam)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "GetFilteredForms", err.Error(), err, "FormType", formType)
+		return nil, 0, err
+	}
+	fmt.Println("&&&&&&&&&&&&&&", forms)
+	return forms, total, nil
 }
