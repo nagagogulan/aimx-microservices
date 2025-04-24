@@ -4,38 +4,33 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"net/smtp"
-	"time"
-	"strings"
-	"errors"
-	"encoding/json"
 	"os"
 	"path/filepath"
-
+	"strings"
+	"time"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
-	com "github.com/PecozQ/aimx-library/common"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
+	"github.com/gofrs/uuid"
+	"github.com/joho/godotenv"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
 	"whatsdare.com/fullstack/aimx/backend/model"
-	"github.com/joho/godotenv"
-	"github.com/gofrs/uuid"
-
-
 )
 
 var (
 	otpStore = make(map[string]string) // Temporary OTP storage
 )
-
 
 type SMTPConfig struct {
 	FromEmail string
@@ -45,26 +40,26 @@ type SMTPConfig struct {
 }
 
 func init() {
-		// Get the current working directory (from where the command is run)
-		dir, err := os.Getwd()
-		if err != nil {
-			log.Fatal("Error getting current working directory:", err)
-		}
-		fmt.Println("Current Working Directory:", dir)
-	
-		// Construct the path to the .env file in the root directory
-		envPath := filepath.Join(dir, "../.env")
-	
-		// Load the .env file from the correct path
-		err = godotenv.Load(envPath)
-		if err != nil {
-			log.Fatal("Error loading .env file")
-		}
+	// Get the current working directory (from where the command is run)
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
+
+	// Construct the path to the .env file in the root directory
+	envPath := filepath.Join(dir, "./.env")
+
+	// Load the .env file from the correct path
+	err = godotenv.Load(envPath)
+	if err != nil {
+		log.Fatal("Error loading .env file", err)
+	}
 }
 
 func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error) {
 	fmt.Println("inside function")
-	if !com.ValidateEmail(req.Email) {
+	if !commonlib.ValidateEmail(req.Email) {
 		return nil, errcom.ErrInvalidEmail
 	}
 
@@ -85,7 +80,6 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if org.CurrentUserCount >= metadata.MaxUserCount {
 		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("maximum user limit reached for organization"))
 	}
-
 
 	// Generate OTP & Secret Key
 	otp := generateOTP()
@@ -398,7 +392,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		Email:          user.Email,
 		Secret:         user.Secret,
 		RoleID:         role, // Use UUID value for RoleID
-		OrganizationID: org.OrganizationID,
+		OrganisationID: org.OrganizationID,
 		IsMFAEnabled:   user.IS_MFA_Enabled,
 		Status:         entities.Active,
 		CreatedAt:      time.Now(),
@@ -426,7 +420,6 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	// Step 15: Generate JWT for the new user
 	return s.generateJWTForNewUser(ctx, newUser, org)
 }
-
 
 // Helper function to generate JWT for an existing user
 func (s *service) generateJWTForExistingUser(ctx context.Context, userData *entities.User, org *entities.Organization) (*model.Response, error) {
@@ -475,7 +468,3 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 
 	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled}, nil
 }
-
-
-
-
