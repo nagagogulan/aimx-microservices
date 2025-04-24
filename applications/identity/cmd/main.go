@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	
+
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		// my local host
 		// DBHost:     "localhost",
@@ -26,17 +26,17 @@ func main() {
 
 		// rds
 		DBHost:     "18.142.238.70",
-        DBPort:     5432,
-        DBUser:     "myappuser",
-        DBPassword: "SmartWork@123",
-        DBName:     "aimxdb",
+		DBPort:     5432,
+		DBUser:     "myappuser",
+		DBPassword: "SmartWork@123",
+		DBName:     "aimxdb",
 
 		// build dev
 		// DBHost:     "localhost",
-        // DBPort:     5432,
-        // DBUser:     "postgres",
-        // DBPassword: "Admin",
-        // DBName:     "mylocaldb",
+		// DBPort:     5432,
+		// DBUser:     "postgres",
+		// DBPassword: "Admin",
+		// DBName:     "mylocaldb",
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
@@ -69,11 +69,11 @@ func main() {
 	httpHandlers := base.MakeHTTPHandler(s)
 
 	httpServer := http.Server{
-		Addr:    ":" + strconv.Itoa(common.HttpPort),
+		Addr:    ":" + strconv.Itoa(8081),
 		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
-	fmt.Println("Info", "HTTP server started", "port", common.HttpPort)
+	fmt.Println("Info", "HTTP server started", "port", 8081)
 	err = httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
