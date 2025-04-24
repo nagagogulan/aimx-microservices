@@ -1,0 +1,134 @@
+package base
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"fmt"
+	"strings"
+	"strconv"
+	"os"
+	"path/filepath"
+
+
+	"github.com/gin-gonic/gin"
+	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/middleware"
+	"github.com/joho/godotenv"
+
+)
+
+func init() {
+	// Get the current working directory (from where the command is run)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
+
+	// Construct the path to the .env file in the root directory
+	envPath := filepath.Join(dir, "../.env")
+
+	// Load the .env file from the correct path
+	err = godotenv.Load(envPath)
+	if err != nil {
+		fmt.Errorf("Error loading .env file")
+	}
+}
+
+func MakeHTTPHandler(endpoints Endpoints) http.Handler {
+	r := gin.New()
+
+	// Base router group: /api/v1
+	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+
+	// Role
+	api := router.Group("/user-profile")
+	{
+		api.GET("/", gin.WrapF(httptransport.NewServer(
+			endpoints.ListUsersEndpoint,
+			decodeListUsersRequest,
+			encodeResponse,
+		).ServeHTTP))
+
+		api.DELETE("/:id", gin.WrapF(httptransport.NewServer(
+			endpoints.DeleteUserEndpoint,
+			decodeUUIDParam,
+			encodeResponse,
+		).ServeHTTP))
+
+		api.PUT("/deactivate/:id", gin.WrapF(httptransport.NewServer(
+			endpoints.DeactivateUserEndpoint,
+			decodeUUIDParam,
+			encodeResponse,
+		).ServeHTTP))
+	}
+	return r
+}
+
+func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
+	// This assumes path ends with /:id
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	idStr := parts[len(parts)-1]
+	return idStr, nil // ← string is passed to endpoint
+}
+
+func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	return json.NewEncoder(w).Encode(response)
+}
+
+func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("missing Authorization header")
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader {
+		return nil, fmt.Errorf("invalid Authorization header format")
+	}
+
+	accessSecret, err := generateJWTSecrets()
+	// Validate JWT and extract orgID
+	claims, err := middleware.ValidateJWT(token, accessSecret)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+	}
+
+	fmt.Println("claims", claims)
+	// Parse pagination and search
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	search := r.URL.Query().Get("search")
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 10
+	}
+
+	return map[string]interface{}{
+		"organization_id": claims.OrganizationID,
+		"page":            page,
+		"limit":           limit,
+		"search":          search,
+	}, nil
+}
+
+// Fetch JWT secrets from environment variables
+func generateJWTSecrets() (string, error) {
+
+	accessSecret := os.Getenv("ACCESS_SECRET")
+
+	if accessSecret == "" {
+		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
+	}
+
+	return accessSecret, nil
+}

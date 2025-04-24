@@ -9,21 +9,33 @@ import (
 	"math/big"
 	"net/smtp"
 	"time"
+	"strings"
+	"errors"
+	"encoding/json"
+	"os"
+	"path/filepath"
+
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	com "github.com/PecozQ/aimx-library/common"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
 	"whatsdare.com/fullstack/aimx/backend/model"
+	"github.com/joho/godotenv"
+	"github.com/gofrs/uuid"
+
+
 )
 
 var (
 	otpStore = make(map[string]string) // Temporary OTP storage
 )
+
 
 type SMTPConfig struct {
 	FromEmail string
@@ -32,17 +44,54 @@ type SMTPConfig struct {
 	SMTPPort  string
 }
 
+func init() {
+		// Get the current working directory (from where the command is run)
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Fatal("Error getting current working directory:", err)
+		}
+		fmt.Println("Current Working Directory:", dir)
+	
+		// Construct the path to the .env file in the root directory
+		envPath := filepath.Join(dir, "../.env")
+	
+		// Load the .env file from the correct path
+		err = godotenv.Load(envPath)
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
+}
+
 func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error) {
 	fmt.Println("inside function")
 	if !com.ValidateEmail(req.Email) {
 		return nil, errcom.ErrInvalidEmail
 	}
 
+	domain := strings.Split(req.Email, "@")
+	if len(domain) < 2 {
+		return nil, NewCustomError(errcom.ErrInvalidEmail, errors.New("invalid email format"))
+	}
+
+	org, err := s.OrgRepo.GetOrganizationByDomain(ctx, domain[1])
+	if err != nil {
+		return nil, NewCustomError(errcom.ErrNotFound, errors.New("no organization found for this domain"))
+	}
+
+	var metadata dto.OrgMetadata
+	if err := json.Unmarshal(org.Metadata, &metadata); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal organization metadata: %w", err)
+	}
+	if org.CurrentUserCount >= metadata.MaxUserCount {
+		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("maximum user limit reached for organization"))
+	}
+
+
 	// Generate OTP & Secret Key
 	otp := generateOTP()
 
 	// Check if user exists
-	existingUser, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
+	existingUser, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
 		fmt.Errorf("failed to check user: %w", err)
 	}
@@ -50,9 +99,16 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: existingUser.IS_MFA_Enabled}, nil
 	}
 
+	userDetails, err := s.UserRepo.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		fmt.Errorf("failed to check user: %w", err)
+	}
+	if userDetails != nil && userDetails.IsMFAEnabled {
+		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
+	}
 	// If user does not exist, save OTP as new record
 	if existingUser == nil {
-		err := s.UserRepo.SaveOTP(ctx, req, otp)
+		err := s.TempUserRepo.SaveOTP(ctx, req, otp)
 		if err != nil {
 			commonlib.LogMessage(s.logger, commonlib.Error, "Createuser", err.Error(), err, "CreateBy", req.Email)
 			return nil, NewCustomError(errcom.ErrNotFound, err)
@@ -60,7 +116,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	} else {
 		// If user exists but doesn't have an OTP and MFP is disabled, update OTP
 		if existingUser != nil && !existingUser.IS_MFA_Enabled {
-			err := s.UserRepo.UpdateOTP(ctx, otp, existingUser.Email)
+			err := s.TempUserRepo.UpdateOTP(ctx, otp, existingUser.Email)
 			if err != nil {
 				commonlib.LogMessage(s.logger, commonlib.Error, "Update OTP", err.Error(), err, "UpdateOTP", req.Email)
 				fmt.Println("Failed to update OTP:", err)
@@ -84,7 +140,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 
 }
 func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error) {
-	res, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
+	res, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
 	if err != nil {
 		fmt.Errorf("User Not Found : %w", err)
 	}
@@ -96,13 +152,13 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 	}
 	if res != nil && !res.IS_MFA_Enabled && res.Secret == "" {
 		if time.Since(res.ExpireOTP) > 5*time.Minute {
-			err := s.UserRepo.DeleteOTP(ctx, req.Email)
+			err := s.TempUserRepo.DeleteOTP(ctx, req.Email)
 			if err != nil {
 				return nil, NewCustomError(errcom.ErrNotFound, err)
 			}
 			return nil, NewCustomError(errcom.ErrOTPExpired, err)
 		}
-		errors := s.UserRepo.DeleteOTP(ctx, req.Email)
+		errors := s.TempUserRepo.DeleteOTP(ctx, req.Email)
 		if errors != nil {
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
@@ -119,7 +175,11 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		}
 		// Store the secret in the database
 		req.Secret = secret.Secret()
-		err = s.UserRepo.UpdateScreteKey(ctx, req)
+		user := &entities.TempUser{
+			Email:  req.Email,
+			Secret: req.Secret,
+		}
+		err = s.TempUserRepo.UpdateScreteKey(ctx, user)
 		if err != nil {
 			fmt.Println("Failed to store OTP:", err)
 			return nil, err
@@ -198,49 +258,224 @@ func sendEmailOTPs(s, otp string) error {
 	return nil
 }
 
-func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
-	// Get the user's stored secret and OTP from DB
-	userData, err := s.UserRepo.GetOTPByUsername(ctx, req.Email)
-	if err != nil {
-		log.Println("Failed to fetch user details:", err)
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+// Fetch JWT secrets from environment variables
+func generateJWTSecrets() (string, string, error) {
+	accessSecret := os.Getenv("ACCESS_SECRET")
+	refreshSecret := os.Getenv("REFRESH_SECRET")
+
+	if accessSecret == "" || refreshSecret == "" {
+		return "", "", fmt.Errorf("JWT secret keys are not set in environment variables")
 	}
-	qrverifystatus := userData.IS_MFA_Enabled
-	isValid, err := totp.ValidateCustom(
-		req.OTP,
-		userData.Secret,
-		time.Now().UTC(),
-		totp.ValidateOpts{
-			Period:    30,
-			Skew:      3,
-			Digits:    otp.DigitsSix,
-			Algorithm: otp.AlgorithmSHA1,
-		})
+
+	return accessSecret, refreshSecret, nil
+}
+
+func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
+	// Step 1: Validate the "Model" field
+	if req.Model != "" {
+		if req.Model != "Admin" && req.Model != "Customer" {
+			return nil, fmt.Errorf("invalid value for model: %s, it should be either 'Admin' or 'Customer'", req.Model)
+		}
+	}
+
+	// Step 2: Get the user's OTP and validate existence
+	userDataTemp, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
+	var userData *entities.User
 
 	if err != nil {
-		fmt.Println("TOTP validation error:", err)
-		return nil, NewCustomError(errcom.ErrFieldValidation, err)
-	}
-	if !isValid {
-		fmt.Println("Invalid OTP from user")
-		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
-	}
-	if !userData.IS_MFA_Enabled {
-		qrverify, err := s.UserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+		// If user not found in TempUserRepo, check in UserRepo for second-time users
+		userData, err = s.UserRepo.GetUserByEmail(ctx, req.Email)
 		if err != nil {
-			fmt.Println("Failed to Scan QR code verify Status:", err)
+			fmt.Println("Failed to fetch user details:", err)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
+		}
+
+		if userData != nil && userData.Status == entities.Deactivated {
+			return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("user is deactivated and cannot log in"))
+		}
+	}
+
+	// Conditional user assignment based on existence in TempUserRepo or UserRepo
+	var user *entities.TempUser
+	if userDataTemp != nil {
+		user = userDataTemp // For first-time user
+	} else if userData != nil {
+		user = &entities.TempUser{
+			Email:          userData.Email,
+			Secret:         userData.Secret,
+			IS_MFA_Enabled: userData.IsMFAEnabled,
+			ExpireOTP:      userData.ExpireOTP,
+		}
+	} else {
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no user data found"))
+	}
+
+	// Step 3: Validate OTP
+	isValid, err := totp.ValidateCustom(req.OTP, user.Secret, time.Now().UTC(), totp.ValidateOpts{
+		Period:    30,
+		Skew:      3,
+		Digits:    otp.DigitsSix,
+		Algorithm: otp.AlgorithmSHA1,
+	})
+
+	if err != nil || !isValid {
+		return nil, NewCustomError(errcom.ErrFieldValidation, fmt.Errorf("invalid OTP"))
+	}
+
+	// Step 4: If MFA is not enabled, update QR verify status
+	if !user.IS_MFA_Enabled {
+		qrverify, err := s.TempUserRepo.UpdateQRVerifyStatus(ctx, req.Email)
+		if err != nil {
 			return nil, err
 		}
-		qrverifystatus = qrverify.IS_MFA_Enabled
+		if qrverify != nil && qrverify.IS_MFA_Enabled {
+			user.IS_MFA_Enabled = true
+		}
 	}
 
-	auth := middleware.TokenDetails{ // already UUID, no need to parse
-		Email: req.Email,
+	// Step 5: Get organization details by email domain
+	domainParts := strings.Split(req.Email, "@")
+	if len(domainParts) < 2 {
+		return nil, NewCustomError(errcom.ErrInvalidEmail, fmt.Errorf("invalid email format"))
 	}
-	jwtToken, err := middleware.GenerateJWT(&auth)
+	orgDomain := domainParts[1]
+
+	// Fetch organization details
+	org, err := s.OrgRepo.GetOrganizationByDomain(ctx, orgDomain)
+	if err != nil {
+		log.Println("Organization not found:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("organization not found"))
+	}
+
+	// Step 6: Fetch SingHealthAdmin details (for role validation)
+	_, err = s.OrgRepo.GetSingHealthAdminDetails(ctx)
+	if err != nil {
+		log.Println("Error fetching SingHealthAdmin organization details:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no SingHealth admin organization found"))
+	}
+
+	// Step 7: Fetch all roles from RoleRepo
+	roles, err := s.RoleRepo.GetAllRoles(ctx)
+	if err != nil {
+		log.Println("Error fetching role details:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no roles found"))
+	}
+
+	// Map roles by their name for easy access (with UUID)
+	roleMap := make(map[string]uuid.UUID)
+	for _, role := range roles {
+		roleMap[role.Name] = role.ID // Store UUID directly
+	}
+
+	// Step 8: Determine the role based on the provided conditions
+	var role uuid.UUID // Use uuid.UUID to store the role
+
+	// Determine role based on conditions
+	if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && req.Model == "Admin" && org.IsSingHealthAdmin {
+		role = roleMap["Super-Admin"]
+	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && req.Model == "Admin" && org.IsSingHealthAdmin {
+		role = roleMap["Collaborator"]
+	} else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && req.Model == "Customer" && !org.IsSingHealthAdmin {
+		role = roleMap["Admin"]
+	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && req.Model == "Customer" && !org.IsSingHealthAdmin {
+		role = roleMap["User"]
+	} else {
+		return nil, fmt.Errorf("user does not have access to login this page")
+	}
+
+	// Step 9: Role Validation for second-time users
+	if userData != nil && userData.RoleID != role {
+		return nil, fmt.Errorf("role mismatch for user, expected %s, found %s", role, userData.RoleID)
+	}
+
+	// Step 10: If user exists, skip creation and proceed to JWT generation
+	if userData != nil && userData.IsMFAEnabled {
+		return s.generateJWTForExistingUser(ctx, userData, org)
+	}
+
+	// Step 11: If user doesn't exist, create a new user and assign the role
+	newUser := &entities.User{
+		Email:          user.Email,
+		Secret:         user.Secret,
+		RoleID:         role, // Use UUID value for RoleID
+		OrganizationID: org.OrganizationID,
+		IsMFAEnabled:   user.IS_MFA_Enabled,
+		Status:         entities.Active,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	// Step 12: Save the new user to the database
+	if err := s.UserRepo.CreateUser(ctx, newUser); err != nil {
+		fmt.Println("Failed to create new user:", err)
+		return nil, NewCustomError(errcom.ErrFieldValidation, err)
+	}
+
+	// Step 13: (Optional) Delete temp user if it was successfully moved to UserRepo
+	if err := s.TempUserRepo.DeleteUser(ctx, user.ID); err != nil {
+		fmt.Println("Failed to delete temp user after migration:", err)
+	}
+
+	// Step 14: Update the organization user count after successfully adding a new user
+	org.CurrentUserCount++
+	if err := s.OrgRepo.UpdateOrganizationByEmail(ctx, req.Email, org); err != nil {
+		fmt.Println("Failed to update organization user count:", err)
+		return nil, fmt.Errorf("failed to update organization user count: %w", err)
+	}
+
+	// Step 15: Generate JWT for the new user
+	return s.generateJWTForNewUser(ctx, newUser, org)
+}
+
+
+// Helper function to generate JWT for an existing user
+func (s *service) generateJWTForExistingUser(ctx context.Context, userData *entities.User, org *entities.Organization) (*model.Response, error) {
+	accessSecret, refreshSecret, err := generateJWTSecrets()
+	if err != nil {
+		fmt.Println("JWT secret keys not found:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("env file not found"))
+	}
+
+	auth := middleware.TokenDetails{
+		Email:          userData.Email,
+		UserID:         userData.ID,
+		OrganizationID: org.OrganizationID,
+		AtExpires:      time.Now().Add(15 * time.Minute).Unix(),
+		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+
+	jwtToken, err := middleware.GenerateJWT(&auth, []byte(accessSecret), []byte(refreshSecret))
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("***************", jwtToken)
-	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: qrverifystatus}, nil
+
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled}, nil
 }
+
+// Helper function to generate JWT for a new user
+func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.User, org *entities.Organization) (*model.Response, error) {
+	accessSecret, refreshSecret, err := generateJWTSecrets()
+	if err != nil {
+		fmt.Println("JWT secret keys not found:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("env file not found"))
+	}
+
+	auth := middleware.TokenDetails{
+		Email:          newUser.Email,
+		UserID:         newUser.ID,
+		OrganizationID: org.OrganizationID,
+		AtExpires:      time.Now().Add(15 * time.Minute).Unix(),
+		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+
+	jwtToken, err := middleware.GenerateJWT(&auth, []byte(accessSecret), []byte(refreshSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled}, nil
+}
+
+
+
+

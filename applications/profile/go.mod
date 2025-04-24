@@ -3,18 +3,14 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.264
+	github.com/PecozQ/aimx-library v0.0.275
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/joho/godotenv v1.5.1
-	github.com/pquerna/otp v1.4.0
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -26,7 +22,6 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
@@ -48,7 +43,7 @@ require (
 
 require (
 	github.com/go-kit/kit v0.13.0
-	github.com/go-kit/log v0.2.1
+	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

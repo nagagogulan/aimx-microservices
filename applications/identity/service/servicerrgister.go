@@ -11,17 +11,26 @@ import (
 )
 
 type Service interface {
-	// User management
 	LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
 	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
 	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
 }
+
 type service struct {
-	UserRepo repository.UserRepositoryService
-	logger   kitlog.Logger
+	TempUserRepo repository.UserRepositoryService
+	OrgRepo      repository.OrganizationRepositoryService
+	UserRepo     repository.UserCRUDService
+	RoleRepo     repository.RoleRepositoryService
+	logger       kitlog.Logger
 }
 
-func NewService(UserRepo repository.UserRepositoryService) Service {
+func NewService(tempUserRepo repository.UserRepositoryService, orgRepo repository.OrganizationRepositoryService, 
+	userRepo repository.UserCRUDService, roleRepo repository.RoleRepositoryService) Service {
 	fmt.Println("db interface connected")
-	return &service{UserRepo: UserRepo}
+	return &service{
+		TempUserRepo: tempUserRepo,
+		OrgRepo:      orgRepo,
+		UserRepo:     userRepo,
+		RoleRepo:  	roleRepo,
+	}
 }

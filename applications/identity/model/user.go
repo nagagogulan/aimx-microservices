@@ -15,6 +15,7 @@ type UserAuthDetail struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Secret    string    `json:"secret"`
 	DeletedAt time.Time `json:"deleted_at"`
+	Model  string `json:"model"` // Model as a string, no marshaling or conversion needed
 }
 type UserAuthResponse struct {
 	Message string `json:"message"`

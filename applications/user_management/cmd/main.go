@@ -47,8 +47,7 @@ func main() {
 		log.Fatalf("Error getting raw DB instance: %v", err)
 	}
 
-	err = sqlDB.Ping()
-	if err != nil {
+	if err := sqlDB.Ping(); err != nil {
 		log.Fatalf("Failed to ping the database: %v", err)
 	} else {
 		fmt.Println("Database connection successful!")
@@ -59,14 +58,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	tempUserRepo := repository.NewUserserviceRepositoryService(DB)
-	orgRepo := repository.NewOrganizationRepositoryService(DB)
 	userRepo := repository.NewUserCRUDRepository(DB)
-	roleRepo := repository.NewRoleRepositoryService(DB)
+	s := service.NewService(userRepo)
+	endpoints := base.NewEndpoint(s) // 💡 create Endpoints
+	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 
-	s := service.NewService(tempUserRepo, orgRepo, userRepo, roleRepo)
-
-	httpHandlers := base.MakeHTTPHandler(s)
 
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(common.HttpPort),
