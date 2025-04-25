@@ -90,15 +90,15 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		fmt.Errorf("failed to check user: %w", err)
 	}
 	if existingUser != nil && existingUser.IS_MFA_Enabled {
-		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: existingUser.IS_MFA_Enabled}, nil
+		return nil, errcom.ErrDuplicateEmail
 	}
 
 	userDetails, err := s.UserRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		fmt.Errorf("failed to check user: %w", err)
 	}
-	if userDetails != nil && userDetails.IsMFAEnabled {
-		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
+	if userDetails != nil {
+		return nil, errcom.ErrDuplicateEmail
 	}
 	// If user does not exist, save OTP as new record
 	if existingUser == nil {

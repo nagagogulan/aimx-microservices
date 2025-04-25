@@ -33,7 +33,7 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		endpoints.CreateUserEndpoint,
 		decodeCreateUserRequest,
 		encodeResponse,
-		httptransport.ServerErrorEncoder(service.ErrorEncoder),
+		options...,
 	).ServeHTTP))
 	router.POST("/otpverify", gin.WrapF(httptransport.NewServer(
 		endpoints.verifyOTPEndpoint,

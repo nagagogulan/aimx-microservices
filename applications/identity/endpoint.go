@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
@@ -41,7 +42,7 @@ func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.UserAuthRequest)
 		res, err := s.LoginWithOTP(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled}, nil
 	}
@@ -64,7 +65,7 @@ func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.UserAuthDetail)
 		res, err := s.VerifyTOTP(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken}, nil
 	}

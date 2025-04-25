@@ -68,9 +68,38 @@ func NewAppError(err error, statusCode int, message string, fieldError []FieldEr
 		FieldErrors: fieldError,
 	}
 }
+
+// func EncodeError(ctx context.Context, err error, w http.ResponseWriter) {
+// 	if appErr, ok := err.(*AppError); ok {
+// 		fmt.Println("the app error is givne as:", appErr, appErr.StatusCode)
+// 		w.WriteHeader(appErr.StatusCode)
+// 		response := ErrorResponse{
+// 			Error: appErr.Message,
+// 		}
+// 		if len(appErr.FieldErrors) > 0 {
+// 			response.FieldErrors = appErr.FieldErrors
+// 		}
+// 		json.NewEncoder(w).Encode(response)
+// 		return
+// 	}
+// 	w.WriteHeader(http.StatusInternalServerError)
+// 	w.Write([]byte("internal server error"))
+// }
+
+// Encode error response info
 func EncodeError(ctx context.Context, err error, w http.ResponseWriter) {
 	if appErr, ok := err.(*AppError); ok {
-		w.WriteHeader(appErr.StatusCode)
+		fmt.Println("the err isg iven as:", err)
+		switch {
+		case strings.Contains(err.Error(), "exists"):
+			w.WriteHeader(http.StatusBadRequest)
+		case strings.Contains(err.Error(), "expired"):
+			w.WriteHeader(http.StatusBadRequest)
+		case strings.Contains(err.Error(), "not found"):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(appErr.StatusCode)
+		}
 		response := ErrorResponse{
 			Error: appErr.Message,
 		}
@@ -83,6 +112,7 @@ func EncodeError(ctx context.Context, err error, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("internal server error"))
 }
+
 func FromError(err error) *AppError {
 	var pgErr *pgconn.PgError
 	// Check if the error is a PostgreSQL error...
