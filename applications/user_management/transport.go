@@ -3,20 +3,18 @@ package base
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"fmt"
-	"strings"
-	"strconv"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
-
-	"github.com/gin-gonic/gin"
-	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/middleware"
+	"github.com/gin-gonic/gin"
+	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/joho/godotenv"
-
 )
 
 func init() {
@@ -28,7 +26,7 @@ func init() {
 	fmt.Println("Current Working Directory:", dir)
 
 	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "../.env")
+	envPath := filepath.Join(dir, "./.env")
 
 	// Load the .env file from the correct path
 	err = godotenv.Load(envPath)

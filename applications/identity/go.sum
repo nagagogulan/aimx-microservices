@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/PecozQ/aimx-library v0.0.285 h1:m+vNSwXBpcz1BIACY7GV1+wWwEyb8kd9AUvR6C2PJ3w=
-github.com/PecozQ/aimx-library v0.0.285/go.mod h1:uLTf3Uw1yoGhF2mUvRuAUuLwxgNbtRyx5zBUioqlcsc=
+github.com/PecozQ/aimx-library v0.0.290 h1:LCtF39SvJvr0rum0nq79ufIxsQzTroicKkQuMk74BjI=
+github.com/PecozQ/aimx-library v0.0.290/go.mod h1:uLTf3Uw1yoGhF2mUvRuAUuLwxgNbtRyx5zBUioqlcsc=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc h1:biVzkmvwrH8WK8raXaxBx6fRVTlJILwEwQGL1I/ByEI=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=

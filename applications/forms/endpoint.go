@@ -129,7 +129,8 @@ func makeCreateFormEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.FormDTO)
 		form, err := s.CreateForm(ctx, *req)
 		if err != nil {
-			return nil, err
+			fmt.Println("the err is given as")
+			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
@@ -145,7 +146,7 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 
 		form, err := s.UpdateForm(ctx, strtype, req.Status)
 		if err != nil {
-			return nil, err
+			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
 	}

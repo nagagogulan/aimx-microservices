@@ -226,21 +226,100 @@ func generateOTP() string {
 	return fmt.Sprintf("%06d", n.Int64()+100000)
 }
 
-func sendEmailOTPs(s, otp string) error {
+func sendEmailOTPs(receiverEmail, otp string) error {
 	from := "priyadharshini.twilight@gmail.com"
 	password := "rotk reak madc kwkf"
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	auth := smtp.PlainAuth("", from, password, smtpHost)
-	to := []string{s}
+	to := []string{receiverEmail}
 
 	// Properly format the message
-	message := []byte("From: AI Community <nithiyavel402@gmail.com>\r\n" +
-		"To: " + s + "\r\n" +
-		"Subject: Your OTP Code for Login Verification\r\n" +
-		"Content-Type: text/plain; charset=UTF-8\r\n" +
-		"\r\n" +
-		"Your OTP is: " + otp)
+	// message := []byte("From: AI Community <nithiyavel402@gmail.com>\r\n" +
+	// 	"To: " + s + "\r\n" +
+	// 	"Subject: Your OTP Code for Login Verification\r\n" +
+	// 	"Content-Type: text/plain; charset=UTF-8\r\n" +
+	// 	"\r\n" +
+	// 	"Your OTP is: " + otp)
+	message := []byte(fmt.Sprintf("From: SingHealth <%s>\r\n"+
+		"To: %s\r\n"+
+		"Subject: OTP Verification\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: text/html; charset=UTF-8\r\n"+
+		"\r\n"+
+		`<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset="UTF-8" />
+			<title>OTP Verification</title>
+			<link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet" />
+			<style>
+			body {
+				font-family: 'Open Sans', sans-serif;
+				background-color: #f4f4f7;
+				padding: 0;
+				margin: 0;
+			}
+			.email-container {
+				max-width: 600px;
+				margin: 30px auto;
+				background-color: #ffffff;
+				padding: 30px;
+				border-radius: 10px;
+				box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+			}
+			.logo {
+				text-align: center;
+				margin-bottom: 20px;
+			}
+			.otp-box {
+				font-size: 28px;
+				font-weight: bold;
+				letter-spacing: 10px;
+				background-color: #fff3ed;
+				padding: 15px 25px;
+				display: inline-block;
+				border-radius: 8px;
+				color: #F06D1A;
+				margin: 20px 0;
+			}
+			.footer {
+				font-size: 12px;
+				color: #999999;
+				margin-top: 30px;
+				text-align: center;
+			}
+			@media only screen and (max-width: 620px) {
+				.otp-box {
+				font-size: 22px;
+				letter-spacing: 6px;
+				padding: 10px 20px;
+				}
+			}
+			</style>
+		</head>
+		<body>
+			<div class="email-container">
+
+			<h2 style="color: #F06D1A; margin-bottom: 10px;">Verify Your Email</h2>
+			<p style="font-size: 15px; color: #333;">
+				Hello 👋,<br />
+				Use the OTP below to verify your email address. This OTP is valid for the next <strong>10 minutes</strong>.
+			</p>
+
+			<div class="otp-box">%s</div>
+
+			<p style="font-size: 14px; color: #555;">
+				If you did not request this, please ignore this email or contact support.
+			</p>
+
+			<div class="footer">
+				&copy; 2025 SingHealth. All rights reserved.<br />
+				This is an automated message, please do not reply.
+			</div>
+			</div>
+		</body>
+		</html>`, from, receiverEmail, otp))
 
 	// Send the email
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, message)
@@ -266,11 +345,11 @@ func generateJWTSecrets() (string, string, error) {
 
 func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error) {
 	// Step 1: Validate the "Model" field
-	if req.Model != "" {
-		if req.Model != "Admin" && req.Model != "Customer" {
-			return nil, fmt.Errorf("invalid value for model: %s, it should be either 'Admin' or 'Customer'", req.Model)
-		}
-	}
+	// if req.Model != "" {
+	// 	if req.Model != "Admin" && req.Model != "Customer" {
+	// 		return nil, fmt.Errorf("invalid value for model: %s, it should be either 'Admin' or 'Customer'", req.Model)
+	// 	}
+	// }
 
 	// Step 2: Get the user's OTP and validate existence
 	userDataTemp, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
@@ -365,13 +444,13 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	var role uuid.UUID // Use uuid.UUID to store the role
 
 	// Determine role based on conditions
-	if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && req.Model == "Admin" && org.IsSingHealthAdmin {
+	if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && org.IsSingHealthAdmin {
 		role = roleMap["Super-Admin"]
-	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && req.Model == "Admin" && org.IsSingHealthAdmin {
+	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && org.IsSingHealthAdmin {
 		role = roleMap["Collaborator"]
-	} else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && req.Model == "Customer" && !org.IsSingHealthAdmin {
+	} else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && !org.IsSingHealthAdmin {
 		role = roleMap["Admin"]
-	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && req.Model == "Customer" && !org.IsSingHealthAdmin {
+	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && !org.IsSingHealthAdmin {
 		role = roleMap["User"]
 	} else {
 		return nil, fmt.Errorf("user does not have access to login this page")

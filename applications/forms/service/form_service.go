@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/smtp"
+	"strings"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -14,33 +15,31 @@ import (
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
-	// orgreq := &dto.CreateOrganizationRequest{}
-	// for _, val := range form.Fields {
-	// 	// switch val.Label {
-	// 	// case "Organization Name":
-	// 	// 	if name, ok := val.Value.(string); ok {
-	// 	// 		orgreq.Name = name
-	// 	// 	}
-	// 	// case "Admin Email Address":
-	// 	// 	if email, ok := val.Value.(string); ok {
-	// 	// 		orgreq.Email = email
-	// 	// 	}
-	// 	// }
-	// }
-	// domainParts := strings.Split(email, "@")
-	// if len(domainParts) < 2 {
-	// 	return fmt.Errorf("invalid email format")
-	// }
-	// orgDomain := domainParts[1]
+	if form.Type == 1 {
+		orgreq := &dto.CreateOrganizationRequest{}
+		for _, val := range form.Fields {
+			switch val.Label {
+			case "Admin Email Address":
+				if email, ok := val.Value.(string); ok {
+					orgreq.Email = email
+				}
+			}
+		}
+		domainParts := strings.Split(orgreq.Email, "@")
+		if len(domainParts) < 2 {
+			return nil, errcom.ErrInvalidEmail
+		}
+		orgDomain := domainParts[1]
 
-	// // Step 2: Fetch the organization by domain
-	// existingOrg, err := r.GetOrganizationByDomain(ctx, orgDomain)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to fetch organization by domain: %w", err)
-	// }
-	// if form.Type == 1 {
-	// 	s.organizationRepo.GetOrganizationByDomain()
-	// }
+		existingOrg, err := s.organizationRepo.GetOrganizationByDomain(ctx, orgDomain)
+		if err != nil {
+			return nil, errcom.ErrInvalidEmail
+		}
+		if !commonlib.IsEmpty(existingOrg) {
+			fmt.Println("the existing org is given as:", existingOrg)
+			return nil, errcom.ErrDuplicateEmail
+		}
+	}
 
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
