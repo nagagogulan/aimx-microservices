@@ -5,7 +5,7 @@ import "github.com/gofrs/uuid"
 type UploadRequest struct {
 	FileName  string `json:"fileName"`
 	Content   []byte `json:"content"`
-	Status    string `json:"status"`
+	FormType  string `json:"formType"`
 	FileType  string `json:"fileType"`
 	Extension string `json:"extension"`
 }

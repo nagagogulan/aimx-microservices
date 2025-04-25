@@ -37,7 +37,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
 	}
-	enumLabel := common.ValueMapper(req.Status, "FileFormat", "ENUM_TO_HASH")
+	enumLabel := common.ValueMapper(req.FormType, "FileFormat", "ENUM_TO_HASH")
 	//timestampStr := time.Now().UTC().Format("20060102T150405Z")
 	timestamp := time.Now().Format("20060102_150405")
 	validDatasetExtensions := map[string]bool{

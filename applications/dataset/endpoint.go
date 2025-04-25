@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -33,7 +34,7 @@ func makeUploadDataSet(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.UploadRequest)
 		//path, err := s.UploadFile(ctx, req.FilePath)
-		res, err := s.UploadFile(ctx, req.FileName, req.Content)
+		res, err := s.UploadFile(ctx, req)
 		if err != nil {
 			return model.UploadResponse{Err: err.Error()}, nil
 		}
@@ -46,17 +47,18 @@ func makeGetDataSetfile(s service.Service) endpoint.Endpoint {
 
 		// Call the service to get the file content
 		content, fileName, err := s.GetFile(ctx, req.FilePath)
+		contentType := http.DetectContentType(content)
 		if err != nil {
 			return model.UploadResponse{Err: err.Error()}, nil
 		}
-		return model.GetFileResponse{FileName: fileName, Content: content}, nil
+		return model.GetFileResponse{FileName: fileName, Content: content, ContentType: contentType}, nil
 	}
 }
 func makeDeleteFileEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.DeleteFileRequest)
 
-		err := s.DeleteFile(ctx, req.FileName)
+		err := s.DeleteFile(ctx, req)
 		if err != nil {
 			return model.DeleteFileResponse{
 				Error: err.Error(),

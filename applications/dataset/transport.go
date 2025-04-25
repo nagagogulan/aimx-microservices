@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -63,15 +64,25 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	if err != nil {
 		return nil, err
 	}
-	// id := r.FormValue("id")
-	// if id == "" {
-	// 	return nil, fmt.Errorf("id is required")
-	// }
+
+	fileType := http.DetectContentType(bytes)
+	if fileType == "" {
+		return nil, fmt.Errorf("unable to detect file type")
+	}
+	extension := filepath.Ext(header.Filename) // returns ".jpg", ".csv", etc.
+	if extension != "" && extension[0] == '.' {
+		extension = extension[1:] // strip the leading dot
+	}
 
 	req := model.UploadRequest{
-		//ID:       id,
-		FileName: header.Filename,
-		Content:  bytes,
+		FileType:  fileType,
+		FileName:  header.Filename,
+		Content:   bytes,
+		Extension: extension, // <-- add this field to your UploadRequest struct
+	}
+	status := r.FormValue("status")
+	if status != "" {
+		req.FormType = status
 	}
 
 	// Return the request object with file_path
