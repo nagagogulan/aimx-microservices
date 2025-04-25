@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -161,7 +162,7 @@ func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		formList, err := s.GetFormByType(ctx, req.Type, req.Page, req.PageSize)
 		if err != nil {
-			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
 		}
 		return formList, nil
 	}

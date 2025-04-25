@@ -38,6 +38,9 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	// if err != nil {
 	// 	return fmt.Errorf("failed to fetch organization by domain: %w", err)
 	// }
+	// if form.Type == 1 {
+	// 	s.organizationRepo.GetOrganizationByDomain()
+	// }
 
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
@@ -52,10 +55,10 @@ func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) 
 	formList, total, err := s.formRepo.GetFormByType(ctx, doc_type, page, limit)
 	if err != nil {
 		//commonlib.LogMessage(s.logger, commonlib.Error, "GetForms", err.Error(), err, "type", doc_type)
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+		return nil, err
 	}
 	if commonlib.IsEmpty(formList) {
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+		return nil, err
 	}
 	//var result []*model.FormDTO
 
