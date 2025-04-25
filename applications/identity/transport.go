@@ -74,7 +74,7 @@ func decodeVerifyTOTPUserRequest(ctx context.Context, r *http.Request) (interfac
 		return nil, err
 	}
 	// Extract Gin context
-	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP,  Model: request.Model}, nil
+	return &dto.UserAuthDetail{Email: request.Email, OTP: request.OTP}, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
