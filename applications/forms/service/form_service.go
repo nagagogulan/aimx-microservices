@@ -143,14 +143,6 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			}
 		}
 	}
-	if status == "APPROVED" {
-		orgreq.UserCount = 25
-		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
-		if err != nil {
-			return nil, NewCustomError(errcom.ErrNotFound, err)
-		}
-		fmt.Println("The organization is givn eas:", organizationId)
-	}
 	updatedForm, err := s.formRepo.UpdateForm(ctx, id, status)
 	if err != nil {
 		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {
@@ -158,6 +150,18 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		return nil, err
+	}
+
+	if status != "APPROVED" || status != "REJECTED" {
+		return &model.Response{Message: "Form updated successfully"}, nil
+	}
+	if status == "APPROVED" && org.Type == 1 {
+		orgreq.UserCount = 25
+		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
+		if err != nil {
+			return nil, NewCustomError(errcom.ErrNotFound, err)
+		}
+		fmt.Println("The organization is givn eas:", organizationId)
 	}
 	sendEmail(orgreq.Email, status)
 
