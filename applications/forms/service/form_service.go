@@ -11,6 +11,7 @@ import (
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"go.mongodb.org/mongo-driver/bson"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -247,6 +248,7 @@ func sendEmail(receiverEmail string, status string) error {
 	fmt.Println("Organization approval mail sent successfully")
 	return nil
 }
+
 func (s *service) GetFilteredFormsFilter(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error) {
 	fmt.Println("*************ggggg*******", formType, searchParam)
 	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, searchParam)
@@ -256,4 +258,111 @@ func (s *service) GetFilteredFormsFilter(ctx context.Context, formType int, sear
 	}
 	fmt.Println("&&&&&&&&&&&&&&", forms)
 	return forms, total, nil
+}
+
+func (s *service) ShortListDocket(ctx context.Context, userId string, dto *dto.ShortListDTO) (bool, error) {
+	err := s.commEventRepo.CreateShortList(ctx, userId, dto)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "ShortListDocket", err.Error(), err, "CommEvents", userId)
+		return false, err
+	}
+	_, err = s.UpdateFlagField(ctx, dto.ProjectId, false, 0, true)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *service) RateDocket(ctx context.Context, userId string, dto *dto.RatingDTO) (bool, error) {
+	err := s.commEventRepo.CreateRating(ctx, userId, dto)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", userId)
+		return false, err
+	}
+	_, err = s.UpdateFlagField(ctx, dto.ProjectId, true, dto.Rating, false)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *service) CommentDocket(ctx context.Context, userId string, dto *dto.CommentsDTO) (bool, error) {
+	err := s.commEventRepo.CreateComment(ctx, userId, dto)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "CommentDocket", err.Error(), err, "CommEvents", userId)
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, ratingValue int, like bool) (bool, error) {
+
+	// Validation: Exactly one of rating or like must be true
+	if (rating && like) || (!rating && !like) {
+		return false, fmt.Errorf("exactly one of 'rating' or 'like' must be true")
+	}
+
+	form, err := s.formRepo.GetFormById(ctx, id)
+	if err != nil {
+		return false, err
+	}
+
+	update := bson.M{}
+
+	// Handle Rating
+	if rating {
+		// Validate rating value
+		if ratingValue < 1 || ratingValue > 5 {
+			return false, fmt.Errorf("invalid rating value: %d (must be between 1 and 5)", ratingValue)
+		}
+
+		// Initialize flags.rating if nil
+		if form.Flags.Rating == nil {
+			form.Flags.Rating = map[int]int{
+				5: 0,
+				4: 0,
+				3: 0,
+				2: 0,
+				1: 0,
+			}
+		}
+
+		// Increment existing rating value properly
+		form.Flags.Rating[ratingValue] = form.Flags.Rating[ratingValue] + 1
+
+		// Now recalculate average rating
+		totalRatings := 0
+		totalScore := 0
+
+		for star, count := range form.Flags.Rating {
+			totalRatings += count
+			totalScore += star * count
+		}
+
+		if totalRatings > 0 {
+			form.Flags.AverageRating = totalScore / totalRatings
+		} else {
+			form.Flags.AverageRating = 0
+		}
+
+		update["flags.rating"] = form.Flags.Rating
+		update["flags.average_rating"] = form.Flags.AverageRating
+	}
+
+	// Handle LikeCount
+	if like {
+		if form.Flags.LikeCount > 0 {
+			form.Flags.LikeCount = form.Flags.LikeCount + 1
+		} else {
+			form.Flags.LikeCount = 1
+		}
+		update["flags.like_count"] = form.Flags.LikeCount
+	}
+
+	res, err := s.formRepo.UpdateFormFlags(ctx, id, update)
+	if err != nil {
+		return false, err
+	}
+
+	return res, nil
 }

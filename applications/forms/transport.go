@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -12,14 +14,34 @@ import (
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	"github.com/PecozQ/aimx-library/middleware"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 
 	//"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
+
+func init() {
+	// Get the current working directory (from where the command is run)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
+
+	// Construct the path to the .env file in the root directory
+	envPath := filepath.Join(dir, "./.env")
+
+	// Load the .env file from the correct path
+	err = godotenv.Load(envPath)
+	if err != nil {
+		fmt.Errorf("Error loading .env file")
+	}
+}
 
 func MakeHttpHandler(s service.Service) http.Handler {
 	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errorlib.EncodeError)}
@@ -102,7 +124,106 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	router.POST("/docket/shortlist", gin.WrapF(httptransport.NewServer(
+		endpoints.ShortlistDocketEndpoint,
+		decodeShortlistDocketRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	router.POST("/docket/comments", gin.WrapF(httptransport.NewServer(
+		endpoints.CommentsDocketEndpoint,
+		decodeCommentsDocketRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	router.POST("/docket/rating", gin.WrapF(httptransport.NewServer(
+		endpoints.RatingDocketEndpoint,
+		decodeRatingEndpointRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
+}
+
+func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := decodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new context with organization ID
+	ctx = context.WithValue(ctx, "UserId", claims.UserID)
+
+	var request dto.ShortListDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func decodeCommentsDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := decodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err
+	}
+	// Create a new context with organization ID
+	ctx = context.WithValue(ctx, "UserId", claims.UserID)
+
+	var request dto.CommentsDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := decodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new context with organization ID
+	ctx = context.WithValue(ctx, "UserId", claims.UserID)
+
+	var request dto.RatingDTO
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("missing Authorization header")
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader {
+		return nil, fmt.Errorf("invalid Authorization header format")
+	}
+
+	accessSecret, err := generateJWTSecrets()
+	// Validate JWT and extract orgID
+	claims, err := middleware.ValidateJWT(token, accessSecret)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+	}
+	return claims, nil
+}
+
+// Fetch JWT secrets from environment variables
+func generateJWTSecrets() (string, error) {
+
+	accessSecret := os.Getenv("ACCESS_SECRET")
+
+	if accessSecret == "" {
+		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
+	}
+
+	return accessSecret, nil
 }
 
 // Decode register api request...

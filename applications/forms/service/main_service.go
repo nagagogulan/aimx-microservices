@@ -25,6 +25,10 @@ type Service interface {
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 
 	GetFilteredFormsFilter(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error)
+
+	ShortListDocket(ctx context.Context, userId string, dto *dto.ShortListDTO) (bool, error)
+	RateDocket(ctx context.Context, userId string, dto *dto.RatingDTO) (bool, error)
+	CommentDocket(ctx context.Context, userId string, dto *dto.CommentsDTO) (bool, error)
 }
 
 type service struct {
@@ -32,11 +36,12 @@ type service struct {
 	formRepo         repository.FormRepositoryService
 	formTypeRepo     repository.FormTypeRepositoryService
 	organizationRepo repository.OrganizationRepositoryService
+	commEventRepo    repository.CommEventRepositoryService
 	logger           kitlog.Logger
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
-	organizationRepo repository.OrganizationRepositoryService) Service {
+	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService) Service {
 	fmt.Println("db interface connected")
-	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo, organizationRepo: organizationRepo}
+	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo, organizationRepo: organizationRepo, commEventRepo: commEventRepo}
 }

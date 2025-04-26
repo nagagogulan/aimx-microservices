@@ -120,8 +120,9 @@ func main() {
 	formRepo := repository.NewFormRepository(db)
 	formTypeRepo := repository.NewFormTypeRepo(db)
 	organizationRepo := repository.NewOrganizationRepositoryService(DB)
+	commEventRepo := repository.NewComEventsRepository(DB)
 
-	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo)
+	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo, commEventRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{
