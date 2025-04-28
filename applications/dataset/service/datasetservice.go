@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -29,10 +31,10 @@ func NewService() Service {
 }
 
 func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
-	// claims, err := middleware.GetClaimsFromContext(ctx)
-	// if err != nil {
-	// 	return apperrors.ErrUnableToRetrieveClaims
-	// }
+	claims, err := middleware.GetClaimsFromContext(ctx)
+	if err != nil {
+		return nil, apperrors.ErrUnableToRetrieveClaims
+	}
 	id, err := uuid.NewV4()
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
@@ -63,7 +65,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		if !validImageExtensions[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png, .gif allowed")
 		}
-		filePath = fmt.Sprintf("images/%s/%s_%s", "67788999", timestamp, "67788999")
+		filePath = fmt.Sprintf("images/%s/%s_%s", claims.UserID, timestamp, claims.UserID)
 	case 2:
 		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
