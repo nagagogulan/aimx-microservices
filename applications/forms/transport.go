@@ -151,6 +151,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.GET("/filterfield/get", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormFilterBYTypeEndpoint,
+		decodeGetFilterFieldsByTypeRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -360,6 +366,27 @@ func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, 
 	var req model.SearchFormsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
+	}
+	return req, nil
+}
+func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	// remove quotes if passed in URL
+	typeStr := r.URL.Query().Get("type")
+	req := &model.ParamRequest{}
+
+	if typeStr != "" {
+		typeInt, err := strconv.Atoi(typeStr)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+		if typeInt > 0 {
+			req.Type = typeInt
+		}
+	}
+
+	if req.Type < 0 {
+		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 	return req, nil
 }
