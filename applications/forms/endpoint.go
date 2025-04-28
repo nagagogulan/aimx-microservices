@@ -30,6 +30,7 @@ type Endpoints struct {
 	CreateFormTypeEndpoint endpoint.Endpoint
 	GetFormTypeEndpoint    endpoint.Endpoint
 	UpdateFormEndpoint     endpoint.Endpoint
+	GetFormFilterEndpoint  endpoint.Endpoint
 
 	RatingDocketEndpoint    endpoint.Endpoint
 	CommentsDocketEndpoint  endpoint.Endpoint
@@ -49,6 +50,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		CreateFormTypeEndpoint: Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
 		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
+		GetFormFilterEndpoint:  Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
@@ -240,5 +242,25 @@ func makeGetFormTypeEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
 		}
 		return formList, nil
+	}
+}
+func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(model.SearchFormsRequest)
+
+		forms, total, err := s.GetFilteredForms(ctx, req.Type, req.SearchParam)
+		if err != nil {
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+		}
+		var flatForms []dto.FormDTO
+		for _, f := range forms {
+			if f != nil {
+				flatForms = append(flatForms, *f)
+			}
+		}
+		return &model.SearchFormsResponse{
+			Forms: flatForms,
+			Total: total,
+		}, nil
 	}
 }

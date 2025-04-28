@@ -249,14 +249,16 @@ func sendEmail(receiverEmail string, status string) error {
 	return nil
 }
 
-func (s *service) GetFilteredFormsFilter(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error) {
-	fmt.Println("*************ggggg*******", formType, searchParam)
+func (s *service) GetFilteredForms(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error) {
 	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, searchParam)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "GetFilteredForms", err.Error(), err, "FormType", formType)
 		return nil, 0, err
 	}
-	fmt.Println("&&&&&&&&&&&&&&", forms)
+	if len(forms) == 0 {
+		fmt.Println("No forms found")
+		return nil, 0, errcom.ErrNotFound
+	}
 	return forms, total, nil
 }
 

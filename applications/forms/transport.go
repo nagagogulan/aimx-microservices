@@ -124,6 +124,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	router.GET("/form/search", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormFilterEndpoint,
+		decodeSearchFormsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	router.POST("/docket/shortlist", gin.WrapF(httptransport.NewServer(
 		endpoints.ShortlistDocketEndpoint,
 		decodeShortlistDocketRequest,
@@ -346,6 +353,13 @@ func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interfac
 
 	if id != "" {
 		req.ID = id
+	}
+	return req, nil
+}
+func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req model.SearchFormsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
 	}
 	return req, nil
 }

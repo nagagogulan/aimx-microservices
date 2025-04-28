@@ -24,7 +24,7 @@ type Service interface {
 	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 
-	GetFilteredFormsFilter(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error)
+	GetFilteredForms(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error)
 
 	ShortListDocket(ctx context.Context, userId string, dto *dto.ShortListDTO) (bool, error)
 	RateDocket(ctx context.Context, userId string, dto *dto.RatingDTO) (bool, error)
