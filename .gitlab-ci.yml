@@ -7,27 +7,42 @@ deploy_microservices:
   only:
     - dev
   before_script:
-    - apk add --no-cache openssh
+    - apk add --no-cache git openssh
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
-    - ssh $EC2_USER@$EC2_HOST "
+    # Get list of changed directories (adjust if using monorepo with subdirs)
+    - |
+      CHANGED_SERVICES=$(git diff --name-only origin/main...HEAD | grep -E '^(forms|dataset|identity|roles|profile|user_management)/' | cut -d/ -f1 | sort -u)
+      echo "Changed services: $CHANGED_SERVICES"
+      
+      DEPLOY_CMDS=""
+      for service in $CHANGED_SERVICES; do
+        case $service in
+          identity)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-identity:latest && docker stop aimx-identity || true && docker rm aimx-identity || true && docker run -d --name aimx-identity -p 8081:8081 nagagogulan/aimx-identity:latest && "
+            ;;
+          forms)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-forms:latest && docker stop aimx-forms || true && docker rm aimx-forms || true && docker run -d --name aimx-forms -p 8082:8082 nagagogulan/aimx-forms:latest && "
+            ;;
+          roles)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-roles:latest && docker stop aimx-roles || true && docker rm aimx-roles || true && docker run -d --name aimx-roles -p 8083:8083 nagagogulan/aimx-roles:latest && "
+            ;;
+          dataset)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-dataset:latest && docker stop aimx-dataset || true && docker rm aimx-dataset || true && docker run -d --name aimx-dataset -p 8084:8084 nagagogulan/aimx-dataset:latest && "
+            ;;
+          profile)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-profile:latest && docker stop aimx-profile || true && docker rm aimx-profile || true && docker run -d --name aimx-profile -p 8085:8085 nagagogulan/aimx-profile:latest && "
+            ;;
+          user_management)
+            DEPLOY_CMDS+="docker pull nagagogulan/aimx-user_management:latest && docker stop aimx-user_management || true && docker rm aimx-user_management || true && docker run -d --name aimx-user_management -p 8086:8086 nagagogulan/aimx-user_management:latest && "
+            ;;
+        esac
+      done
+      DEPLOY_CMDS=${DEPLOY_CMDS%&& }  # remove last '&&' if present
+      ssh $EC2_USER@$EC2_HOST "
         docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
-        docker pull nagagogulan/aimx-identity:latest &&
-        docker pull nagagogulan/aimx-forms:latest &&
-        docker pull nagagogulan/aimx-roles:latest &&
-        docker pull nagagogulan/aimx-dataset:latest &&
-        docker pull nagagogulan/aimx-profile:latest &&
-        docker pull nagagogulan/aimx-user_management:latest &&
-        docker stop \$(docker ps -q) || true &&
-        docker rm \$(docker ps -a -q) || true &&
-        docker run -d -p 8081:8081 nagagogulan/aimx-identity:latest &&
-        docker run -d -p 8082:8082 nagagogulan/aimx-forms:latest &&
-        docker run -d -p 8083:8083 nagagogulan/aimx-roles:latest &&
-        docker run -d -p 8084:8084 nagagogulan/aimx-dataset:latest &&
-        docker run -d -p 8085:8085 nagagogulan/aimx-profile:latest &&
-        docker run -d -p 8086:8086 nagagogulan/aimx-user_management:latest
+        $DEPLOY_CMDS
       "
-
