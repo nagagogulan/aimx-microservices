@@ -34,8 +34,8 @@ type Endpoints struct {
 	GetFormFilterBYTypeEndpoint endpoint.Endpoint
 
 	RatingDocketEndpoint    endpoint.Endpoint
-	CommentsDocketEndpoint  endpoint.Endpoint
 	ShortlistDocketEndpoint endpoint.Endpoint
+	GetCommentsByIdEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -46,28 +46,34 @@ func NewEndpoint(s service.Service) Endpoints {
 		DeleteTemplateEndpoint:  Middleware(makeDeleteTemplateEndpoint(s), commonlib.TimeoutMs),
 		// GetTemplateByIDEndpoint: Middleware(makeGetTemplateByIDEndpoint(s), common.TimeoutMs),
 
-		CreateFormEndpoint:          Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
-		GetFormByTypeEndpoint:       Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
-		CreateFormTypeEndpoint:      Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
-		GetFormTypeEndpoint:         Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
-		UpdateFormEndpoint:          Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
-		GetFormFilterEndpoint:       Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
-		GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormEndpoint:     Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
+		GetFormByTypeEndpoint:  Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormTypeEndpoint: Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
+		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
+		GetFormFilterEndpoint:  Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
+		// GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
-		CommentsDocketEndpoint:  Middleware(makeCommentsDocketEndpoint(s), commonlib.TimeoutMs),
+		GetCommentsByIdEndpoint: Middleware(makeGetCommentsByIdEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
 func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.ShortListDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.ShortListDocket(ctx, userID, req)
+		req := request.(dto.ShortListDTO)
+
+		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+		if !ok {
+			return nil, service.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		}
+		claims, err := decodeHeaderGetClaims(httpReq)
 		if err != nil {
-			fmt.Println("the err is given as", err)
+			return nil, err
+		}
+		form, err := s.ShortListDocket(ctx, claims.UserID, req)
+		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
@@ -77,12 +83,18 @@ func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.RatingDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.RateDocket(ctx, userID, req)
+		req := request.(dto.RatingDTO)
+
+		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+		if !ok {
+			return nil, service.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		}
+		claims, err := decodeHeaderGetClaims(httpReq)
 		if err != nil {
-			fmt.Println("the err is given as", err)
+			return nil, err
+		}
+		form, err := s.RateDocket(ctx, claims.UserID, req)
+		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
@@ -90,18 +102,14 @@ func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-func makeCommentsDocketEndpoint(s service.Service) endpoint.Endpoint {
+func makeGetCommentsByIdEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.CommentsDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.CommentDocket(ctx, userID, req)
+		req := request.(dto.ShortListDTO)
+		form, err := s.GetCommentsById(ctx, req.InteractionId)
 		if err != nil {
-			fmt.Println("the err is given as", err)
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
-		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
 	}
 }
 
@@ -266,6 +274,7 @@ func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
 		}, nil
 	}
 }
+
 func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// Assert the request type to ensure it contains the necessary filterType parameter

@@ -83,3 +83,5 @@ type SearchFormsResponse struct {
 	Forms []dto.FormDTO `json:"forms"`
 	Total int64         `json:"total"`
 }
+
+type ContextKey string

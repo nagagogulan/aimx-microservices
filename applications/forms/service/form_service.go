@@ -262,43 +262,46 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, searchPara
 	return forms, total, nil
 }
 
-func (s *service) ShortListDocket(ctx context.Context, userId string, dto *dto.ShortListDTO) (bool, error) {
-	err := s.commEventRepo.CreateShortList(ctx, userId, dto)
+func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error) {
+	// FIXME: Check if the user has already shortlisted
+	err := s.commEventRepo.CreateShortList(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "ShortListDocket", err.Error(), err, "CommEvents", userId)
 		return false, err
 	}
-	_, err = s.UpdateFlagField(ctx, dto.ProjectId, false, 0, true)
+	_, err = s.UpdateFlagField(ctx, dto.InteractionId, false, 0, true)
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (s *service) RateDocket(ctx context.Context, userId string, dto *dto.RatingDTO) (bool, error) {
-	err := s.commEventRepo.CreateRating(ctx, userId, dto)
+func (s *service) RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error) {
+	// FIXME: Check if the user has already rated
+	err := s.commEventRepo.CreateRating(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", userId)
 		return false, err
 	}
-	_, err = s.UpdateFlagField(ctx, dto.ProjectId, true, dto.Rating, false)
+	_, err = s.UpdateFlagField(ctx, dto.InteractionId, true, dto.Rating, false)
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (s *service) CommentDocket(ctx context.Context, userId string, dto *dto.CommentsDTO) (bool, error) {
-	err := s.commEventRepo.CreateComment(ctx, userId, dto)
+func (s *service) GetCommentsById(ctx context.Context, interactionId string) ([]*dto.CommentData, error) {
+	res, err := s.commEventRepo.GetCommentsByProjectID(ctx, interactionId)
 	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "CommentDocket", err.Error(), err, "CommEvents", userId)
-		return false, err
+		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", interactionId)
+		return nil, err
 	}
-	return true, nil
+	return res, nil
 }
 
 func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, ratingValue int, like bool) (bool, error) {
 
+	fmt.Println("inside the UpdateFlagField")
 	// Validation: Exactly one of rating or like must be true
 	if (rating && like) || (!rating && !like) {
 		return false, fmt.Errorf("exactly one of 'rating' or 'like' must be true")
