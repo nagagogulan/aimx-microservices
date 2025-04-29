@@ -8,7 +8,7 @@ deploy_microservices:
   stage: deploy
   image: alpine:latest
   only:
-    - feature_cicd
+    - dev
   before_script:
     - apk add --no-cache git openssh
     - git config --global --add safe.directory /builds/$CI_PROJECT_PATH
