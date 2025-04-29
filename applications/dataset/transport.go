@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
+	middleware "github.com/PecozQ/aimx-library/middleware"
+	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
@@ -18,6 +22,23 @@ import (
 	//"github.com/gorilla/mux"
 )
 
+func init() {
+	// Get the current working directory (from where the command is run)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
+
+	// Construct the path to the .env file in the root directory
+	envPath := filepath.Join(dir, "../.env")
+
+	// Load the .env file from the correct path
+	err = godotenv.Load(envPath)
+	if err != nil {
+		fmt.Errorf("Error loading .env file")
+	}
+}
 func MakeHttpHandler(s service.Service) http.Handler {
 	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errorlib.EncodeError)}
 
@@ -53,7 +74,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	return r
 }
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := decodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err
+	}
 
+	// Create a new context with organization ID
+	ctx = context.WithValue(ctx, "UserId", claims.UserID)
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		return nil, err
@@ -103,12 +130,43 @@ func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, erro
 
 	return req, nil
 }
+
 func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req model.DeleteFileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
 	return req, nil
+}
+
+func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("missing Authorization header")
+	}
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader {
+		return nil, fmt.Errorf("invalid Authorization header format")
+	}
+
+	accessSecret, err := generateJWTSecrets()
+	// Validate JWT and extract orgID
+	claims, err := middleware.ValidateJWT(token, accessSecret)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+	}
+	return claims, nil
+}
+
+// Fetch JWT secrets from environment variables
+func generateJWTSecrets() (string, error) {
+
+	accessSecret := os.Getenv("ACCESS_SECRET")
+
+	if accessSecret == "" {
+		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
+	}
+	return accessSecret, nil
 }
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
