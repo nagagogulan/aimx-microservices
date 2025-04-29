@@ -1,4 +1,4 @@
-services:
+deploy:
   stage: deploy
   image: alpine:latest
   rules:
