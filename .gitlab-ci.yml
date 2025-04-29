@@ -1,63 +1,33 @@
-deploy:
+stages:
+  - deploy
+
+deploy_microservices:
   stage: deploy
   image: alpine:latest
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      when: always
+  only:
+    - dev
   before_script:
-    - apk add --no-cache git openssh
-    - git config --global --add safe.directory /builds/$CI_PROJECT_PATH
-    - git remote set-url origin "$CI_REPOSITORY_URL"
-    - git fetch origin main
-    - git checkout -B ci-head || git checkout -B ci-head HEAD
+    - apk add --no-cache openssh
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
-    - |
-      CHANGED_SERVICES=$(git diff --name-only origin/main...ci-head | grep -E '^(forms|dataset|identity|roles|profile|user_management)/' | cut -d/ -f1 | sort -u)
-      echo "Changed services: $CHANGED_SERVICES"
-      ssh $EC2_USER@$EC2_HOST "
-        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-        for service in $CHANGED_SERVICES; do
-          case \$service in
-            identity)
-              docker pull nagagogulan/aimx-identity:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-identity:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-identity:latest) || true &&
-              docker run -d -p 8081:8081 nagagogulan/aimx-identity:latest
-              ;;
-            forms)
-              docker pull nagagogulan/aimx-forms:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-forms:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-forms:latest) || true &&
-              docker run -d -p 8082:8082 nagagogulan/aimx-forms:latest
-              ;;
-            roles)
-              docker pull nagagogulan/aimx-roles:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-roles:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-roles:latest) || true &&
-              docker run -d -p 8083:8083 nagagogulan/aimx-roles:latest
-              ;;
-            dataset)
-              docker pull nagagogulan/aimx-dataset:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-dataset:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-dataset:latest) || true &&
-              docker run -d -p 8084:8084 nagagogulan/aimx-dataset:latest
-              ;;
-            profile)
-              docker pull nagagogulan/aimx-profile:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-profile:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-profile:latest) || true &&
-              docker run -d -p 8085:8085 nagagogulan/aimx-profile:latest
-              ;;
-            user_management)
-              docker pull nagagogulan/aimx-user_management:latest &&
-              docker stop \$(docker ps -q --filter ancestor=nagagogulan/aimx-user_management:latest) || true &&
-              docker rm \$(docker ps -a -q --filter ancestor=nagagogulan/aimx-user_management:latest) || true &&
-              docker run -d -p 8086:8086 nagagogulan/aimx-user_management:latest
-              ;;
-          esac
-        done
+    - ssh $EC2_USER@$EC2_HOST "
+        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
+        docker pull nagagogulan/aimx-identity:latest &&
+        docker pull nagagogulan/aimx-forms:latest &&
+        docker pull nagagogulan/aimx-roles:latest &&
+        docker pull nagagogulan/aimx-dataset:latest &&
+        docker pull nagagogulan/aimx-profile:latest &&
+        docker pull nagagogulan/aimx-user_management:latest &&
+        docker stop \$(docker ps -q) || true &&
+        docker rm \$(docker ps -a -q) || true &&
+        docker run -d -p 8081:8081 nagagogulan/aimx-identity:latest &&
+        docker run -d -p 8082:8082 nagagogulan/aimx-forms:latest &&
+        docker run -d -p 8083:8083 nagagogulan/aimx-roles:latest &&
+        docker run -d -p 8084:8084 nagagogulan/aimx-dataset:latest &&
+        docker run -d -p 8085:8085 nagagogulan/aimx-profile:latest &&
+        docker run -d -p 8086:8086 nagagogulan/aimx-user_management:latest
       "
+
