@@ -1,0 +1,66 @@
+version: '3.9'
+
+networks:
+  aimx-network:
+    driver: bridge
+
+services:
+  identity:
+    build:
+      context: ./applications/identity
+      dockerfile: Dockerfile
+    container_name: identity-container
+    ports:
+      - "8081:8081"
+    networks:
+      - aimx-network
+
+  forms:
+    build:
+      context: ./applications/forms
+      dockerfile: Dockerfile
+    container_name: forms-container
+    ports:
+      - "8082:8082"
+    networks:
+      - aimx-network
+
+  roles:
+    build:
+      context: ./applications/roles
+      dockerfile: Dockerfile
+    container_name: roles-container
+    ports:
+      - "8083:8083"
+    networks:
+      - aimx-network
+
+  dataset:
+    build:
+      context: ./applications/dataset
+      dockerfile: Dockerfile
+    container_name: dataset-container
+    ports:
+      - "8084:8084"
+    networks:
+      - aimx-network
+
+  profile:
+    build:
+      context: ./applications/profile
+      dockerfile: Dockerfile
+    container_name: profile-container
+    ports:
+      - "8085:8085"
+    networks:
+      - aimx-network
+
+  user_management:
+    build:
+      context: ./applications/user_management
+      dockerfile: Dockerfile
+    container_name: user-management-container
+    ports:
+      - "8086:8086"
+    networks:
+      - aimx-network

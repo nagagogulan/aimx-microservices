@@ -9,7 +9,6 @@ import (
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
-	"github.com/PecozQ/aimx-library/domain/entities"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -97,7 +96,8 @@ func (s *service) DeleteTemplate(ctx context.Context, id string) (*model.Respons
 	}
 	return &model.Response{Message: "Successfully Template deleted"}, nil
 }
-func (s *service) GetFilterFieldsByType(ctx context.Context, filterType int) (*entities.FilterFieldRequest, error) {
+
+func (s *service) GetFilterFieldsByType(ctx context.Context, filterType int) (*entity.FilterFieldRequest, error) {
 	// Call the repository method to get filter fields by type
 	filterFields, err := s.filterfieldRepo.GetFilterFieldsByType(ctx, filterType)
 	if err != nil {

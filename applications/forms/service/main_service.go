@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
-	"github.com/PecozQ/aimx-library/domain/entities"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kitlog "github.com/go-kit/log"
@@ -26,12 +25,12 @@ type Service interface {
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 
 	GetFilteredForms(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error)
-	GetFilterFieldsByType(ctx context.Context, filterType int) (*entities.FilterFieldRequest, error)
+	GetFilterFieldsByType(ctx context.Context, filterType int) (*entity.FilterFieldRequest, error)
 
-	ShortListDocket(ctx context.Context, userId string, dto *dto.ShortListDTO) (bool, error)
-	RateDocket(ctx context.Context, userId string, dto *dto.RatingDTO) (bool, error)
+	ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error)
+	RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error)
 
-	CommentDocket(ctx context.Context, userId string, dto *dto.CommentsDTO) (bool, error)
+	GetCommentsById(ctx context.Context, interactionId string) ([]*dto.CommentData, error)
 }
 
 type service struct {

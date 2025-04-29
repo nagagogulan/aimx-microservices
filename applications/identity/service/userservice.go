@@ -90,7 +90,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		fmt.Errorf("failed to check user: %w", err)
 	}
 	if existingUser != nil && existingUser.IS_MFA_Enabled {
-		return nil, errcom.ErrDuplicateEmail
+		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: existingUser.IS_MFA_Enabled}, nil
 	}
 
 	userDetails, err := s.UserRepo.GetUserByEmail(ctx, req.Email)
@@ -98,7 +98,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 		fmt.Errorf("failed to check user: %w", err)
 	}
 	if userDetails != nil {
-		return nil, errcom.ErrDuplicateEmail
+		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
 	}
 	// If user does not exist, save OTP as new record
 	if existingUser == nil {
@@ -131,7 +131,6 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	}
 
 	return &model.Response{Message: "OTP sent successfully", IS_MFA_Enabled: false}, nil
-
 }
 func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error) {
 	res, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
@@ -191,7 +190,6 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 			return &model.UserAuthResponse{Message: "OTP Verified!", QRURL: req.Secret, QRImage: qrCodeBase64}, nil
 		}
 		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
-
 	} else if res != nil && res.Secret != "" && !res.IS_MFA_Enabled {
 		fmt.Println("Secret key already generated, regenerating QR code...")
 
@@ -536,7 +534,7 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 		Email:          newUser.Email,
 		UserID:         newUser.ID,
 		OrganizationID: org.OrganizationID,
-		AtExpires:      time.Now().Add(15 * time.Minute).Unix(),
+		AtExpires:      time.Now().Add(60 * time.Minute).Unix(),
 		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 

@@ -1,0 +1,33 @@
+stages:
+  - deploy
+
+deploy_microservices:
+  stage: deploy
+  image: alpine:latest
+  only:
+    - dev
+  before_script:
+    - apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+  script:
+    - ssh $EC2_USER@$EC2_HOST "
+        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
+        docker pull nagagogulan/aimx-identity:latest &&
+        docker pull nagagogulan/aimx-forms:latest &&
+        docker pull nagagogulan/aimx-roles:latest &&
+        docker pull nagagogulan/aimx-dataset:latest &&
+        docker pull nagagogulan/aimx-profile:latest &&
+        docker pull nagagogulan/aimx-user_management:latest &&
+        docker stop \$(docker ps -q) || true &&
+        docker rm \$(docker ps -a -q) || true &&
+        docker run -d -p 8081:8081 nagagogulan/aimx-identity:latest &&
+        docker run -d -p 8082:8082 nagagogulan/aimx-forms:latest &&
+        docker run -d -p 8083:8083 nagagogulan/aimx-roles:latest &&
+        docker run -d -p 8084:8084 nagagogulan/aimx-dataset:latest &&
+        docker run -d -p 8085:8085 nagagogulan/aimx-profile:latest &&
+        docker run -d -p 8086:8086 nagagogulan/aimx-user_management:latest
+      "
+
