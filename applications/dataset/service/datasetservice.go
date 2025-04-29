@@ -16,7 +16,7 @@ import (
 
 type Service interface {
 	//UploadFile(ctx context.Context, filePath string) (string, error)
-	UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error)
+	UploadFile(ctx context.Context, UserID string, req model.UploadRequest) (*model.UploadResponse, error)
 	GetFile(ctx context.Context, filePath string) ([]byte, string, error)
 	//GetFileList(ctx context.Context) ([]string, error)
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
@@ -28,14 +28,7 @@ func NewService() Service {
 	return &fileService{}
 }
 
-func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
-	UserID, ok := ctx.Value("UserId").(string)
-	if !ok {
-		// handle missing or wrong type
-		log.Println("UserId not found in context or wrong type")
-	} else {
-		log.Println("UserId from context:", UserID)
-	}
+func (s *fileService) UploadFile(ctx context.Context, UserID string, req model.UploadRequest) (*model.UploadResponse, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
