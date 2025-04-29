@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
+	"github.com/PecozQ/aimx-library/common"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"go.mongodb.org/mongo-driver/bson"
@@ -74,6 +75,8 @@ func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) 
 			"created_at":      form.CreatedAt,
 			"updated_at":      form.UpdatedAt,
 			"type":            form.Type,
+			"like_count":      form.Flags.LikeCount,
+			"average_rating":  form.Flags.AverageRating,
 		}
 
 		// Add fields to the same map
@@ -263,8 +266,14 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, searchPara
 }
 
 func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error) {
+	interactionCtxId := common.ValueMapper("LIKE", "OperationContext", "ENUM_TO_HASH").(int)
+	existingInteraction, err := s.commEventRepo.CheckForExistingInteraction(ctx, userId, dto.InteractionId, interactionCtxId)
+	if existingInteraction || err != nil {
+		// return false, errcom.ErrDuplicateInteraction
+		return false, errcom.ErrDuplicateInteraction
+	}
 	// FIXME: Check if the user has already shortlisted
-	err := s.commEventRepo.CreateShortList(ctx, userId, &dto)
+	err = s.commEventRepo.CreateShortList(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "ShortListDocket", err.Error(), err, "CommEvents", userId)
 		return false, err
@@ -277,8 +286,13 @@ func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.Sh
 }
 
 func (s *service) RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error) {
+	interactionCtxId := common.ValueMapper("RATING", "OperationContext", "ENUM_TO_HASH").(int)
+	existingInteraction, err := s.commEventRepo.CheckForExistingInteraction(ctx, userId, dto.InteractionId, interactionCtxId)
+	if existingInteraction || err != nil {
+		return false, errcom.ErrDuplicateInteraction
+	}
 	// FIXME: Check if the user has already rated
-	err := s.commEventRepo.CreateRating(ctx, userId, &dto)
+	err = s.commEventRepo.CreateRating(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", userId)
 		return false, err

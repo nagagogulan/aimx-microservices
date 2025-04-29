@@ -66,7 +66,7 @@ func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 
 		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
 		if !ok {
-			return nil, service.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+			return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
 		}
 		claims, err := decodeHeaderGetClaims(httpReq)
 		if err != nil {
@@ -74,7 +74,7 @@ func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		form, err := s.ShortListDocket(ctx, claims.UserID, req)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
 		}
 		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
@@ -95,7 +95,7 @@ func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		form, err := s.RateDocket(ctx, claims.UserID, req)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
 		}
 		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
