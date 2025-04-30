@@ -2,6 +2,9 @@ package model
 
 import (
 	"time"
+
+	"github.com/gofrs/uuid"
+
 )
 
 type UserAuthRequest struct {
@@ -27,6 +30,7 @@ type Response struct {
 	IS_MFA_Enabled bool   `json:"is_mfa_enabled"`
 	Secret         string `json:"secret"`
 	JWTToken       string `json:"jwtToken"`
+	User_Id		uuid.UUID `json:"user_id"`
 }
 
 func (UserAuthDetail) TableName() string {
