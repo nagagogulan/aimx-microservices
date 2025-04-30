@@ -54,7 +54,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		UpdateFormEndpoint:             Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
 		GetFormFilterEndpoint:          Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
 		GetFormFilterByOrgNameEndpoint: Middleware(makeSearchFormsByOrgNameEndpoint(s), commonlib.TimeoutMs),
-		// GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
+		GetFormFilterBYTypeEndpoint:    Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
@@ -290,5 +290,24 @@ func makeSearchFormsByOrgNameEndpoint(s service.Service) endpoint.Endpoint {
 		return &model.SearchFormByNamesResponse{
 			Form: form,
 		}, nil
+	}
+}
+func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Assert the request type to ensure it contains the necessary filterType parameter
+		req, ok := request.(*model.ParamRequest)
+		if !ok {
+			return nil, errors.New("params error")
+		}
+
+		// Call the service method to get filter fields by type
+		filterFields, err := s.GetFilterFieldsByType(ctx, req.Type)
+		if err != nil {
+			// Return an error if something goes wrong
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+		}
+
+		// Return the result as a response
+		return filterFields, nil
 	}
 }
