@@ -310,6 +310,16 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, searchPara
 	}
 	return forms, total, nil
 }
+func (s *service) SearchFormsByOrgName(ctx context.Context, req model.SearchFormsByOrganizationRequest) (*dto.FormDTO, error) {
+	// Fetch single form from the repository
+	form, err := s.formRepo.SearchFormsByOrganization(ctx, req.FormName, req.Type)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "SearchFormsByOrgName", err.Error(), err, "Organization", req.FormName)
+		return nil, err
+	}
+
+	return &form, nil // Return pointer to single form
+}
 
 func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error) {
 	interactionCtxId := common.ValueMapper("LIKE", "OperationContext", "ENUM_TO_HASH").(int)

@@ -134,6 +134,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.GET("/form/searchbyorg", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormFilterByOrgNameEndpoint,
+		decodeSearchFormsByOrgNameRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	router.POST("/docket/shortlist", gin.WrapF(httptransport.NewServer(
 		endpoints.ShortlistDocketEndpoint,
@@ -270,6 +276,40 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	if req.ID == "" && req.Type < 0 {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
+	return req, nil
+}
+func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	formName := strings.TrimSpace(r.URL.Query().Get("formname"))
+	typeStr := r.URL.Query().Get("type")
+	// pageStr := r.URL.Query().Get("page")
+	// pageSizeStr := r.URL.Query().Get("pageSize")
+
+	// Create the request object to store the decoded data
+	req := model.SearchFormsByOrganizationRequest{
+		FormName: formName,
+	}
+	// Validate that the "organization_name" is provided
+	if req.FormName == "" {
+		return nil, fmt.Errorf("organization_name must be provided")
+	}
+	typeInt, err := strconv.Atoi(typeStr)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, err
+	}
+	if typeInt > 0 {
+		req.Type = typeInt
+	}
+	// pages, err := strconv.Atoi(pageStr)
+	// if err == nil && pages > 0 {
+	// 	req.Param.Page = pages
+	// }
+
+	// pageSize, err := strconv.Atoi(pageSizeStr)
+	// if err == nil && pageSize > 0 {
+	// 	req.Param.PageSize = pageSize
+	// }
+
 	return req, nil
 }
 
