@@ -3,6 +3,7 @@ package model
 import "github.com/gofrs/uuid"
 
 type UploadRequest struct {
+	UserID    string `json:"user_id"`
 	FileName  string `json:"fileName"`
 	Content   []byte `json:"content"`
 	FormType  string `json:"formType"`

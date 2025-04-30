@@ -25,16 +25,17 @@ type Endpoints struct {
 	UpdateTemplateEndpoint  endpoint.Endpoint
 	DeleteTemplateEndpoint  endpoint.Endpoint
 
-	CreateFormEndpoint     endpoint.Endpoint
-	GetFormByTypeEndpoint  endpoint.Endpoint
-	CreateFormTypeEndpoint endpoint.Endpoint
-	GetFormTypeEndpoint    endpoint.Endpoint
-	UpdateFormEndpoint     endpoint.Endpoint
-	GetFormFilterEndpoint  endpoint.Endpoint
+	CreateFormEndpoint          endpoint.Endpoint
+	GetFormByTypeEndpoint       endpoint.Endpoint
+	CreateFormTypeEndpoint      endpoint.Endpoint
+	GetFormTypeEndpoint         endpoint.Endpoint
+	UpdateFormEndpoint          endpoint.Endpoint
+	GetFormFilterEndpoint       endpoint.Endpoint
+	GetFormFilterBYTypeEndpoint endpoint.Endpoint
 
 	RatingDocketEndpoint    endpoint.Endpoint
-	CommentsDocketEndpoint  endpoint.Endpoint
 	ShortlistDocketEndpoint endpoint.Endpoint
+	GetCommentsByIdEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -51,22 +52,29 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetFormTypeEndpoint:    Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormEndpoint:     Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
 		GetFormFilterEndpoint:  Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
+		// GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
-		CommentsDocketEndpoint:  Middleware(makeCommentsDocketEndpoint(s), commonlib.TimeoutMs),
+		GetCommentsByIdEndpoint: Middleware(makeGetCommentsByIdEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
 func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.ShortListDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.ShortListDocket(ctx, userID, req)
+		req := request.(dto.ShortListDTO)
+
+		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+		if !ok {
+			return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		}
+		claims, err := decodeHeaderGetClaims(httpReq)
 		if err != nil {
-			fmt.Println("the err is given as", err)
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
+		}
+		form, err := s.ShortListDocket(ctx, claims.UserID, req)
+		if err != nil {
+			return nil, err
 		}
 		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
@@ -75,31 +83,33 @@ func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.RatingDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.RateDocket(ctx, userID, req)
+		req := request.(dto.RatingDTO)
+
+		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+		if !ok {
+			return nil, service.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		}
+		claims, err := decodeHeaderGetClaims(httpReq)
 		if err != nil {
-			fmt.Println("the err is given as", err)
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
+		}
+		form, err := s.RateDocket(ctx, claims.UserID, req)
+		if err != nil {
+			return nil, err
 		}
 		return form, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
 	}
 }
 
-func makeCommentsDocketEndpoint(s service.Service) endpoint.Endpoint {
+func makeGetCommentsByIdEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.CommentsDTO)
-		userID := ctx.Value("UserId").(string)
-		fmt.Println("the user Id is givne as:", userID)
-		form, err := s.CommentDocket(ctx, userID, req)
+		req := request.(dto.ShortListDTO)
+		form, err := s.GetCommentsById(ctx, req.InteractionId)
 		if err != nil {
-			fmt.Println("the err is given as", err)
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
 		return form, nil
-		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
 	}
 }
 
@@ -262,5 +272,25 @@ func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
 			Forms: flatForms,
 			Total: total,
 		}, nil
+	}
+}
+
+func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Assert the request type to ensure it contains the necessary filterType parameter
+		req, ok := request.(*model.ParamRequest)
+		if !ok {
+			return nil, errors.New("params error")
+		}
+
+		// Call the service method to get filter fields by type
+		filterFields, err := s.GetFilterFieldsByType(ctx, req.Type)
+		if err != nil {
+			// Return an error if something goes wrong
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+		}
+
+		// Return the result as a response
+		return filterFields, nil
 	}
 }

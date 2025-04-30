@@ -60,7 +60,7 @@ func main() {
 	// Set MongoDB URI
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "18.142.238.70",
+		DBHost:     "54.251.209.147",
 		DBPort:     5432,
 		DBUser:     "myappuser",
 		DBPassword: "SmartWork@123",
@@ -93,7 +93,7 @@ func main() {
 	// Close the DB connection when done (deferred)
 	defer sqlDB.Close()
 
-	uri := "mongodb://18.142.238.70:27017" // replace with your MongoDB URI
+	uri := "mongodb://54.251.209.147:27017" // replace with your MongoDB URI
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -121,8 +121,9 @@ func main() {
 	formTypeRepo := repository.NewFormTypeRepo(db)
 	organizationRepo := repository.NewOrganizationRepositoryService(DB)
 	commEventRepo := repository.NewComEventsRepository(DB)
+	filterfieldRepo := repository.NewAddSearchfilterService(DB)
 
-	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo, commEventRepo)
+	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo, commEventRepo, filterfieldRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{

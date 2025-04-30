@@ -25,7 +25,7 @@ func main() {
 		// DBName:     "localDb",
 
 		// rds
-		DBHost:     "18.142.238.70",
+		DBHost:     "54.251.209.147",
 		DBPort:     5432,
 		DBUser:     "myappuser",
 		DBPassword: "SmartWork@123",

@@ -44,7 +44,11 @@ func init() {
 }
 
 func MakeHttpHandler(s service.Service) http.Handler {
-	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errorlib.EncodeError)}
+	options := []httptransport.ServerOption{
+		httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+			return context.WithValue(ctx, "HTTPRequest", r)
+		}),
+		httptransport.ServerErrorEncoder(errorlib.EncodeError)}
 
 	r := gin.New()
 	endpoints := NewEndpoint(s)
@@ -138,16 +142,22 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.POST("/docket/comments", gin.WrapF(httptransport.NewServer(
-		endpoints.CommentsDocketEndpoint,
-		decodeCommentsDocketRequest,
+	router.POST("/docket/rating", gin.WrapF(httptransport.NewServer(
+		endpoints.RatingDocketEndpoint,
+		decodeRatingEndpointRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
 
-	router.POST("/docket/rating", gin.WrapF(httptransport.NewServer(
-		endpoints.RatingDocketEndpoint,
-		decodeRatingEndpointRequest,
+	router.GET("/docket/comments", gin.WrapF(httptransport.NewServer(
+		endpoints.GetCommentsByIdEndpoint,
+		decodeShortlistDocketRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	router.GET("/filterfield/get", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormFilterBYTypeEndpoint,
+		decodeGetFilterFieldsByTypeRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -156,45 +166,15 @@ func MakeHttpHandler(s service.Service) http.Handler {
 }
 
 func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	claims, err := decodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new context with organization ID
-	ctx = context.WithValue(ctx, "UserId", claims.UserID)
-
 	var request dto.ShortListDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-	return request, nil
-}
-
-func decodeCommentsDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	claims, err := decodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err
-	}
-	// Create a new context with organization ID
-	ctx = context.WithValue(ctx, "UserId", claims.UserID)
-
-	var request dto.CommentsDTO
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		fmt.Println("the error is givne as:", err)
 		return nil, err
 	}
 	return request, nil
 }
 
 func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	claims, err := decodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new context with organization ID
-	ctx = context.WithValue(ctx, "UserId", claims.UserID)
-
 	var request dto.RatingDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -218,18 +198,16 @@ func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
 	}
+	fmt.Println("the claim is given as:", claims)
 	return claims, nil
 }
 
 // Fetch JWT secrets from environment variables
 func generateJWTSecrets() (string, error) {
-
 	accessSecret := os.Getenv("ACCESS_SECRET")
-
 	if accessSecret == "" {
 		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
 	}
-
 	return accessSecret, nil
 }
 
@@ -360,6 +338,28 @@ func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, 
 	var req model.SearchFormsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
+	}
+	return req, nil
+}
+
+func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	// remove quotes if passed in URL
+	typeStr := r.URL.Query().Get("type")
+	req := &model.ParamRequest{}
+
+	if typeStr != "" {
+		typeInt, err := strconv.Atoi(typeStr)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return nil, err
+		}
+		if typeInt > 0 {
+			req.Type = typeInt
+		}
+	}
+
+	if req.Type < 0 {
+		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
 	return req, nil
 }
