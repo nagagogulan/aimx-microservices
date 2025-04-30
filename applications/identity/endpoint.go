@@ -44,6 +44,7 @@ func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
+		fmt.Println(res)
 		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled}, nil
 	}
 }
@@ -67,6 +68,7 @@ func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
 		}
-		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken}, nil
+		fmt.Println(res)
+		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken , User_Id: res.User_Id}, nil
 	}
 }

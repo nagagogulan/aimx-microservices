@@ -48,7 +48,7 @@ func init() {
 	fmt.Println("Current Working Directory:", dir)
 
 	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "./.env")
+	envPath := filepath.Join(dir, "../.env")
 
 	// Load the .env file from the correct path
 	err = godotenv.Load(envPath)
@@ -521,7 +521,7 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 		return nil, err
 	}
 
-	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled}, nil
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled, User_Id: userData.ID}, nil
 }
 
 // Helper function to generate JWT for a new user
@@ -545,5 +545,5 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 		return nil, err
 	}
 
-	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled}, nil
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled, User_Id: newUser.ID}, nil
 }
