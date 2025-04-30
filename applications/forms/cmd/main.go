@@ -121,9 +121,12 @@ func main() {
 	formTypeRepo := repository.NewFormTypeRepo(db)
 	organizationRepo := repository.NewOrganizationRepositoryService(DB)
 	commEventRepo := repository.NewComEventsRepository(DB)
+	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
+	globalSettingRepo := repository.NewGeneralSettingRepository(DB)
 	filterfieldRepo := repository.NewAddSearchfilterService(DB)
 
-	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo, commEventRepo, filterfieldRepo)
+	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo,
+		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{

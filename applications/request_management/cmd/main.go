@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		// my local host
 		DBHost:     "localhost",
@@ -54,28 +53,29 @@ func main() {
 		fmt.Println("Database connection successful!")
 	}
 
-	if err := pgsql.Migrate(DB); err != nil {
-		log.Fatalf("Could not migrate database: %v", err)
+	// Call Migration from Library
+	err = pgsql.Migrate(DB)
+	if err != nil {
+		log.Fatalf("Database migration failed: %v", err)
 	}
+
+	// Optional: migrate your role/module/permission/RMP tables here manually if needed
+	// err = DB.AutoMigrate(&model.Role{}, &model.Module{}, &model.Permission{}, &model.RoleModulePermission{})
+
 	defer sqlDB.Close()
 
-	tempUserRepo := repository.NewUserserviceRepositoryService(DB)
-	orgRepo := repository.NewOrganizationRepositoryService(DB)
-	userRepo := repository.NewUserCRUDRepository(DB)
-	roleRepo := repository.NewRoleRepositoryService(DB)
+	requestRepo := repository.NewRequestRepository(DB)
+	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
 
-	s := service.NewService(tempUserRepo, orgRepo, userRepo, roleRepo)
-
-	httpHandlers := base.MakeHTTPHandler(s)
+	s := service.NewRequestService(requestRepo, orgSettingRepo)
+	endpoints := base.NewEndpoint(s)                // 💡 create Endpoints
+	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 
 	httpServer := http.Server{
-		Addr:    ":" + strconv.Itoa(8081),
+		Addr:    ":" + strconv.Itoa(8085),
 		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
-	fmt.Println("Info", "HTTP server started", "port", 8081)
-	err = httpServer.ListenAndServe()
-	if err != nil {
-		log.Fatalf("HTTP server failed: %v", err)
-	}
+	fmt.Println("HTTP server started on port", 8085)
+	log.Fatal(httpServer.ListenAndServe())
 }

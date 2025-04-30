@@ -34,17 +34,22 @@ type Service interface {
 }
 
 type service struct {
-	templateRepo     repository.TemplateRepositoryService
-	formRepo         repository.FormRepositoryService
-	formTypeRepo     repository.FormTypeRepositoryService
-	organizationRepo repository.OrganizationRepositoryService
-	commEventRepo    repository.CommEventRepositoryService
-	filterfieldRepo  repository.AddSearchfilterService
-	logger           kitlog.Logger
+	templateRepo      repository.TemplateRepositoryService
+	formRepo          repository.FormRepositoryService
+	formTypeRepo      repository.FormTypeRepositoryService
+	organizationRepo  repository.OrganizationRepositoryService
+	commEventRepo     repository.CommEventRepositoryService
+	filterfieldRepo   repository.AddSearchfilterService
+	logger            kitlog.Logger
+	orgSettingRepo    repository.OrganizationSettingRepository
+	globalSettingRepo repository.GeneralSettingRepository
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
-	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, filterfieldRepo repository.AddSearchfilterService) Service {
+	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
+	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService) Service {
 	fmt.Println("db interface connected")
-	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo, organizationRepo: organizationRepo, commEventRepo: commEventRepo, filterfieldRepo: filterfieldRepo}
+	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
+		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
+		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo}
 }

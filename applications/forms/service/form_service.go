@@ -12,6 +12,7 @@ import (
 	"github.com/PecozQ/aimx-library/common"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -159,13 +160,58 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	if status != "APPROVED" || status != "REJECTED" {
 		return &model.Response{Message: "Form updated successfully"}, nil
 	}
-	if status == "APPROVED" && org.Type == 1 {
-		orgreq.UserCount = 25
+
+	// to get all the general setting value
+	generalSettings, err := s.globalSettingRepo.GetAllGeneralSetting()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch general settings: %w", err)
+	}
+
+	if len(generalSettings) == 0 {
+		return nil, fmt.Errorf("no general settings found")
+	}
+
+	// Step 3: Use general settings
+	firstSetting := generalSettings[0]
+
+		if status == "APPROVED" && org.Type == 1 {
+		orgreq.UserCount = 0
+		// based on the general seting the max count is added for organization
+		orgreq.Metadata = map[string]interface{}{
+			"max_user_count": firstSetting.MaxUsersPerOrganization,
+		}
 		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
 		if err != nil {
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		fmt.Println("The organization is givn eas:", organizationId)
+
+		// Convert int unit to string
+		unitEnum := commonlib.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][firstSetting.MaxProjectDocketSizeUnit]
+		if unitEnum == "" {
+			unitEnum = "UNKNOWN"
+		}
+
+		// created org settings based on general setting value
+		orgSetting := &entities.OrganizationSetting{
+			OrganizationID:           organizationId.OrganizationID	,
+			DefaultDeletionDays:      firstSetting.DefaultDeletionDays,
+			DefaultArchivingDays:     firstSetting.DefaultArchivingDays,
+			MaxActiveProjects:        firstSetting.MaxActiveProjects,
+			MaxUsersPerOrganization:  firstSetting.MaxUsersPerOrganization,
+			MaxProjectDocketSize:     firstSetting.MaxProjectDocketSize,
+			MaxProjectDocketSizeUnit: unitEnum,
+			ScheduledEvaluationTime:  firstSetting.ScheduledEvaluationTime,
+		}
+	
+		// Step 6: Save organization setting
+		err = s.orgSettingRepo.CreateOrganizationSetting(ctx, orgSetting)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create organization setting: %w", err)
+		}
+	
+		fmt.Println("OrganizationSetting created successfully for organization ID:", organizationId)
+	
 	}
 	sendEmail(orgreq.Email, status)
 

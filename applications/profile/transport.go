@@ -3,21 +3,16 @@ package base
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 	"strings"
 
-
+	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/PecozQ/aimx-library/domain/entities"
-	"github.com/PecozQ/aimx-library/domain/dto"
-	"github.com/PecozQ/aimx-library/common"
-
-
 )
-
-
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r := gin.New()
@@ -33,22 +28,67 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	// api := r.Group("/api/v1/profile")
 	{
 		api.GET("/:id", gin.WrapF(httptransport.NewServer(
-            endpoints.GetUserProfileEndpoint,
-            decodeUUIDParam, // This will now extract 'id' from the URL path
-            encodeResponse,
-        ).ServeHTTP))
+			endpoints.GetUserProfileEndpoint,
+			decodeUUIDParam, // This will now extract 'id' from the URL path
+			encodeResponse,
+		).ServeHTTP))
 
-        // PUT: /profile
-        api.PUT("/", gin.WrapF(httptransport.NewServer(
-            endpoints.UpdateUserProfileEndpoint,
-            decodeUpdateUserRequest, // Decode body to user
-            encodeResponse,
-        ).ServeHTTP))
+		// PUT: /profile
+		api.PUT("/", gin.WrapF(httptransport.NewServer(
+			endpoints.UpdateUserProfileEndpoint,
+			decodeUpdateUserRequest, // Decode body to user
+			encodeResponse,
+		).ServeHTTP))
+	}
+
+	// General Setting APIs
+	general := router.Group("/general-setting")
+	{
+		general.POST("/", gin.WrapF(httptransport.NewServer(
+			endpoints.CreateGeneralSettingEndpoint,
+			decodeGeneralSettingRequest,
+			encodeResponse,
+		).ServeHTTP))
+
+		general.PUT("/", gin.WrapF(httptransport.NewServer(
+			endpoints.UpdateGeneralSettingEndpoint,
+			decodeGeneralSettingRequest,
+			encodeResponse,
+		).ServeHTTP))
+
+		general.GET("/", gin.WrapF(httptransport.NewServer(
+			endpoints.GetAllGeneralSettingEndpoint,
+			decodeEmptyRequest,
+			encodeResponse,
+		).ServeHTTP))
+	}
+
+	organization := router.Group("/organization")
+	{
+		organization.GET("/non-singhealth", gin.WrapF(httptransport.NewServer(
+			endpoints.GetAllNonSingHealthOrganizationsEndpoint,
+			decodeEmptyRequest,
+			encodeResponse,
+		).ServeHTTP))
+	}
+
+	settings := router.Group("/org-setting")
+	{
+		settings.POST("/update", gin.WrapF(httptransport.NewServer(
+			endpoints.UpdateOrganizationSettingByOrgIDEndpoint,
+			decodeUpdateOrganizationSettingRequest,
+			encodeResponse,
+		).ServeHTTP))
+
+		settings.POST("/get", gin.WrapF(httptransport.NewServer(
+			endpoints.GetOrganizationSettingByOrgIDEndpoint,
+			decodeGetOrganizationSettingRequest,
+			encodeResponse,
+		).ServeHTTP))
 	}
 
 	return r
 }
-
 
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 	// This assumes path ends with /:id
@@ -60,14 +100,13 @@ func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 	return idStr, nil // ← string is passed to endpoint
 }
 
-
 func decodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req dto.UpdateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to entity.User
 	user := &entities.User{
 		ID:       req.ID,
@@ -75,11 +114,40 @@ func decodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, e
 		UserName: req.UserName,
 		Country:  req.Country,
 	}
-	
+
 	return user, nil
 }
 
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
+}
+
+func decodeGeneralSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req dto.GeneralSettingRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func decodeUpdateOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req dto.OrganizationSettingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+	return &req, nil // Return pointer
+}
+
+func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req dto.OrganizationSettingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+	return &req, nil // Return pointer
 }

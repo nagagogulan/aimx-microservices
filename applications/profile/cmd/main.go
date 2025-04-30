@@ -17,11 +17,11 @@ import (
 func main() {
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		// my local host
-		DBHost:     "54.251.209.147",
+		DBHost:     "localhost",
 		DBPort:     5432,
-		DBUser:     "myappuser",
-		DBPassword: "SmartWork@123",
-		DBName:     "aimxdb",
+		DBUser:     "postgres",
+		DBPassword: "password@123",
+		DBName:     "localDb",
 
 		// rds
 		// DBHost:     "18.142.238.70",
@@ -41,11 +41,35 @@ func main() {
 		log.Fatalf("Error initializing DB: %v", err)
 	}
 
-	sqlDB, _ := DB.DB()
+	sqlDB, err := DB.DB()
+	if err != nil {
+		log.Fatalf("Error getting raw DB instance: %v", err)
+	}
+
+	err = sqlDB.Ping()
+	if err != nil {
+		log.Fatalf("Failed to ping the database: %v", err)
+	} else {
+		fmt.Println("Database connection successful!")
+	}
+
+	// Call Migration from Library
+	err = pgsql.Migrate(DB)
+	if err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
+
+	// Optional: migrate your role/module/permission/RMP tables here manually if needed
+	// err = DB.AutoMigrate(&model.Role{}, &model.Module{}, &model.Permission{}, &model.RoleModulePermission{})
+
 	defer sqlDB.Close()
 
 	userRepo := repository.NewUserCRUDRepository(DB)
-	s := service.NewService(userRepo)
+	generalSettingRepo := repository.NewGeneralSettingRepository(DB)
+	orgRepo := repository.NewOrganizationRepositoryService(DB)
+	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
+
+	s := service.NewService(userRepo, generalSettingRepo, orgRepo, orgSettingRepo)
 	endpoints := base.NewEndpoint(s)                // 💡 create Endpoints
 	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 

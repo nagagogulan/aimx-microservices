@@ -26,7 +26,7 @@ func init() {
 	fmt.Println("Current Working Directory:", dir)
 
 	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "./.env")
+	envPath := filepath.Join(dir, "../.env")
 
 	// Load the .env file from the correct path
 	err = godotenv.Load(envPath)
@@ -90,6 +90,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	}
 
 	accessSecret, err := generateJWTSecrets()
+	fmt.Println("accessSecret", accessSecret)
 	// Validate JWT and extract orgID
 	claims, err := middleware.ValidateJWT(token, accessSecret)
 	if err != nil {
