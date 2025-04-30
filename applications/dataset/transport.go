@@ -80,7 +80,6 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	}
 
 	// Create a new context with organization ID
-	ctx = context.WithValue(ctx, "UserId", claims.UserID)
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		return nil, err
@@ -102,6 +101,7 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	}
 
 	req := model.UploadRequest{
+		UserID:    claims.UserID,
 		FileType:  fileType,
 		FileName:  header.Filename,
 		Content:   bytes,
