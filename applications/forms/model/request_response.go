@@ -83,5 +83,12 @@ type SearchFormsResponse struct {
 	Forms []dto.FormDTO `json:"forms"`
 	Total int64         `json:"total"`
 }
-
+type SearchFormsByOrganizationRequest struct {
+	FormName string `json:"formname"`
+	Type     int    `json:"type"`
+	//	Param            ParamRequest `json:"searchparam"`
+}
+type SearchFormByNamesResponse struct {
+	Form *dto.FormDTO `json:"form"`
+}
 type ContextKey string

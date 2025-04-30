@@ -86,6 +86,36 @@ func (s *service) UpdateTemplate(ctx context.Context, id string, template entity
 		}
 		return nil, err
 	}
+	if updatedTemplate.Fields == nil {
+		return nil, fmt.Errorf("fields in created template are nil")
+	}
+
+	// Initialize labels
+	var labels []string
+	for _, field := range updatedTemplate.Fields {
+		if field.Filter { // Check "filterapplicable" field
+			// Ensure the label is not nil or empty
+			if field.Label != "" {
+				labels = append(labels, field.Label)
+			} else {
+				fmt.Println("Warning: Found empty label for field:", field)
+			}
+		}
+	}
+	filterFieldsRequest := &dto.FilterFieldRequest{
+		Type:         updatedTemplate.Type,
+		FilterFields: labels,
+	}
+
+	// Log the FilterFieldsRequest
+	fmt.Println("FilterFieldsRequest:", filterFieldsRequest)
+
+	// Call AddSearchfilterFields to add the filter fields
+	errs := s.filterfieldRepo.UpdateSearchfilterFields(ctx, filterFieldsRequest)
+	if errs != nil {
+		fmt.Println("Error in AddSearchfilterFields:", errs)
+		return nil, errcom.ErrNotFound
+	}
 	return updatedTemplate, nil
 }
 func (s *service) DeleteTemplate(ctx context.Context, id string) (*model.Response, error) {

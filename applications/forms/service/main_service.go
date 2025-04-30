@@ -26,6 +26,7 @@ type Service interface {
 
 	GetFilteredForms(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error)
 	GetFilterFieldsByType(ctx context.Context, filterType int) (*entity.FilterFieldRequest, error)
+	SearchFormsByOrgName(ctx context.Context, req model.SearchFormsByOrganizationRequest) (*dto.FormDTO, error)
 
 	ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error)
 	RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error)
