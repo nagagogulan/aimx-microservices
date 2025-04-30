@@ -174,7 +174,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	// Step 3: Use general settings
 	firstSetting := generalSettings[0]
 
-		if status == "APPROVED" && org.Type == 1 {
+	if status == "APPROVED" && org.Type == 1 {
 		orgreq.UserCount = 0
 		// based on the general seting the max count is added for organization
 		orgreq.Metadata = map[string]interface{}{
@@ -194,7 +194,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 
 		// created org settings based on general setting value
 		orgSetting := &entities.OrganizationSetting{
-			OrganizationID:           organizationId.OrganizationID	,
+			OrgID:                    organizationId.OrganizationID,
 			DefaultDeletionDays:      firstSetting.DefaultDeletionDays,
 			DefaultArchivingDays:     firstSetting.DefaultArchivingDays,
 			MaxActiveProjects:        firstSetting.MaxActiveProjects,
@@ -203,15 +203,15 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			MaxProjectDocketSizeUnit: unitEnum,
 			ScheduledEvaluationTime:  firstSetting.ScheduledEvaluationTime,
 		}
-	
+
 		// Step 6: Save organization setting
 		err = s.orgSettingRepo.CreateOrganizationSetting(ctx, orgSetting)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create organization setting: %w", err)
 		}
-	
+
 		fmt.Println("OrganizationSetting created successfully for organization ID:", organizationId)
-	
+
 	}
 	sendEmail(orgreq.Email, status)
 
