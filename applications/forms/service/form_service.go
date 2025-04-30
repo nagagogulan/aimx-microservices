@@ -52,15 +52,34 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	return createdForm, err
 }
 
-func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit int) (*model.GetFormResponse, error) {
+func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit, status int) (*model.GetFormResponse, error) {
 
-	formList, total, err := s.formRepo.GetFormByType(ctx, doc_type, page, limit)
+	formList, total, err := s.formRepo.GetFormByType(ctx, doc_type, page, limit, status)
 	if err != nil {
 		//commonlib.LogMessage(s.logger, commonlib.Error, "GetForms", err.Error(), err, "type", doc_type)
+		if errors.Is(err, errcom.ErrNotFound) {
+			return &model.GetFormResponse{
+				FormDtoData: make([]map[string]interface{}, 0), // empty slice, not nil
+				PagingInfo: model.PagingInfo{
+					TotalItems:  0,
+					CurrentPage: page,
+					TotalPage:   0,
+					ItemPerPage: limit,
+				},
+			}, nil
+		}
 		return nil, err
 	}
 	if commonlib.IsEmpty(formList) {
-		return nil, err
+		return &model.GetFormResponse{
+			FormDtoData: make([]map[string]interface{}, 0), // empty slice, not nil
+			PagingInfo: model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
+			},
+		}, nil
 	}
 	//var result []*model.FormDTO
 

@@ -26,6 +26,7 @@ type Template struct {
 
 type ParamRequest struct {
 	ID       string `json:"id"`
+	Status   int    `json:"status"`
 	Type     int    `json:"type"`
 	Page     int    `json:"page"`
 	PageSize int    `json:"pageSize"`
