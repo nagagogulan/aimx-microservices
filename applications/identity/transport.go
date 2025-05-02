@@ -10,6 +10,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
