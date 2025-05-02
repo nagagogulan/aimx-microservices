@@ -1,10 +1,16 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DOCKER_IMAGE_PREFIX: nagagogulan/aimx
+  SERVICES: "identity forms roles dataset profile user_management"
+
 build_microservices:
   stage: build
   image: golang:1.20-alpine
   services:
     - docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk add --no-cache git docker-cli make
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -19,6 +25,34 @@ build_microservices:
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd - > /dev/null
       done
-  tags:
-    - docker
-  # Ensure the runner is configured to allow privileged mode for this tag
+
+deploy_microservices:
+  stage: deploy
+  image: alpine:latest
+  only:
+    - dev
+  before_script:
+    - apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+  script:
+    - |
+      ssh $EC2_USER@$EC2_HOST "
+        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
+        for SERVICE in $SERVICES; do
+          echo \"Pulling \$SERVICE...\"
+          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
+        done &&
+        docker stop \$(docker ps -q) || true &&
+        docker rm \$(docker ps -a -q) || true &&
+        docker run -d -p 8081:8081 $DOCKER_IMAGE_PREFIX-identity:latest &&
+        docker run -d -p 8082:8082 $DOCKER_IMAGE_PREFIX-forms:latest &&
+        docker run -d -p 8083:8083 $DOCKER_IMAGE_PREFIX-roles:latest &&
+        docker run -d -p 8084:8084 $DOCKER_IMAGE_PREFIX-dataset:latest &&
+        docker run -d -p 8085:8085 $DOCKER_IMAGE_PREFIX-profile:latest &&
+        docker run -d -p 8086:8086 $DOCKER_IMAGE_PREFIX-user_management:latest
+      "
+
+
