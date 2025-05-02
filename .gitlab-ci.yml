@@ -1,4 +1,4 @@
-# stages:
+stages:
   - build
   - deploy
 
@@ -15,14 +15,15 @@ build_microservices:
     - apk add --no-cache git docker-cli make
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
-    - for SERVICE in $SERVICES; do
-        echo "Building $SERVICE...";
-        cd backend/applications/$SERVICE || exit 1;
-        go mod tidy;
-        go mod vendor;
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .;
-        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest;
-        cd - > /dev/null;
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building $SERVICE..."
+        cd backend/applications/$SERVICE || exit 1
+        go mod tidy
+        go mod vendor
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        cd - > /dev/null
       done
 
 deploy_microservices:
@@ -37,11 +38,12 @@ deploy_microservices:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
-    - ssh $EC2_USER@$EC2_HOST "
+    - |
+      ssh $EC2_USER@$EC2_HOST "
         docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
         for SERVICE in $SERVICES; do
-          echo \"Pulling \$SERVICE...\";
-          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest;
+          echo \"Pulling \$SERVICE...\"
+          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
         done &&
         docker stop \$(docker ps -q) || true &&
         docker rm \$(docker ps -a -q) || true &&
