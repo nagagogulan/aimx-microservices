@@ -21,10 +21,10 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 	r := gin.New()
 	endpoints := NewEndpoint(s)
 
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Next()
-	})
+	// r.Use(func(c *gin.Context) {
+	// 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	// 	c.Next()
+	// })
 
 	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
 
