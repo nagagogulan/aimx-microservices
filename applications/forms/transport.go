@@ -18,9 +18,9 @@ import (
 	"whatsdare.com/fullstack/aimx/backend/service"
 	"github.com/gofrs/uuid"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
-   "github.com/gin-contrib/cors"
 	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -136,13 +136,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	router.GET("/form/search", gin.WrapF(httptransport.NewServer(
-		endpoints.GetFormFilterEndpoint,
+		endpoints.FilterFormsEndpoint,
 		decodeSearchFormsRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
 	router.GET("/form/searchbyorg", gin.WrapF(httptransport.NewServer(
-		endpoints.GetFormFilterByOrgNameEndpoint,
+		endpoints.SearchFormsEndpoint,
 		decodeSearchFormsByOrgNameRequest,
 		encodeResponse,
 		options...,
@@ -295,8 +295,8 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	formName := strings.TrimSpace(r.URL.Query().Get("formname"))
 	typeStr := r.URL.Query().Get("type")
-	// pageStr := r.URL.Query().Get("page")
-	// pageSizeStr := r.URL.Query().Get("pageSize")
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("pageSize")
 
 	// Create the request object to store the decoded data
 	req := model.SearchFormsByOrganizationRequest{
@@ -314,15 +314,15 @@ func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (in
 	if typeInt > 0 {
 		req.Type = typeInt
 	}
-	// pages, err := strconv.Atoi(pageStr)
-	// if err == nil && pages > 0 {
-	// 	req.Param.Page = pages
-	// }
+	pages, err := strconv.Atoi(pageStr)
+	if err == nil && pages > 0 {
+		req.Page = pages
+	}
 
-	// pageSize, err := strconv.Atoi(pageSizeStr)
-	// if err == nil && pageSize > 0 {
-	// 	req.Param.PageSize = pageSize
-	// }
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err == nil && pageSize > 0 {
+		req.PageSize = pageSize
+	}
 
 	return req, nil
 }

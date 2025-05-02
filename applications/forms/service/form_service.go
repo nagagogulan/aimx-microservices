@@ -319,27 +319,157 @@ func sendEmail(receiverEmail string, status string) error {
 	return nil
 }
 
-func (s *service) GetFilteredForms(ctx context.Context, formType int, searchParam dto.SearchParam) ([]*dto.FormDTO, int64, error) {
-	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, searchParam)
+func (s *service) GetFilteredForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*[]model.GetFormResponse, error) {
+
+	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "GetFilteredForms", err.Error(), err, "FormType", formType)
-		return nil, 0, err
-	}
-	if len(forms) == 0 {
-		fmt.Println("No forms found")
-		return nil, 0, errcom.ErrNotFound
-	}
-	return forms, total, nil
-}
-func (s *service) SearchFormsByOrgName(ctx context.Context, req model.SearchFormsByOrganizationRequest) (*dto.FormDTO, error) {
-	// Fetch single form from the repository
-	form, err := s.formRepo.SearchFormsByOrganization(ctx, req.FormName, req.Type)
-	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "SearchFormsByOrgName", err.Error(), err, "Organization", req.FormName)
+		if errors.Is(err, errcom.ErrNotFound) {
+			response := []model.GetFormResponse{
+				{
+					FormDtoData: make([]map[string]interface{}, 0),
+					PagingInfo: model.PagingInfo{
+						TotalItems:  0,
+						CurrentPage: page,
+						TotalPage:   0,
+						ItemPerPage: limit,
+					},
+				},
+			}
+			return &response, nil
+		}
 		return nil, err
 	}
 
-	return &form, nil // Return pointer to single form
+	if len(forms) == 0 {
+		response := []model.GetFormResponse{
+			{
+				FormDtoData: make([]map[string]interface{}, 0),
+				PagingInfo: model.PagingInfo{
+					TotalItems:  0,
+					CurrentPage: page,
+					TotalPage:   0,
+					ItemPerPage: limit,
+				},
+			},
+		}
+		return &response, nil
+	}
+
+	var flattenedData []map[string]interface{}
+	for _, form := range forms {
+		entry := map[string]interface{}{
+			"id":              form.ID,
+			"organization_id": form.OrganizationID,
+			"status":          form.Status,
+			"created_at":      form.CreatedAt,
+			"updated_at":      form.UpdatedAt,
+			"type":            form.Type,
+			"like_count":      form.Flags.LikeCount,
+			"average_rating":  form.Flags.AverageRating,
+		}
+
+		for _, field := range form.Fields {
+			entry[field.Label] = field.Value
+		}
+
+		flattenedData = append(flattenedData, entry)
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	response := []model.GetFormResponse{
+		{
+			FormDtoData: flattenedData,
+			PagingInfo: model.PagingInfo{
+				TotalItems:  total,
+				CurrentPage: page,
+				TotalPage:   totalPages,
+				ItemPerPage: limit,
+			},
+		},
+	}
+
+	return &response, nil
+}
+
+func (s *service) SearchForms(ctx context.Context, name string, page int, limit int, searchType int) (*[]model.GetFormResponse, error) {
+	// Fetch forms from the repository
+	forms, total, err := s.formRepo.SearchForms(ctx, name, page, limit, searchType)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "SearchForms", err.Error(), err, "SearchType", searchType)
+		if errors.Is(err, errcom.ErrNotFound) {
+			// Return response with no forms found
+			response := []model.GetFormResponse{
+				{
+					FormDtoData: make([]map[string]interface{}, 0),
+					PagingInfo: model.PagingInfo{
+						TotalItems:  0, // TotalItems will be 0
+						CurrentPage: page,
+						TotalPage:   0,
+						ItemPerPage: limit,
+					},
+				},
+			}
+			return &response, nil
+		}
+		return nil, err
+	}
+
+	if len(forms) == 0 {
+		// Return response with no forms found
+		response := []model.GetFormResponse{
+			{
+				FormDtoData: make([]map[string]interface{}, 0),
+				PagingInfo: model.PagingInfo{
+					TotalItems:  0, // TotalItems will be 0
+					CurrentPage: page,
+					TotalPage:   0,
+					ItemPerPage: limit,
+				},
+			},
+		}
+		return &response, nil
+	}
+
+	// Prepare flattened data
+	var flattenedData []map[string]interface{}
+	for _, form := range forms {
+		entry := map[string]interface{}{
+			"id":              form.ID,
+			"organization_id": form.OrganizationID,
+			"status":          form.Status,
+			"created_at":      form.CreatedAt,
+			"updated_at":      form.UpdatedAt,
+			"type":            form.Type,
+			"like_count":      form.Flags.LikeCount,
+			"average_rating":  form.Flags.AverageRating,
+		}
+
+		// Flatten form fields
+		for _, field := range form.Fields {
+			entry[field.Label] = field.Value
+		}
+
+		// Append to flattened data
+		flattenedData = append(flattenedData, entry)
+	}
+
+	// Calculate total pages
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	response := []model.GetFormResponse{
+		{
+			FormDtoData: flattenedData,
+			PagingInfo: model.PagingInfo{
+				TotalItems:  total, // TotalItems is set to the total count of forms
+				CurrentPage: page,
+				TotalPage:   totalPages,
+				ItemPerPage: limit,
+			},
+		},
+	}
+
+	// Return the response with the forms and pagination details
+	return &response, nil
 }
 
 func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error) {

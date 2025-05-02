@@ -25,14 +25,14 @@ type Endpoints struct {
 	UpdateTemplateEndpoint  endpoint.Endpoint
 	DeleteTemplateEndpoint  endpoint.Endpoint
 
-	CreateFormEndpoint             endpoint.Endpoint
-	GetFormByTypeEndpoint          endpoint.Endpoint
-	CreateFormTypeEndpoint         endpoint.Endpoint
-	GetFormTypeEndpoint            endpoint.Endpoint
-	UpdateFormEndpoint             endpoint.Endpoint
-	GetFormFilterEndpoint          endpoint.Endpoint
-	GetFormFilterBYTypeEndpoint    endpoint.Endpoint
-	GetFormFilterByOrgNameEndpoint endpoint.Endpoint
+	CreateFormEndpoint          endpoint.Endpoint
+	GetFormByTypeEndpoint       endpoint.Endpoint
+	CreateFormTypeEndpoint      endpoint.Endpoint
+	GetFormTypeEndpoint         endpoint.Endpoint
+	UpdateFormEndpoint          endpoint.Endpoint
+	FilterFormsEndpoint         endpoint.Endpoint
+	GetFormFilterBYTypeEndpoint endpoint.Endpoint
+	SearchFormsEndpoint         endpoint.Endpoint
 
 	RatingDocketEndpoint    endpoint.Endpoint
 	ShortlistDocketEndpoint endpoint.Endpoint
@@ -50,14 +50,14 @@ func NewEndpoint(s service.Service) Endpoints {
 		DeleteTemplateEndpoint:  Middleware(makeDeleteTemplateEndpoint(s), commonlib.TimeoutMs),
 		// GetTemplateByIDEndpoint: Middleware(makeGetTemplateByIDEndpoint(s), common.TimeoutMs),
 
-		CreateFormEndpoint:             Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
-		GetFormByTypeEndpoint:          Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
-		CreateFormTypeEndpoint:         Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
-		GetFormTypeEndpoint:            Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
-		UpdateFormEndpoint:             Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
-		GetFormFilterEndpoint:          Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
-		GetFormFilterByOrgNameEndpoint: Middleware(makeSearchFormsByOrgNameEndpoint(s), commonlib.TimeoutMs),
-		GetFormFilterBYTypeEndpoint:    Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormEndpoint:          Middleware(makeCreateFormEndpoint(s), commonlib.TimeoutMs),
+		GetFormByTypeEndpoint:       Middleware(makeGetFormByTypeEndpoint(s), commonlib.TimeoutMs),
+		CreateFormTypeEndpoint:      Middleware(makeCreateFormTypeEndpoint(s), commonlib.TimeoutMs),
+		GetFormTypeEndpoint:         Middleware(makeGetFormTypeEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormEndpoint:          Middleware(makeUpdateFormEndpoint(s), commonlib.TimeoutMs),
+		FilterFormsEndpoint:         Middleware(makeFilterFormsEndpoint(s), commonlib.TimeoutMs),
+		SearchFormsEndpoint:         Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
+		GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
@@ -261,40 +261,29 @@ func makeGetFormTypeEndpoint(s service.Service) endpoint.Endpoint {
 		return formList, nil
 	}
 }
-func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
+func makeFilterFormsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.SearchFormsRequest)
 
-		forms, total, err := s.GetFilteredForms(ctx, req.Type, req.SearchParam)
+		formList, err := s.GetFilteredForms(ctx, req.Type, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
 		}
-		var flatForms []dto.FormDTO
-		for _, f := range forms {
-			if f != nil {
-				flatForms = append(flatForms, *f)
-			}
-		}
-		return &model.SearchFormsResponse{
-			Forms: flatForms,
-			Total: total,
-		}, nil
+		return formList, nil
 	}
 }
-func makeSearchFormsByOrgNameEndpoint(s service.Service) endpoint.Endpoint {
+func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.SearchFormsByOrganizationRequest)
 
 		fmt.Println("Searching for form by organization name:", req.FormName)
 
-		form, err := s.SearchFormsByOrgName(ctx, req)
+		forms, err := s.SearchForms(ctx, req.FormName, req.Page, req.PageSize, req.Type)
 		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
 		}
 
-		return &model.SearchFormByNamesResponse{
-			Form: form,
-		}, nil
+		return forms, nil
 	}
 }
 func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {

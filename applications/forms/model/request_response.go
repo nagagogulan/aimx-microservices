@@ -87,7 +87,8 @@ type SearchFormsResponse struct {
 type SearchFormsByOrganizationRequest struct {
 	FormName string `json:"formname"`
 	Type     int    `json:"type"`
-	//	Param            ParamRequest `json:"searchparam"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
 }
 type SearchFormByNamesResponse struct {
 	Form *dto.FormDTO `json:"form"`
