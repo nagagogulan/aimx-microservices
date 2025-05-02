@@ -17,11 +17,11 @@ import (
 func main() {
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		// my local host
-		DBHost:     "localhost",
+		DBHost:     "54.251.209.147",
 		DBPort:     5432,
-		DBUser:     "postgres",
-		DBPassword: "password@123",
-		DBName:     "localDb",
+		DBUser:     "myappuser",
+		DBPassword: "SmartWork@123",
+		DBName:     "aimxdb",
 
 		// rds
 		// DBHost:     "18.142.238.70",

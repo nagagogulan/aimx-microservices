@@ -317,6 +317,7 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	typeStr := r.URL.Query().Get("type")
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
+	status := r.URL.Query().Get("status")
 
 	req := &model.ParamRequest{}
 	typeInt, err := strconv.Atoi(typeStr)
@@ -337,6 +338,11 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 	if err == nil && pageSize > 0 {
 		req.PageSize = pageSize
 	}
+
+	intStatus, err := strconv.Atoi(status)
+	if err == nil {
+		req.Status = intStatus
+	}
 	// page, pageSize := commonlib.ParsePaginationParams(r)
 	// req.Page = page
 	// req.PageSize = pageSize
@@ -347,6 +353,7 @@ func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}
 
 	return nil, nil
 }
+
 func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request entities.Template
 

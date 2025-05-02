@@ -18,18 +18,18 @@ func main() {
 
 	DB, err := pgsql.InitDB(&pgsql.Config{
 		// my local host
-		DBHost:     "localhost",
-		DBPort:     5432,
-		DBUser:     "postgres",
-		DBPassword: "password@123",
-		DBName:     "localDb",
+		// DBHost:     "localhost",
+		// DBPort:     5432,
+		// DBUser:     "postgres",
+		// DBPassword: "password@123",
+		// DBName:     "localDb",
 
 		// rds
-		// DBHost:     "18.142.238.70",
-		// DBPort:     5432,
-		// DBUser:     "myappuser",
-		// DBPassword: "SmartWork@123",
-		// DBName:     "aimxdb",
+		DBHost:     "54.251.209.147",
+		DBPort:     5432,
+		DBUser:     "myappuser",
+		DBPassword: "SmartWork@123",
+		DBName:     "aimxdb",
 
 		// build dev
 		// DBHost:     "localhost",

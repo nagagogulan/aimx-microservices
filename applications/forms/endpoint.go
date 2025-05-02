@@ -228,7 +228,7 @@ func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		if commonlib.IsEmpty(req) {
 			return nil, errors.New("Type must be provided")
 		}
-		formList, err := s.GetFormByType(ctx, req.Type, req.Page, req.PageSize)
+		formList, err := s.GetFormByType(ctx, req.Type, req.Page, req.PageSize, req.Status)
 		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
 		}
