@@ -1,14 +1,23 @@
-script:
-  - echo "Listing current directory contents:"
-  - ls -al
-  - echo "Checking backend/applications structure:"
-  - ls -al backend/applications || echo "Directory not found"
-  - for SERVICE in $SERVICES; do
-      echo "Building $SERVICE...";
-      cd backend/applications/$SERVICE || exit 1;
-      go mod tidy;
-      go mod vendor;
-      docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .;
-      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest;
-      cd - > /dev/null;
-    done
+stages:
+  - build
+
+variables:
+  SERVICES: "service1 service2"  # Replace with actual services
+  DOCKER_IMAGE_PREFIX: "your-docker-image-prefix"
+
+build:
+  stage: build
+  script:
+    - echo "Listing current directory contents:"
+    - ls -al
+    - echo "Checking backend/applications structure:"
+    - ls -al backend/applications || echo "Directory not found"
+    - for SERVICE in $SERVICES; do
+        echo "Building $SERVICE...";
+        cd backend/applications/$SERVICE || exit 1;
+        go mod tidy;
+        go mod vendor;
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .;
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest;
+        cd - > /dev/null;
+      done
