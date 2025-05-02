@@ -18,13 +18,16 @@ func CORS(next http.Handler) http.Handler {
 		// Log incoming origin
 		fmt.Printf("CORS check - Origin: %s, Allowed: %v\n", origin, allowedOrigins[origin])
 
-		if allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Vary", "Origin")
-		}
+		// if allowedOrigins[origin] {
+		// 	fmt.Println("Inside the if statment", origin)
+
+		// 	w.Header().Set("Vary", "Origin")
+		// }
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true") // ✅ REQUIRED for tokens
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -34,4 +37,3 @@ func CORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

@@ -9,7 +9,6 @@ import (
 
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -19,13 +18,14 @@ import (
 func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 
 	r := gin.New()
+	r.Use(gin.Logger())
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-	}))
+	// r.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	// 	AllowCredentials: true,
+	// }))
 
 	// Base router group: /api/v1
 	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))

@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/joho/godotenv"
-	"github.com/gin-contrib/cors"
 )
 
 func init() {
@@ -38,13 +37,14 @@ func init() {
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r := gin.New()
+	r.Use(gin.Logger())
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-	}))
+	// r.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	// 	AllowCredentials: true,
+	// }))
 
 	// Base router group: /api/v1
 	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
@@ -122,7 +122,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	fmt.Printf("Println", claims)
 	return map[string]interface{}{
 		"organisation_id": claims.OrganizationID,
-		"user_id": claims.UserID,
+		"user_id":         claims.UserID,
 		"page":            page,
 		"limit":           limit,
 		"search":          search,
