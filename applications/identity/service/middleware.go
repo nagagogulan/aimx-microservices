@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
-	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -77,4 +77,3 @@ func CORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
