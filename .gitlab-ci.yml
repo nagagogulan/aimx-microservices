@@ -18,7 +18,7 @@ build_microservices:
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
-        cd backend/applications/$SERVICE || exit 1
+        cd applications/$SERVICE || exit 1
         go mod tidy
         go mod vendor
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
