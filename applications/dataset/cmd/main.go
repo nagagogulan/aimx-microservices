@@ -21,10 +21,8 @@ func main() {
 
 	// Set up HTTP server
 	httpServer := http.Server{
-		Addr: ":" + strconv.Itoa(8084),
-		Handler: service.CORS(
-			http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
-		),
+		Addr:    ":" + strconv.Itoa(8084),
+		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
 	}
 
 	fmt.Println("Info", "HTTP server started", "port", 8084)

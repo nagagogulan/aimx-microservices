@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gofrs/uuid"
-	"github.com/gin-contrib/cors"
-	"github.com/PecozQ/aimx-library/domain/dto"
 )
 
 func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
