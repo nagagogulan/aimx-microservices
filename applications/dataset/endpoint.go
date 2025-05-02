@@ -46,7 +46,7 @@ func makeUploadDataSet(s service.Service) endpoint.Endpoint {
 		//path, err := s.UploadFile(ctx, req.FilePath)
 		res, err := s.UploadFile(ctx, claims.UserID, req)
 		if err != nil {
-			return model.UploadResponse{Err: err.Error()}, nil
+			return nil, err
 		}
 		return model.UploadResponse{ID: res.ID, FilePath: res.FilePath}, nil
 	}
@@ -59,7 +59,7 @@ func makeGetDataSetfile(s service.Service) endpoint.Endpoint {
 		content, fileName, err := s.GetFile(ctx, req.FilePath)
 		contentType := http.DetectContentType(content)
 		if err != nil {
-			return model.UploadResponse{Err: err.Error()}, nil
+			return nil, err
 		}
 		return model.GetFileResponse{FileName: fileName, Content: content, ContentType: contentType}, nil
 	}
@@ -70,9 +70,7 @@ func makeDeleteFileEndpoint(s service.Service) endpoint.Endpoint {
 
 		err := s.DeleteFile(ctx, req)
 		if err != nil {
-			return model.DeleteFileResponse{
-				Error: err.Error(),
-			}, nil
+			return nil, err
 		}
 
 		return model.DeleteFileResponse{
