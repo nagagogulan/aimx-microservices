@@ -40,7 +40,10 @@ func init() {
 	}
 }
 func MakeHttpHandler(s service.Service) http.Handler {
-	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errorlib.EncodeError)}
+	options := []httptransport.ServerOption{httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+		return context.WithValue(ctx, "HTTPRequest", r)
+	}),
+		httptransport.ServerErrorEncoder(errorlib.EncodeError)}
 
 	r := gin.New()
 	endpoints := NewEndpoint(s)
@@ -74,11 +77,6 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	return r
 }
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	claims, err := decodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create a new context with organization ID
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -101,7 +99,6 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	}
 
 	req := model.UploadRequest{
-		UserID:    claims.UserID,
 		FileType:  fileType,
 		FileName:  header.Filename,
 		Content:   bytes,
@@ -150,6 +147,9 @@ func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
 	}
 
 	accessSecret, err := generateJWTSecrets()
+	if err != nil {
+		return nil, err
+	}
 	// Validate JWT and extract orgID
 	claims, err := middleware.ValidateJWT(token, accessSecret)
 	if err != nil {

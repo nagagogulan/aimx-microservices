@@ -2,9 +2,11 @@ package base
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/model"
@@ -33,8 +35,16 @@ func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endp
 func makeUploadDataSet(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.UploadRequest)
+		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+		if !ok {
+			return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		}
+		claims, err := decodeHeaderGetClaims(httpReq)
+		if err != nil {
+			return nil, err
+		}
 		//path, err := s.UploadFile(ctx, req.FilePath)
-		res, err := s.UploadFile(ctx, req)
+		res, err := s.UploadFile(ctx, claims.UserID, req)
 		if err != nil {
 			return model.UploadResponse{Err: err.Error()}, nil
 		}

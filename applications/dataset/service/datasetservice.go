@@ -16,7 +16,7 @@ import (
 
 type Service interface {
 	//UploadFile(ctx context.Context, filePath string) (string, error)
-	UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error)
+	UploadFile(ctx context.Context, UserID string, req model.UploadRequest) (*model.UploadResponse, error)
 	GetFile(ctx context.Context, filePath string) ([]byte, string, error)
 	//GetFileList(ctx context.Context) ([]string, error)
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
@@ -28,8 +28,8 @@ func NewService() Service {
 	return &fileService{}
 }
 
-func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
-	fmt.Println("user id cheing log", req.UserID)
+func (s *fileService) UploadFile(ctx context.Context, UserID string, req model.UploadRequest) (*model.UploadResponse, error) {
+	fmt.Println("user id cheing log", UserID)
 	id, err := uuid.NewV4()
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
@@ -60,7 +60,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		if !validImageExtensions[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png, .gif allowed")
 		}
-		filePath = fmt.Sprintf("images/%s/%s_%s", req.UserID, timestamp, req.UserID)
+		filePath = fmt.Sprintf("images/%s/%s_%s", UserID, timestamp, UserID)
 	case 2:
 		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
