@@ -54,5 +54,3 @@ deploy_microservices:
         docker run -d -p 8085:8085 $DOCKER_IMAGE_PREFIX-profile:latest &&
         docker run -d -p 8086:8086 $DOCKER_IMAGE_PREFIX-user_management:latest
       "
-
-
