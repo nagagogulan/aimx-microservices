@@ -17,6 +17,7 @@ import (
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 	//"github.com/gorilla/mux"
@@ -52,6 +53,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	// 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	// 	c.Next()
 	// })
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	router := r.Group(fmt.Sprintf("%s/%s", commonlib.BasePath, commonlib.Version))
 

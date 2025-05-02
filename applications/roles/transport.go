@@ -3,22 +3,29 @@ package base
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
-	"fmt"
 
+	"github.com/PecozQ/aimx-library/common"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gofrs/uuid"
-	"github.com/PecozQ/aimx-library/common"
-
+	"github.com/gin-contrib/cors"
 	"github.com/PecozQ/aimx-library/domain/dto"
 )
 
 func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 
 	r := gin.New()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	// Base router group: /api/v1
 	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
@@ -58,7 +65,6 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 
 	roleDetails := router.Group("/getRoleDetails")
 	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode))
-
 
 	return r
 }
@@ -149,7 +155,6 @@ func encode(_ context.Context, w http.ResponseWriter, response interface{}) erro
 	return json.NewEncoder(w).Encode(response)
 }
 
-
 func decodeFlexibleCreateRMP(_ context.Context, r *http.Request) (interface{}, error) {
 	var raw map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
@@ -222,4 +227,3 @@ func decodeFlexibleCreateRMP(_ context.Context, r *http.Request) (interface{}, e
 		PermissionID: finalPerm,
 	}, nil
 }
-
