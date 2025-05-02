@@ -119,9 +119,10 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	if limit < 1 {
 		limit = 10
 	}
-
+	fmt.Printf("Println", claims)
 	return map[string]interface{}{
-		"organization_id": claims.OrganizationID,
+		"organisation_id": claims.OrganizationID,
+		"user_id": claims.UserID,
 		"page":            page,
 		"limit":           limit,
 		"search":          search,

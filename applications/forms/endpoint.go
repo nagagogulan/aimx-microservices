@@ -37,6 +37,9 @@ type Endpoints struct {
 	RatingDocketEndpoint    endpoint.Endpoint
 	ShortlistDocketEndpoint endpoint.Endpoint
 	GetCommentsByIdEndpoint endpoint.Endpoint
+
+	DeactivateOrganizationEndpoint endpoint.Endpoint
+
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -59,6 +62,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
 		GetCommentsByIdEndpoint: Middleware(makeGetCommentsByIdEndpoint(s), commonlib.TimeoutMs),
+
+		DeactivateOrganizationEndpoint: Middleware(makeDeactivateOrganizationEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -310,4 +315,20 @@ func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		// Return the result as a response
 		return filterFields, nil
 	}
+}
+
+func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
+    return func(ctx context.Context, request interface{}) (interface{}, error) {
+        req := request.(dto.DeactivateOrganizationRequest)
+
+        // Call the service to deactivate the organization
+        err := s.DeactivateOrganization(ctx, req.OrganizationID)
+        if err != nil {
+            return nil, fmt.Errorf("failed to deactivate organization: %v", err)
+        }
+
+        return map[string]interface{}{
+            "message": "Organization deactivated successfully",
+        }, nil
+    }
 }

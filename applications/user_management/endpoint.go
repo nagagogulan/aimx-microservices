@@ -26,7 +26,7 @@ func NewEndpoint(s service.Service) Endpoints {
 func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(map[string]interface{})
-		orgIDRaw := req["organization_id"]
+		orgIDRaw := req["organisation_id"]
 		var orgID uuid.UUID
 		switch v := orgIDRaw.(type) {
 		case uuid.UUID:
@@ -40,11 +40,26 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		default:
 			return nil, fmt.Errorf("organization_id missing or invalid")
 		}
+		userIDRaw := req["user_id"]
+		var userID uuid.UUID
+		switch v := userIDRaw.(type) {
+		case uuid.UUID:
+			userID = v
+		case string:
+			parsed, err := uuid.FromString(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid user_id: %v", err)
+			}
+			userID = parsed
+		default:
+			return nil, fmt.Errorf("user_id missing or invalid")
+		}
+
 		page := req["page"].(int)
 		limit := req["limit"].(int)
 		search := req["search"].(string)
 
-		return s.ListUsers(ctx, orgID, page, limit, search)
+		return s.ListUsers(ctx, orgID,userID, page, limit, search)
 	}
 }
 
@@ -77,4 +92,3 @@ func makeDeactivateUserEndpoint(handler func(context.Context, uuid.UUID) error) 
 		}, nil
 	}
 }
-

@@ -80,6 +80,10 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if org.CurrentUserCount >= metadata.MaxUserCount {
 		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("maximum user limit reached for organization"))
 	}
+	if org.DeletedAt != nil {
+		// Check if the organization has been deactivated
+		return nil, NewCustomError(errcom.ErrUnauthorized, errors.New("organization has been deactivated, you do not have access to login"))
+	}
 
 	// Generate OTP & Secret Key
 	otp := generateOTP()
@@ -510,7 +514,7 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 		Email:          userData.Email,
 		UserID:         userData.ID,
 		OrganizationID: org.OrganizationID,
-		AtExpires:      time.Now().Add(15 * time.Minute).Unix(),
+		AtExpires:      time.Now().Add(2 * 24 * time.Minute).Unix(),
 		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 
@@ -534,7 +538,7 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 		Email:          newUser.Email,
 		UserID:         newUser.ID,
 		OrganizationID: org.OrganizationID,
-		AtExpires:      time.Now().Add(60 * time.Minute).Unix(),
+		AtExpires:      time.Now().Add(2 * 24 * time.Minute).Unix(),
 		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 

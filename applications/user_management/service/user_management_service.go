@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	ListUsers(ctx context.Context, orgID uuid.UUID, page, limit int, search string) ([]dto.UserResponseWithDetails, error)
+	ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string) (dto.PaginatedUsersResponse, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeactivateUser(ctx context.Context, id uuid.UUID) error
 }
@@ -23,8 +23,8 @@ func NewService(repo repository.UserCRUDService) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) ListUsers(ctx context.Context, orgID uuid.UUID, page, limit int, search string) ([]dto.UserResponseWithDetails, error) {
-	return s.repo.ListUsersByOrg(ctx, orgID, page, limit, search)
+func (s *service) ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string) (dto.PaginatedUsersResponse, error) {
+	return s.repo.ListUsersByOrg(ctx, orgID, userID, page, limit, search)
 }
 
 func (s *service) DeleteUser(ctx context.Context, id uuid.UUID) error {

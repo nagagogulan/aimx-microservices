@@ -9,6 +9,8 @@ import (
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kitlog "github.com/go-kit/log"
 	"whatsdare.com/fullstack/aimx/backend/model"
+	"github.com/gofrs/uuid"
+
 )
 
 type Service interface {
@@ -32,6 +34,9 @@ type Service interface {
 	RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error)
 
 	GetCommentsById(ctx context.Context, interactionId string) ([]*dto.CommentData, error)
+
+	DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error
+
 }
 
 type service struct {

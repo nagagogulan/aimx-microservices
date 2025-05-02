@@ -15,6 +15,8 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"whatsdare.com/fullstack/aimx/backend/model"
+	"github.com/gofrs/uuid"
+
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
@@ -459,4 +461,10 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 	}
 
 	return res, nil
+}
+
+
+func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error {
+    // Call repository method to deactivate organization
+    return s.organizationRepo.DeactivateOrganization(ctx, orgID)
 }
