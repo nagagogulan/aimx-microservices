@@ -8,19 +8,19 @@ variables:
 
 build_microservices:
   stage: build
-  image: golang:1.23-alpine
+  image: docker:20.10.16
   services:
-    - docker:dind
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - apk add --no-cache git docker-cli make
+    - apk add --no-cache git make
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
         cd applications/$SERVICE || exit 1
-        go mod tidy
-        go mod vendor
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd - > /dev/null
@@ -40,13 +40,16 @@ deploy_microservices:
   script:
     - |
       ssh $EC2_USER@$EC2_HOST "
+        echo 'Logging into Docker...'
         docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
         for SERVICE in $SERVICES; do
           echo \"Pulling \$SERVICE...\"
           docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
         done &&
+        echo 'Stopping existing containers...'
         docker stop \$(docker ps -q) || true &&
         docker rm \$(docker ps -a -q) || true &&
+        echo 'Starting containers...'
         docker run -d -p 8081:8081 $DOCKER_IMAGE_PREFIX-identity:latest &&
         docker run -d -p 8082:8082 $DOCKER_IMAGE_PREFIX-forms:latest &&
         docker run -d -p 8083:8083 $DOCKER_IMAGE_PREFIX-roles:latest &&
