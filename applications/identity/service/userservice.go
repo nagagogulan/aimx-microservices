@@ -82,7 +82,7 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	}
 	if org.DeletedAt != nil {
 		// Check if the organization has been deactivated
-		return nil, NewCustomError(errcom.ErrUnauthorized, errors.New("organization has been deactivated, you do not have access to login"))
+		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("organization has been deactivated, you do not have access to login"))
 	}
 
 	// Generate OTP & Secret Key
