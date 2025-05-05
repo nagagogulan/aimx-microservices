@@ -17,6 +17,7 @@ type Endpoints struct {
 	GetRequestsByOrgEndpoint    endpoint.Endpoint
 	GetAllRequestsEndpoint      endpoint.Endpoint
 	GetRequestByIDEndpoint endpoint.Endpoint
+	ListRequestTypes endpoint.Endpoint
 
 }
 
@@ -27,6 +28,8 @@ func NewEndpoint(s service.RequestService) Endpoints {
 		GetRequestsByOrgEndpoint:    MakeGetRequestsByOrgEndpoint(s),
 		GetAllRequestsEndpoint:      MakeGetAllRequestsEndpoint(s),
 		GetRequestByIDEndpoint: MakeGetRequestByIDEndpoint(s),
+		ListRequestTypes: makeListRequestTypesEndpoint(s),
+
 	}
 }
 
@@ -70,4 +73,17 @@ func MakeGetRequestByIDEndpoint(s service.RequestService) endpoint.Endpoint {
 
 func Middleware(ep endpoint.Endpoint, timeoutMs int) endpoint.Endpoint {
 	return ep // Add timeout middleware if needed
+}
+
+func makeListRequestTypesEndpoint(s service.RequestService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Call the service to get the list of request types
+		requestTypes, err := s.ListRequestTypes(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch request types: %v", err)
+		}
+		return dto.ListRequestTypesResponse{
+			RequestTypes: requestTypes,
+		}, nil
+	}
 }

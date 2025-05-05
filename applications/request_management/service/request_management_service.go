@@ -18,6 +18,7 @@ type RequestService interface {
     GetRequestsByOrg(ctx context.Context, orgID uuid.UUID) ([]*dto.RequestResponseDTO, error)
     GetAllRequests(ctx context.Context) ([]*dto.RequestResponseDTO, error)
     GetRequestByID(ctx context.Context, id uuid.UUID) (*dto.RequestResponseDTO, error)
+    ListRequestTypes(ctx context.Context) ([]dto.RequestTypeResponse, error)
 
 }
 
@@ -168,3 +169,16 @@ func mapToResponseDTOs(requests []entities.RequestManagement) []*dto.RequestResp
     }
     return list
 }
+
+func (s *requestService) ListRequestTypes(ctx context.Context) ([]dto.RequestTypeResponse, error) {
+    var response []dto.RequestTypeResponse
+    // Iterate through the ENUM_TO_HASH map for "RequestType"
+    for name, id := range common.ENUM_TO_HASH["RequestType"] {
+        response = append(response, dto.RequestTypeResponse{
+            Name: name,
+            ID:   id,
+        })
+    }
+    return response, nil
+}
+

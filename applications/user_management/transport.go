@@ -98,14 +98,12 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	}
 
 	accessSecret, err := generateJWTSecrets()
-	fmt.Println("accessSecret", accessSecret)
 	// Validate JWT and extract orgID
 	claims, err := middleware.ValidateJWT(token, accessSecret)
 	if err != nil {
-		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+		return nil, fmt.Errorf("invalid token: %v", err)
 	}
 
-	fmt.Println("claims", claims)
 	// Parse pagination and search
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
@@ -119,13 +117,25 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	if limit < 1 {
 		limit = 10
 	}
-	fmt.Printf("Println", claims)
+
+	// Parse filters from the request
+	filters := make(map[string]interface{})
+	filterParams := r.URL.Query().Get("filters")
+	if filterParams != "" {
+		// If filters are passed as query params, parse them
+		err := json.Unmarshal([]byte(filterParams), &filters)
+		if err != nil {
+			return nil, fmt.Errorf("invalid filters: %v", err)
+		}
+	}
+
 	return map[string]interface{}{
 		"organisation_id": claims.OrganizationID,
 		"user_id":         claims.UserID,
 		"page":            page,
 		"limit":           limit,
 		"search":          search,
+		"filters":         filters, // Include filters in the request
 	}, nil
 }
 

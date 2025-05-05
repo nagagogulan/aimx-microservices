@@ -65,6 +65,7 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 
 	roleDetails := router.Group("/getRoleDetails")
 	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode))
+	rmp.POST("/bulk-update", wrapEndpoint(endpoints.FlexibleBulkUpdateRMP, decodeFlexibleBulkUpdateRMP, encode)) // New endpoint
 
 	return r
 }
@@ -189,6 +190,78 @@ func decodeFlexibleCreateRMP(_ context.Context, r *http.Request) (interface{}, e
 		id, _ := uuid.FromString(rawPerms)
 		flatPerms = append(flatPerms, id)
 
+	case []interface{}:
+		if len(rawPerms) > 0 {
+			switch rawPerms[0].(type) {
+			case string:
+				// flat array
+				for _, item := range rawPerms {
+					id, _ := uuid.FromString(item.(string))
+					flatPerms = append(flatPerms, id)
+				}
+			case []interface{}:
+				// nested permission_id (by module)
+				for _, innerList := range rawPerms {
+					var group []uuid.UUID
+					for _, item := range innerList.([]interface{}) {
+						id, _ := uuid.FromString(item.(string))
+						group = append(group, id)
+					}
+					mappedPerms = append(mappedPerms, group)
+				}
+			}
+		}
+	default:
+		return nil, fmt.Errorf("invalid permission_id format")
+	}
+
+	var finalPerm interface{}
+	if len(mappedPerms) > 0 {
+		finalPerm = mappedPerms
+	} else {
+		finalPerm = flatPerms
+	}
+
+	return &dto.FlexibleCreateRMPRequest{
+		RoleID:       roleID,
+		ModuleIDs:    moduleIDs,
+		PermissionID: finalPerm,
+	}, nil
+}
+
+func decodeFlexibleBulkUpdateRMP(_ context.Context, r *http.Request) (interface{}, error) {
+	var raw map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	roleID, err := uuid.FromString(raw["role_id"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	var moduleIDs []uuid.UUID
+	switch v := raw["module_id"].(type) {
+	case string:
+		id, _ := uuid.FromString(v)
+		moduleIDs = append(moduleIDs, id)
+	case []interface{}:
+		for _, m := range v {
+			id, _ := uuid.FromString(m.(string))
+			moduleIDs = append(moduleIDs, id)
+		}
+	default:
+		return nil, fmt.Errorf("invalid module_id format")
+	}
+
+	// Handle permission_id
+	var flatPerms []uuid.UUID
+	var mappedPerms [][]uuid.UUID
+
+	switch rawPerms := raw["permission_id"].(type) {
+	case string:
+		id, _ := uuid.FromString(rawPerms)
+		flatPerms = append(flatPerms, id)
 	case []interface{}:
 		if len(rawPerms) > 0 {
 			switch rawPerms[0].(type) {

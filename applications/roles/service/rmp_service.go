@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/gofrs/uuid"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
+	"github.com/gofrs/uuid"
 )
 
 type RMPService interface {
@@ -16,7 +17,7 @@ type RMPService interface {
 	ListRMP(ctx context.Context) ([]dto.RMPResponse, error)
 	GetModulesAndPermissionsByRoleID(ctx context.Context, roleID uuid.UUID) (*dto.GroupedRMPResponse, error)
 	FlexibleBulkCreateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error)
-
+	FlexibleBulkUpdateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error)
 }
 
 type rmpService struct {
@@ -51,8 +52,11 @@ func (s *rmpService) GetModulesAndPermissionsByRoleID(ctx context.Context, roleI
 	return s.repo.GetModulesAndPermissionsByRoleID(ctx, roleID)
 }
 
-
 func (s *rmpService) FlexibleBulkCreateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error) {
 	return s.repo.FlexibleBulkCreateRMP(ctx, req)
 }
 
+func (s *rmpService) FlexibleBulkUpdateRMP(ctx context.Context, req *dto.FlexibleCreateRMPRequest) ([]dto.RMPResponse, error) {
+	fmt.Printf("Performing flexible bulk update with the request: %v\n", req)
+	return s.repo.FlexibleBulkUpdateRMP(ctx, req)
+}

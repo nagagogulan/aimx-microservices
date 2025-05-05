@@ -57,6 +57,12 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			decodeIDFromPath,
 			encodeResponse,
 		).ServeHTTP))
+
+		api.GET("/request-types", gin.WrapF(httptransport.NewServer(
+			endpoints.ListRequestTypes,
+			decodeEmptyRequest,
+			encodeResponse,
+		).ServeHTTP))
 	}
 
 	return r

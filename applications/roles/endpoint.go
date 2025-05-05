@@ -11,17 +11,17 @@ import (
 )
 
 type RoleEndpoints struct {
-	CreateRole     endpoint.Endpoint
-	GetRoleByID    endpoint.Endpoint
-	UpdateRole     endpoint.Endpoint
-	DeleteRole     endpoint.Endpoint
-	ListRoles      endpoint.Endpoint
+	CreateRole  endpoint.Endpoint
+	GetRoleByID endpoint.Endpoint
+	UpdateRole  endpoint.Endpoint
+	DeleteRole  endpoint.Endpoint
+	ListRoles   endpoint.Endpoint
 
-	CreateModule   endpoint.Endpoint
-	GetModuleByID  endpoint.Endpoint
-	UpdateModule   endpoint.Endpoint
-	DeleteModule   endpoint.Endpoint
-	ListModules    endpoint.Endpoint
+	CreateModule  endpoint.Endpoint
+	GetModuleByID endpoint.Endpoint
+	UpdateModule  endpoint.Endpoint
+	DeleteModule  endpoint.Endpoint
+	ListModules   endpoint.Endpoint
 
 	CreatePermission  endpoint.Endpoint
 	GetPermissionByID endpoint.Endpoint
@@ -29,14 +29,14 @@ type RoleEndpoints struct {
 	DeletePermission  endpoint.Endpoint
 	ListPermissions   endpoint.Endpoint
 
-	CreateRMP  endpoint.Endpoint
-	GetRMPByID endpoint.Endpoint
-	UpdateRMP  endpoint.Endpoint
-	DeleteRMP  endpoint.Endpoint
-	ListRMPs   endpoint.Endpoint
+	CreateRMP                        endpoint.Endpoint
+	GetRMPByID                       endpoint.Endpoint
+	UpdateRMP                        endpoint.Endpoint
+	DeleteRMP                        endpoint.Endpoint
+	ListRMPs                         endpoint.Endpoint
 	GetModulesAndPermissionsByRoleID endpoint.Endpoint
-	FlexibleBulkCreateRMP endpoint.Endpoint
-
+	FlexibleBulkCreateRMP            endpoint.Endpoint
+	FlexibleBulkUpdateRMP            endpoint.Endpoint
 }
 
 func NewRoleEndpoints(
@@ -68,18 +68,18 @@ func NewRoleEndpoints(
 		ListPermissions:   wrapListTyped(permissionService.ListPermissions),
 
 		// RMP
-		CreateRMP:  wrap(serviceWrapperTyped[dto.CreateRMPRequest, dto.RMPResponse](rmpService.CreateRMP)),
-		GetRMPByID: wrapUUID(serviceWrapperByUUID[dto.RMPResponse](rmpService.GetRMPByID)),
-		UpdateRMP:  wrap(serviceWrapperTyped[dto.UpdateRMPRequest, dto.RMPResponse](rmpService.UpdateRMP)),
-		DeleteRMP:  wrapUUIDOnly(rmpService.DeleteRMP),
-		ListRMPs:   wrapListTyped(rmpService.ListRMP),
+		CreateRMP:                        wrap(serviceWrapperTyped[dto.CreateRMPRequest, dto.RMPResponse](rmpService.CreateRMP)),
+		GetRMPByID:                       wrapUUID(serviceWrapperByUUID[dto.RMPResponse](rmpService.GetRMPByID)),
+		UpdateRMP:                        wrap(serviceWrapperTyped[dto.UpdateRMPRequest, dto.RMPResponse](rmpService.UpdateRMP)),
+		DeleteRMP:                        wrapUUIDOnly(rmpService.DeleteRMP),
+		ListRMPs:                         wrapListTyped(rmpService.ListRMP),
 		GetModulesAndPermissionsByRoleID: wrapUUIDStruct(rmpService.GetModulesAndPermissionsByRoleID),
-		FlexibleBulkCreateRMP: wrapListPointerTyped(rmpService.FlexibleBulkCreateRMP),
-
+		FlexibleBulkCreateRMP:            wrapListPointerTyped(rmpService.FlexibleBulkCreateRMP),
+		FlexibleBulkUpdateRMP:            wrapListPointerTyped(rmpService.FlexibleBulkUpdateRMP),
 	}
 }
 
-// Wrappers
+// WrappersACA
 
 func wrap(handler func(context.Context, interface{}) (interface{}, error)) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -162,4 +162,3 @@ func wrapListPointerTyped[Req any, Res any](f func(context.Context, *Req) ([]Res
 		return result, nil
 	}
 }
-
