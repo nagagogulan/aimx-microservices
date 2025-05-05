@@ -13,10 +13,9 @@ import (
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"whatsdare.com/fullstack/aimx/backend/model"
-	"github.com/gofrs/uuid"
-
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
@@ -323,7 +322,7 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, page int, 
 
 	forms, total, err := s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
 	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "GetFilteredForms", err.Error(), err, "FormType", formType)
+		// commonlib.LogMessage(s.logger, commonlib.Error, "GetFilteredForms", err.Error(), err, "FormType", formType)
 		if errors.Is(err, errcom.ErrNotFound) {
 			response := []model.GetFormResponse{
 				{
@@ -394,9 +393,11 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, page int, 
 
 func (s *service) SearchForms(ctx context.Context, name string, page int, limit int, searchType int) (*[]model.GetFormResponse, error) {
 	// Fetch forms from the repository
+	fmt.Println("*********************************", name)
 	forms, total, err := s.formRepo.SearchForms(ctx, name, page, limit, searchType)
 	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "SearchForms", err.Error(), err, "SearchType", searchType)
+		fmt.Println("++++++++++++++++++++++++++++++++++++++++++")
+		// commonlib.LogMessage(s.logger, commonlib.Error, "SearchForms", err.Error(), err, "SearchType", searchType)
 		if errors.Is(err, errcom.ErrNotFound) {
 			// Return response with no forms found
 			response := []model.GetFormResponse{
@@ -469,6 +470,94 @@ func (s *service) SearchForms(ctx context.Context, name string, page int, limit 
 	}
 
 	// Return the response with the forms and pagination details
+	return &response, nil
+}
+
+func (s *service) ListForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*[]model.GetFormResponse, error) {
+	var forms []dto.FormDTO
+	var total int64
+	var err error
+
+	// Decide between search or filter
+	// if strings.TrimSpace(searchParam.FormName) != "" {
+	// 	forms, total, err = s.formRepo.SearchForms(ctx, searchParam.FormName, page, limit, formType)
+	// } else {
+	// 	forms, total, err = s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
+	// }
+	fmt.Println("******************************", searchParam)
+	forms, total, err = s.formRepo.ListForms(ctx, formType, page, limit, searchParam)
+
+	if err != nil {
+		if errors.Is(err, errcom.ErrNotFound) {
+			emptyResponse := []model.GetFormResponse{
+				{
+					FormDtoData: make([]map[string]interface{}, 0),
+					PagingInfo: model.PagingInfo{
+						TotalItems:  0,
+						CurrentPage: page,
+						TotalPage:   0,
+						ItemPerPage: limit,
+					},
+				},
+			}
+			return &emptyResponse, nil
+		}
+		return nil, err
+	}
+
+	// Handle empty results
+	if len(forms) == 0 {
+		emptyResponse := []model.GetFormResponse{
+			{
+				FormDtoData: make([]map[string]interface{}, 0),
+				PagingInfo: model.PagingInfo{
+					TotalItems:  0,
+					CurrentPage: page,
+					TotalPage:   0,
+					ItemPerPage: limit,
+				},
+			},
+		}
+		return &emptyResponse, nil
+	}
+
+	// Flatten forms
+	flattenedData := make([]map[string]interface{}, 0, len(forms))
+	for _, form := range forms {
+		entry := map[string]interface{}{
+			"id":              form.ID,
+			"organization_id": form.OrganizationID,
+			"status":          form.Status,
+			"created_at":      form.CreatedAt,
+			"updated_at":      form.UpdatedAt,
+			"type":            form.Type,
+			"like_count":      form.Flags.LikeCount,
+			"average_rating":  form.Flags.AverageRating,
+		}
+		for _, field := range form.Fields {
+			entry[field.Label] = field.Value
+		}
+		flattenedData = append(flattenedData, entry)
+	}
+
+	// Calculate total pages
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	// Return as an array of response
+	response := []model.GetFormResponse{
+		{
+			FormDtoData: flattenedData,
+			PagingInfo: model.PagingInfo{
+				TotalItems:  total,
+				CurrentPage: page,
+				TotalPage:   totalPages,
+				ItemPerPage: limit,
+			},
+		},
+	}
 	return &response, nil
 }
 
@@ -593,8 +682,7 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 	return res, nil
 }
 
-
 func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error {
-    // Call repository method to deactivate organization
-    return s.organizationRepo.DeactivateOrganization(ctx, orgID)
+	// Call repository method to deactivate organization
+	return s.organizationRepo.DeactivateOrganization(ctx, orgID)
 }

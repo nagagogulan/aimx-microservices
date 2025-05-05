@@ -33,13 +33,13 @@ type Endpoints struct {
 	FilterFormsEndpoint         endpoint.Endpoint
 	GetFormFilterBYTypeEndpoint endpoint.Endpoint
 	SearchFormsEndpoint         endpoint.Endpoint
+	ListFormsEndpoint           endpoint.Endpoint
 
 	RatingDocketEndpoint    endpoint.Endpoint
 	ShortlistDocketEndpoint endpoint.Endpoint
 	GetCommentsByIdEndpoint endpoint.Endpoint
 
 	DeactivateOrganizationEndpoint endpoint.Endpoint
-
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -58,6 +58,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		FilterFormsEndpoint:         Middleware(makeFilterFormsEndpoint(s), commonlib.TimeoutMs),
 		SearchFormsEndpoint:         Middleware(makeSearchFormsEndpoint(s), commonlib.TimeoutMs),
 		GetFormFilterBYTypeEndpoint: Middleware(makeGetFilterFieldsByTypeEndpoint(s), commonlib.TimeoutMs),
+		ListFormsEndpoint:           Middleware(makeListFormsEndpoint(s), commonlib.TimeoutMs),
 
 		ShortlistDocketEndpoint: Middleware(makeShortlistDocketEndpoint(s), commonlib.TimeoutMs),
 		RatingDocketEndpoint:    Middleware(makeRatingDocketEndpoint(s), commonlib.TimeoutMs),
@@ -272,6 +273,18 @@ func makeFilterFormsEndpoint(s service.Service) endpoint.Endpoint {
 		return formList, nil
 	}
 }
+
+func makeListFormsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(model.SearchFormsRequest)
+
+		formList, err := s.ListForms(ctx, req.Type, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
+		if err != nil {
+			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
+		}
+		return formList, nil
+	}
+}
 func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.SearchFormsByOrganizationRequest)
@@ -280,7 +293,7 @@ func makeSearchFormsEndpoint(s service.Service) endpoint.Endpoint {
 
 		forms, err := s.SearchForms(ctx, req.FormName, req.Page, req.PageSize, req.Type)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+			return nil, err
 		}
 
 		return forms, nil
@@ -307,17 +320,17 @@ func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
 }
 
 func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
-    return func(ctx context.Context, request interface{}) (interface{}, error) {
-        req := request.(dto.DeactivateOrganizationRequest)
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(dto.DeactivateOrganizationRequest)
 
-        // Call the service to deactivate the organization
-        err := s.DeactivateOrganization(ctx, req.OrganizationID)
-        if err != nil {
-            return nil, fmt.Errorf("failed to deactivate organization: %v", err)
-        }
+		// Call the service to deactivate the organization
+		err := s.DeactivateOrganization(ctx, req.OrganizationID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to deactivate organization: %v", err)
+		}
 
-        return map[string]interface{}{
-            "message": "Organization deactivated successfully",
-        }, nil
-    }
+		return map[string]interface{}{
+			"message": "Organization deactivated successfully",
+		}, nil
+	}
 }

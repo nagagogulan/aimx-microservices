@@ -8,9 +8,8 @@ import (
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kitlog "github.com/go-kit/log"
-	"whatsdare.com/fullstack/aimx/backend/model"
 	"github.com/gofrs/uuid"
-
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Service interface {
@@ -29,6 +28,7 @@ type Service interface {
 	GetFilteredForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*[]model.GetFormResponse, error)
 	GetFilterFieldsByType(ctx context.Context, filterType int) (*entity.FilterFieldRequest, error)
 	SearchForms(ctx context.Context, name string, page int, limit int, searchType int) (*[]model.GetFormResponse, error)
+	ListForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*[]model.GetFormResponse, error)
 
 	ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error)
 	RateDocket(ctx context.Context, userId string, dto dto.RatingDTO) (bool, error)
@@ -36,7 +36,6 @@ type Service interface {
 	GetCommentsById(ctx context.Context, interactionId string) ([]*dto.CommentData, error)
 
 	DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error
-
 }
 
 type service struct {
