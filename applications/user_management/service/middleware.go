@@ -55,6 +55,7 @@ func CORS(next http.Handler) http.Handler {
 		allowedOrigins := map[string]bool{
 			"http://localhost:3000":      true,
 			"http://54.251.209.147:3000": true,
+			"http://13.229.196.7:3000":   true,
 		}
 
 		fmt.Printf("CORS check - Origin: %s, Allowed: %v\n", origin, allowedOrigins[origin])

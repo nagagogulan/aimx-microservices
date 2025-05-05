@@ -16,7 +16,6 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
 	"whatsdare.com/fullstack/aimx/backend/service"
-	"github.com/gofrs/uuid"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -59,7 +58,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	// })
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -177,7 +176,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 
 	router.PUT("organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
 		endpoints.DeactivateOrganizationEndpoint,
-		decodeDeactivateOrganizationRequest,  // This uses gin.Context, not http.Request
+		decodeDeactivateOrganizationRequest, // This uses gin.Context, not http.Request
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -426,26 +425,23 @@ func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (i
 }
 
 func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-    // Extract the organization_id from the URL path using http.Request
-    orgIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/organization/deactivate/") // Extract organization_id from path
-    
-    if orgIDStr == "" {
-        return nil, fmt.Errorf("organization_id is required")
-    }
+	// Extract the organization_id from the URL path using http.Request
+	orgIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/organization/deactivate/") // Extract organization_id from path
 
-    // Convert the string to UUID
-    orgID, err := uuid.FromString(orgIDStr)
-    if err != nil {
-        return nil, fmt.Errorf("invalid organization ID: %v", err)
-    }
+	if orgIDStr == "" {
+		return nil, fmt.Errorf("organization_id is required")
+	}
 
-    return dto.DeactivateOrganizationRequest{
-        OrganizationID: orgID,
-    }, nil
+	// Convert the string to UUID
+	orgID, err := uuid.FromString(orgIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid organization ID: %v", err)
+	}
+
+	return dto.DeactivateOrganizationRequest{
+		OrganizationID: orgID,
+	}, nil
 }
-
-
-
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

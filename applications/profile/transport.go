@@ -8,18 +8,18 @@ import (
 	"strings"
 
 	"github.com/PecozQ/aimx-library/common"
-	"github.com/gin-contrib/cors"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r := gin.New()
-	
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
