@@ -112,9 +112,9 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 		Content:   bytes,
 		Extension: extension, // <-- add this field to your UploadRequest struct
 	}
-	status := r.FormValue("status")
-	if status != "" {
-		req.FormType = status
+	FormType := r.FormValue("FormType")
+	if FormType != "" {
+		req.FormType = FormType
 	}
 
 	// Return the request object with file_path

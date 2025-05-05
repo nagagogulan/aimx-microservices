@@ -35,16 +35,24 @@ func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endp
 func makeUploadDataSet(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.UploadRequest)
-		httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
-		if !ok {
-			return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+		if req.FormType != "IMAGE" {
+			httpReq, ok := ctx.Value("HTTPRequest").(*http.Request)
+			if !ok {
+				return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
+			}
+			claims, err := decodeHeaderGetClaims(httpReq)
+			if err != nil {
+				return nil, err
+			}
+			res, err := s.UploadFile(ctx, claims.UserID, req)
+			if err != nil {
+				return nil, err
+			}
+			return model.UploadResponse{ID: res.ID, FilePath: res.FilePath}, nil
 		}
-		claims, err := decodeHeaderGetClaims(httpReq)
-		if err != nil {
-			return nil, err
-		}
+
 		//path, err := s.UploadFile(ctx, req.FilePath)
-		res, err := s.UploadFile(ctx, claims.UserID, req)
+		res, err := s.UploadFile(ctx, "", req)
 		if err != nil {
 			return nil, err
 		}
