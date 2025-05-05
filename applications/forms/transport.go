@@ -15,6 +15,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
+	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"github.com/gin-contrib/cors"
