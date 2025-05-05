@@ -16,6 +16,8 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
 	"whatsdare.com/fullstack/aimx/backend/service"
+	"github.com/gofrs/uuid"
+
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
