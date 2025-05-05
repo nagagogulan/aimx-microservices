@@ -93,7 +93,7 @@ func main() {
 	// Close the DB connection when done (deferred)
 	defer sqlDB.Close()
 
-	uri := "mongodb://54.251.209.147:27017" // replace with your MongoDB URI
+	uri := "mongodb://13.229.196.7:27017" // replace with your MongoDB URI
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
