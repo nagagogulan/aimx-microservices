@@ -3,19 +3,19 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  DOCKER_HOST: tcp://docker:2375
+  DOCKER_HOST: tcp://docker:2375  # Docker-in-Docker mode
   DOCKER_TLS_CERTDIR: ""  # Disable TLS to work with docker:dind
 
 services:
-  - docker:dind
+  - docker:dind  # Docker daemon for Docker-in-Docker mode
 
 build_backend:
   stage: build
-  image: docker:latest  # Docker is available here
+  image: docker:latest  # Use Docker image, which already has Docker CLI
   tags:
-    - docker
+    - docker  # Make sure your runner is tagged with 'docker' for this to work
   before_script:
-    - apk add --no-cache bash  # Only needed if your script uses bash
+    - apk add --no-cache bash  # Only needed if your script uses bash (default shell)
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - for SERVICE in identity forms roles dataset profile user_management; do
@@ -26,7 +26,8 @@ build_backend:
         cd - > /dev/null;
       done
   only:
-    - dev
+    - dev  # This job will only run on the 'dev' branch
+
 
 
 
