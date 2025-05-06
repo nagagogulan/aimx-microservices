@@ -1,47 +1,25 @@
-stages:
-  - build
-  - deploy
-
-variables:
-  DOCKER_IMAGE: nagagogulan/aimx-backend  # Adjust this as needed
-
 build:
   stage: build
   tags:
     - docker
-  image: golang:1.23-alpine  # Replace with your backend language/image
   before_script:
-    # Install Docker inside the container (if required)
-    - apk update && apk add --no-cache docker-cli
+    - apt-get update && apt-get install -y docker.io
     - export DOCKER_HOST="unix:///var/run/docker.sock"
-  script:
-    - echo "Building Docker image for the backend"
-    - docker build -t $DOCKER_IMAGE:latest .
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - docker push $DOCKER_IMAGE:latest
-  only:
-    - dev  # Or your desired branch
 
-deploy:
-  stage: deploy
-  tags:
-    - docker
-  image: golang:1.23-alpine  # Replace with your backend language/image
-  before_script:
-    - apk update && apk add --no-cache openssh-client docker-cli
-    - eval $(ssh-agent -s)
-    - echo "$EC2_SSH_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
   script:
-    - >
-      ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
-      echo '$DOCKER_PASSWORD' | docker login --username '$DOCKER_USERNAME' --password-stdin &&
-      docker pull $DOCKER_IMAGE:latest &&
-      (docker stop app || true) &&
-      (docker rm app || true) &&
-      docker run -d --name app -p 8080:8080 $DOCKER_IMAGE:latest
-      "
-  only:
-    - dev  # Or your desired branch
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building $SERVICE..."
+        cd applications/$SERVICE || exit 1
+        
+        # Run go mod tidy and go mod vendor
+        echo "Running go mod tidy and go mod vendor for $SERVICE..."
+        go mod tidy
+        go mod vendor
+        
+        # Build Docker image
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        
+        cd - > /dev/null
+      done
