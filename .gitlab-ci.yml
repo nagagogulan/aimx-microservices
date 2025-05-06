@@ -4,15 +4,18 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""  # Disable TLS for simplicity in CI
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS to work with docker:dind
 
+services:
+  - docker:dind
 
 build_backend:
   stage: build
-  image: golang:1.23.1
+  image: docker:latest  # Docker is available here
   tags:
     - docker
   before_script:
+    - apk add --no-cache bash  # Only needed if your script uses bash
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - for SERVICE in identity forms roles dataset profile user_management; do
@@ -24,6 +27,7 @@ build_backend:
       done
   only:
     - dev
+
 
 
 # stages:
