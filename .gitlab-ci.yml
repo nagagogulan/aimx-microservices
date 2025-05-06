@@ -15,16 +15,26 @@ build:
   before_script:
     - apk add --no-cache docker-cli
     - export DOCKER_HOST="unix:///var/run/docker.sock"
+  
   script:
+  - echo "Listing all files in the repository:"
+  - ls -R
+  - echo "Listing contents of backend directory:"
+  - ls backend
+  - echo "Listing contents of backend/applications directory:"
+  - ls backend/applications
+  - echo "Now trying to cd into the identity directory:"
+  - cd backend/applications/identity || exit 1  # Exit if this directory doesn't exist
   - |
     for SERVICE in $SERVICES; do
       echo "Building $SERVICE..."
-      ls -l backend/applications/
-      cd backend/applications/$SERVICE || exit 1
+      ls -l backend/applications/  # Ensure contents are visible for each build
+      cd backend/applications/$SERVICE || exit 1  # Exit if the directory doesn't exist
       docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
       docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      cd - > /dev/null
+      cd - > /dev/null  # Return to previous directory silently
     done
+
 
 deploy_microservices:
   stage: deploy
