@@ -22,17 +22,25 @@ build:
   - echo "Listing contents of applications directory:"
   - ls applications
   - echo "Now trying to cd into the identity directory:"
-  - cd applications/identity || exit 1  # Ensure it exits on failure
+  - cd applications/identity || exit 1  # Ensure the directory exists and exit if not
+  - echo "Building services..."
   - |
     for SERVICE in $SERVICES; do
       echo "Building $SERVICE..."
-      echo "Listing contents of applications/$SERVICE directory:"
-      ls -l applications/$SERVICE || exit 1  # Ensure the service directory exists
-      cd applications/$SERVICE || exit 1  # Change into the service directory
-      docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      cd - > /dev/null  # Return to previous directory silently
+      SERVICE_PATH="applications/$SERVICE"
+      if [ -d "$SERVICE_PATH" ]; then
+        echo "Listing contents of $SERVICE_PATH directory:"
+        ls -l $SERVICE_PATH || exit 1  # Ensure the service directory exists
+        cd $SERVICE_PATH || exit 1  # Change into the service directory
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        cd - > /dev/null  # Return to previous directory silently
+      else
+        echo "$SERVICE_PATH directory does not exist!"  # Handle the missing directory
+        exit 1
+      fi
     done
+
 
 
 
