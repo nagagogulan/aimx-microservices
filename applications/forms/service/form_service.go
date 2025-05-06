@@ -473,7 +473,7 @@ func (s *service) SearchForms(ctx context.Context, name string, page int, limit 
 	return &response, nil
 }
 
-func (s *service) ListForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*[]model.GetFormResponse, error) {
+func (s *service) ListForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*model.GetFormResponse, error) {
 	var forms []dto.FormDTO
 	var total int64
 	var err error
@@ -489,26 +489,8 @@ func (s *service) ListForms(ctx context.Context, formType int, page int, limit i
 
 	if err != nil {
 		if errors.Is(err, errcom.ErrNotFound) {
-			emptyResponse := []model.GetFormResponse{
-				{
-					FormDtoData: make([]map[string]interface{}, 0),
-					PagingInfo: model.PagingInfo{
-						TotalItems:  0,
-						CurrentPage: page,
-						TotalPage:   0,
-						ItemPerPage: limit,
-					},
-				},
-			}
-			return &emptyResponse, nil
-		}
-		return nil, err
-	}
-
-	// Handle empty results
-	if len(forms) == 0 {
-		emptyResponse := []model.GetFormResponse{
-			{
+			// Returning empty response if not found
+			emptyResponse := &model.GetFormResponse{
 				FormDtoData: make([]map[string]interface{}, 0),
 				PagingInfo: model.PagingInfo{
 					TotalItems:  0,
@@ -516,9 +498,25 @@ func (s *service) ListForms(ctx context.Context, formType int, page int, limit i
 					TotalPage:   0,
 					ItemPerPage: limit,
 				},
+			}
+			return emptyResponse, nil
+		}
+		return nil, err
+	}
+
+	// Handle empty results
+	if len(forms) == 0 {
+		// Returning empty response if no forms are found
+		emptyResponse := &model.GetFormResponse{
+			FormDtoData: make([]map[string]interface{}, 0),
+			PagingInfo: model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
 			},
 		}
-		return &emptyResponse, nil
+		return emptyResponse, nil
 	}
 
 	// Flatten forms
@@ -542,23 +540,22 @@ func (s *service) ListForms(ctx context.Context, formType int, page int, limit i
 
 	// Calculate total pages
 	totalPages := 0
-	if limit > 0 {
+	if total > 0 && limit > 0 {
 		totalPages = int(math.Ceil(float64(total) / float64(limit)))
 	}
 
-	// Return as an array of response
-	response := []model.GetFormResponse{
-		{
-			FormDtoData: flattenedData,
-			PagingInfo: model.PagingInfo{
-				TotalItems:  total,
-				CurrentPage: page,
-				TotalPage:   totalPages,
-				ItemPerPage: limit,
-			},
+	// Return as a pointer to response
+	response := &model.GetFormResponse{
+		FormDtoData: flattenedData,
+		PagingInfo: model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
 		},
 	}
-	return &response, nil
+
+	return response, nil
 }
 
 func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.ShortListDTO) (bool, error) {
