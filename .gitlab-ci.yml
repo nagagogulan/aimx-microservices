@@ -16,24 +16,27 @@ build:
     - apk add --no-cache docker-cli
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script: |
-    echo "SERVICES: $SERVICES"
-    export SERVICES=$(echo $SERVICES | tr -s ' ' '\n')
-    for SERVICE in $SERVICES; do
-      echo "Processing service: $SERVICE"
+  echo "SERVICES: $SERVICES"
+  # Convert the services into a list (one per line)
+  export SERVICES=$(echo $SERVICES | tr -s ' ' '\n')
+
+  # List available services in the applications directory
+  AVAILABLE_SERVICES=$(ls -1 applications)
+  echo "Available services: $AVAILABLE_SERVICES"
+
+  for SERVICE in $SERVICES; do
+    if echo "$AVAILABLE_SERVICES" | grep -q "^$SERVICE$"; then
+      echo "Building and deploying service: $SERVICE"
       SERVICE_PATH="applications/$SERVICE"
-      echo "Service path: $SERVICE_PATH"
-      if [ -d "$SERVICE_PATH" ]; then
-        echo "Listing contents of $SERVICE_PATH directory:"
-        ls -l "$SERVICE_PATH"
-        cd "$SERVICE_PATH"
-        docker build -t "$DOCKER_IMAGE_PREFIX-$SERVICE:latest" .
-        docker push "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
-        cd - > /dev/null
-      else
-        echo "$SERVICE_PATH directory does not exist!"
-        exit 1
-      fi
-    done
+      cd "$SERVICE_PATH"
+      docker build -t "$DOCKER_IMAGE_PREFIX-$SERVICE:latest" .
+      docker push "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
+      cd - > /dev/null
+    else
+      echo "$SERVICE does not exist in the applications directory. Skipping..."
+    fi
+  done
+
 
 deploy_microservices:
   stage: deploy
