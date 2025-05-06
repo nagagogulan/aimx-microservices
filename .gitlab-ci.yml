@@ -8,7 +8,7 @@ variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
   GITHUB_USERNAME: "Nagagogulan2"
-  GITHUB_TOKEN: "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"
+  GITHUB_TOKEN: "Twilight_8wave#Secure"
 
 build:
   stage: build
