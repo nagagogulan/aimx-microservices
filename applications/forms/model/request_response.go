@@ -94,3 +94,13 @@ type SearchFormByNamesResponse struct {
 	Form *dto.FormDTO `json:"form"`
 }
 type ContextKey string
+type SearchParam struct {
+	Page   int            `json:"page"`
+	Size   int            `json:"size"`
+	Filter []Filterfields `json:"filter"`
+}
+
+type Filterfields struct {
+	Fields string `json:"fields"` // e.g. "Organization Name"
+	Value  string `json:"value"`  // e.g. "ORG"
+}

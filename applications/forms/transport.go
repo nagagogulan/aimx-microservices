@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -178,6 +179,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	router.PUT("organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
 		endpoints.DeactivateOrganizationEndpoint,
 		decodeDeactivateOrganizationRequest, // This uses gin.Context, not http.Request
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	router.GET("/form/listform", gin.WrapF(httptransport.NewServer(
+		endpoints.ListFormsEndpoint,
+		decodeListFormsRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -422,6 +429,56 @@ func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (i
 	if req.Type < 0 {
 		return nil, fmt.Errorf("either 'id' or 'type' must be provided")
 	}
+	return req, nil
+}
+func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req model.SearchFormsRequest
+
+	// Get raw query params
+	query := r.URL.Query()
+
+	// Basic values
+	formName := strings.TrimSpace(r.URL.Query().Get("formname"))
+	formType, _ := strconv.Atoi(strings.TrimSpace(query.Get("type")))
+	page, _ := strconv.Atoi(strings.TrimSpace(query.Get("page")))
+	pageSize, _ := strconv.Atoi(strings.TrimSpace(query.Get("pageSize")))
+
+	// // Parse dynamic filters from query parameters
+	// filterFields := query["filter_fields"]
+	// filterValues := query["filter_value"]
+
+	// var filters []dto.FilterField
+	// for i := range filterFields {
+	// 	if i < len(filterValues) {
+	// 		filters = append(filters, dto.FilterField{
+	// 			Field: filterFields[i],
+	// 			Value: filterValues[i],
+	// 		})
+	// 	}
+	//}
+	var filters []dto.FilterField
+	if filterRaw := query.Get("filter"); filterRaw != "" {
+		decoded, err := url.QueryUnescape(filterRaw) // unescape if URL-encoded
+		if err != nil {
+			return nil, fmt.Errorf("invalid filter encoding: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(decoded), &filters); err != nil {
+			return nil, fmt.Errorf("invalid filter JSON: %w", err)
+		}
+	}
+
+	// Construct final request
+	req = model.SearchFormsRequest{
+		Type: formType,
+		SearchParam: dto.SearchParam{
+			Page:     page,
+			PageSize: pageSize,
+			Filter:   filters,
+			FormName: formName,
+		},
+	}
+
 	return req, nil
 }
 
