@@ -7,6 +7,8 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
+  GITHUB_USERNAME: "your_github_username"
+  GITHUB_TOKEN: "your_github_token"
 
 build:
   stage: build
@@ -15,15 +17,13 @@ build:
   before_script:
     - apk update && apk add git docker
     - export DOCKER_HOST="unix:///var/run/docker.sock"
+    # Configure GitHub authentication for Go
+    - git config --global url."https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
   script:
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
         cd applications/$SERVICE || exit 1
-        
-        # Authenticate with GitHub (if needed)
-        git config --global user.name "$GITHUB_USERNAME"
-        git config --global user.password "$GITHUB_TOKEN"
         
         # Run go mod tidy and go mod vendor
         echo "Running go mod tidy and go mod vendor for $SERVICE..."
