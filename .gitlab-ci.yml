@@ -3,28 +3,27 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity forms roles dataset profile user_management"
 
-build_microservices:
+build_backend:
   stage: build
   tags:
     - docker
-  image: docker:20.10.16
-  services:
-    - docker:20.10.16-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  image: golang:1.21  # Use a Golang image instead of Node.js
   before_script:
-    - apk add --no-cache git make
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - apt-get update && apt-get install -y docker.io
+    - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
-    - |
-      for SERVICE in $SERVICES; do
-        echo "Testing build for $SERVICE..."
-        cd applications/$SERVICE || exit 1
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-        cd - > /dev/null
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - for SERVICE in identity forms roles dataset profile user_management; do
+        echo "Building $SERVICE...";
+        cd applications/$SERVICE;
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .;
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest;
+        cd - > /dev/null;
       done
+  only:
+    - dev
+
 # stages:
 #   - build
 #   - deploy
