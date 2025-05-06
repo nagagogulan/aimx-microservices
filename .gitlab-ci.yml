@@ -3,17 +3,20 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS for simplicity in CI
+
+services:
+  - docker:dind
 
 build_backend:
   stage: build
+  image: golang:1.21
   tags:
     - docker
-  image: golang:1.23.1  # Use a Golang image instead of Node.js
   before_script:
-    - apt-get update && apt-get install -y docker.io
-    - export DOCKER_HOST="unix:///var/run/docker.sock"
-  script:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
     - for SERVICE in identity forms roles dataset profile user_management; do
         echo "Building $SERVICE...";
         cd applications/$SERVICE;
@@ -22,7 +25,8 @@ build_backend:
         cd - > /dev/null;
       done
   only:
-    - dev
+    - feature/base_setup
+
 
 # stages:
 #   - build
