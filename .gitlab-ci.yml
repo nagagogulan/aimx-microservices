@@ -22,28 +22,26 @@ build:
   - echo "Listing contents of applications directory:"
   - ls applications
   - echo "Now trying to cd into the identity directory:"
-  - cd applications/identity || exit 1  # Ensure the directory exists and exit if not
+  - cd applications/identity || exit 1
+  - pwd  # Debugging the current directory
   - echo "Building services..."
   - |
+    echo "SERVICES: $SERVICES"  # Debug to confirm the variable
     for SERVICE in $SERVICES; do
       echo "Building $SERVICE..."
       SERVICE_PATH="applications/$SERVICE"
       if [ -d "$SERVICE_PATH" ]; then
         echo "Listing contents of $SERVICE_PATH directory:"
-        ls -l $SERVICE_PATH || exit 1  # Ensure the service directory exists
-        cd $SERVICE_PATH || exit 1  # Change into the service directory
+        ls -l $SERVICE_PATH || exit 1
+        cd $SERVICE_PATH || exit 1
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd - > /dev/null  # Return to previous directory silently
       else
-        echo "$SERVICE_PATH directory does not exist!"  # Handle the missing directory
+        echo "$SERVICE_PATH directory does not exist!"
         exit 1
       fi
     done
-
-
-
-
 
 deploy_microservices:
   stage: deploy
