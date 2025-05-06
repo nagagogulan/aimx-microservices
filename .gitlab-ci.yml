@@ -13,13 +13,17 @@ build:
   tags:
     - docker
   before_script:
-    - apt-get update && apt-get install -y docker.io
+    - apk update && apk add git docker
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
         cd applications/$SERVICE || exit 1
+        
+        # Authenticate with GitHub (if needed)
+        git config --global user.name "$GITHUB_USERNAME"
+        git config --global user.password "$GITHUB_TOKEN"
         
         # Run go mod tidy and go mod vendor
         echo "Running go mod tidy and go mod vendor for $SERVICE..."
