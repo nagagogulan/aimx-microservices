@@ -29,7 +29,6 @@ func NewEndpoint(s service.RequestService) Endpoints {
 		GetAllRequestsEndpoint:      MakeGetAllRequestsEndpoint(s),
 		GetRequestByIDEndpoint: MakeGetRequestByIDEndpoint(s),
 		ListRequestTypes: makeListRequestTypesEndpoint(s),
-
 	}
 }
 
@@ -51,16 +50,28 @@ func MakeUpdateRequestStatusEndpoint(s service.RequestService) endpoint.Endpoint
 }
 
 func MakeGetRequestsByOrgEndpoint(s service.RequestService) endpoint.Endpoint {
-	return Middleware(func(ctx context.Context, request interface{}) (interface{}, error) {
-		orgID := request.(uuid.UUID)
-		return s.GetRequestsByOrg(ctx, orgID)
-	}, common.TimeoutMs)
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(map[string]interface{})
+		orgID := req["org_id"].(uuid.UUID)
+		page := req["page"].(int)
+		limit := req["limit"].(int)
+		search := req["search"].(string)
+		filters := req["filters"].(map[string]interface{})
+
+		return s.GetRequestsByOrg(ctx, orgID, page, limit, search, filters)
+	}
 }
 
 func MakeGetAllRequestsEndpoint(s service.RequestService) endpoint.Endpoint {
-	return Middleware(func(ctx context.Context, request interface{}) (interface{}, error) {
-		return s.GetAllRequests(ctx)
-	}, common.TimeoutMs)
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(map[string]interface{})
+		page := req["page"].(int)
+		limit := req["limit"].(int)
+		search := req["search"].(string)
+		filters := req["filters"].(map[string]interface{})
+
+		return s.GetAllRequests(ctx, page, limit, search, filters)
+	}
 }
 
 func MakeGetRequestByIDEndpoint(s service.RequestService) endpoint.Endpoint {
