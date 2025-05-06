@@ -19,7 +19,7 @@ build:
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
-        cd applications/$SERVICE || exit 1
+        cd backend/applications/$SERVICE || exit 1
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd - > /dev/null
