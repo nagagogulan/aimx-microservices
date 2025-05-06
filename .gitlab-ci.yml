@@ -1,6 +1,8 @@
+image: node:latest  # Define a valid base image
+
 stages:
   - build
- 
+  
 variables:
   DOCKER_IMAGE: nagagogulan/aimx
 
@@ -9,7 +11,6 @@ build:
   tags:
     - docker
   before_script:
-    # Optional: Install Docker if required
     - apt-get update && apt-get install -y docker.io
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
@@ -19,6 +20,7 @@ build:
     - docker push $DOCKER_IMAGE:latest
   only:
     - dev
+
 
 
 
