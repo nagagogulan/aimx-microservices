@@ -16,14 +16,14 @@ build:
     - apk add --no-cache docker-cli
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
-    - |
-      for SERVICE in $SERVICES; do
-        echo "Building $SERVICE..."
-        cd backend/applications/$SERVICE || exit 1
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        cd - > /dev/null
-      done
+  - |
+    for SERVICE in $SERVICES; do
+      echo "Building $SERVICE..."
+      cd backend/applications/$SERVICE || exit 1
+      docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+      cd - > /dev/null
+    done
 
 deploy_microservices:
   stage: deploy
