@@ -1,15 +1,9 @@
-
-
-
-
-
-
-
-
 image: golang:1.23-alpine
+
 stages:
   - build
   - deploy
+
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
@@ -18,32 +12,29 @@ build:
   stage: build
   tags:
     - docker
-  # before_script:
-  #   - apk add --no-cache docker-cli
-  #   - export DOCKER_HOST="unix:///var/run/docker.sock"
-  
-  # script:
-  # - echo "SERVICES: $SERVICES"  # Debugging line
-  # - SERVICES=$(echo $SERVICES | tr -s ' ' '\n')  # Remove any extra spaces/newlines
-  # - echo "Starting the loop..."
-  # - |
-  #   for SERVICE in $SERVICES; do
-  #     echo "Processing service: $SERVICE"  # Debugging line
-  #     SERVICE_PATH="applications/$SERVICE"
-  #     echo "Service path: $SERVICE_PATH"  # Debugging line
-  #     if [ -d "$SERVICE_PATH" ]; then
-  #       echo "Listing contents of $SERVICE_PATH directory:"
-  #       ls -l $SERVICE_PATH || exit 1  # Ensure the service directory exists
-  #       cd $SERVICE_PATH || exit 1  # Change into the service directory
-  #       docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-  #       docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-  #       cd - > /dev/null  # Return to previous directory silently
-  #     else
-  #       echo "$SERVICE_PATH directory does not exist!"  # Handle the missing directory
-  #       exit 1
-  #     fi
-  #   done
-
+  before_script:
+    - apk add --no-cache docker-cli
+    - export DOCKER_HOST="unix:///var/run/docker.sock"
+  script:
+    - echo "SERVICES: $SERVICES"
+    - export SERVICES=$(echo $SERVICES | tr -s ' ' '\n')
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Processing service: $SERVICE"
+        SERVICE_PATH="applications/$SERVICE"
+        echo "Service path: $SERVICE_PATH"
+        if [ -d "$SERVICE_PATH" ]; then
+          echo "Listing contents of $SERVICE_PATH directory:"
+          ls -l "$SERVICE_PATH"
+          cd "$SERVICE_PATH"
+          docker build -t "$DOCKER_IMAGE_PREFIX-$SERVICE:latest" .
+          docker push "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
+          cd - > /dev/null
+        else
+          echo "$SERVICE_PATH directory does not exist!"
+          exit 1
+        fi
+      done
 
 deploy_microservices:
   stage: deploy
@@ -56,7 +47,6 @@ deploy_microservices:
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-  
   script:
     - |
       ssh $EC2_USER@$EC2_HOST "
