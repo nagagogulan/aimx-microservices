@@ -16,27 +16,26 @@ build:
     - apk add --no-cache docker-cli
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script: |
-  echo "SERVICES: $SERVICES"
-  # Convert the services into a list (one per line)
-  export SERVICES=$(echo $SERVICES | tr -s ' ' '\n')
+    echo "SERVICES: $SERVICES"
+    # Convert the services into a list (one per line)
+    export SERVICES=$(echo $SERVICES | tr -s ' ' '\n')
 
-  # List available services in the applications directory
-  AVAILABLE_SERVICES=$(ls -1 applications)
-  echo "Available services: $AVAILABLE_SERVICES"
+    # List available services in the applications directory
+    AVAILABLE_SERVICES=$(ls -1 applications)
+    echo "Available services: $AVAILABLE_SERVICES"
 
-  for SERVICE in $SERVICES; do
-    if echo "$AVAILABLE_SERVICES" | grep -q "^$SERVICE$"; then
-      echo "Building and deploying service: $SERVICE"
-      SERVICE_PATH="applications/$SERVICE"
-      cd "$SERVICE_PATH"
-      docker build -t "$DOCKER_IMAGE_PREFIX-$SERVICE:latest" .
-      docker push "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
-      cd - > /dev/null
-    else
-      echo "$SERVICE does not exist in the applications directory. Skipping..."
-    fi
-  done
-
+    for SERVICE in $SERVICES; do
+      if echo "$AVAILABLE_SERVICES" | grep -q "^$SERVICE$"; then
+        echo "Building and deploying service: $SERVICE"
+        SERVICE_PATH="applications/$SERVICE"
+        cd "$SERVICE_PATH"
+        docker build -t "$DOCKER_IMAGE_PREFIX-$SERVICE:latest" .
+        docker push "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
+        cd - > /dev/null
+      else
+        echo "$SERVICE does not exist in the applications directory. Skipping..."
+      fi
+    done
 
 deploy_microservices:
   stage: deploy
@@ -53,32 +52,18 @@ deploy_microservices:
     ssh $EC2_USER@$EC2_HOST "
       echo 'Logging into Docker...'
       docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+      AVAILABLE_SERVICES=$(ls -1 applications)
       for SERVICE in $SERVICES; do
-        echo \"Pulling \$SERVICE image...\"
-        docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
-        echo \"Stopping and removing existing container for \$SERVICE...\"
-        docker ps -q --filter name=\$SERVICE | xargs -r docker stop
-        docker ps -aq --filter name=\$SERVICE | xargs -r docker rm
-        echo \"Starting new container for \$SERVICE...\"
-        case \$SERVICE in
-          identity)
-            docker run -d --name identity -p 8081:8081 $DOCKER_IMAGE_PREFIX-identity:latest
-            ;;
-          forms)
-            docker run -d --name forms -p 8082:8082 $DOCKER_IMAGE_PREFIX-forms:latest
-            ;;
-          roles)
-            docker run -d --name roles -p 8083:8083 $DOCKER_IMAGE_PREFIX-roles:latest
-            ;;
-          dataset)
-            docker run -d --name dataset -p 8084:8084 $DOCKER_IMAGE_PREFIX-dataset:latest
-            ;;
-          profile)
-            docker run -d --name profile -p 8085:8085 $DOCKER_IMAGE_PREFIX-profile:latest
-            ;;
-          user_management)
-            docker run -d --name user_management -p 8086:8086 $DOCKER_IMAGE_PREFIX-user_management:latest
-            ;;
-        esac
+        if echo \"\$AVAILABLE_SERVICES\" | grep -q \"^\$SERVICE\$\"; then
+          echo \"Pulling \$SERVICE image...\"
+          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
+          echo \"Stopping and removing existing container for \$SERVICE...\"
+          docker ps -q --filter name=\$SERVICE | xargs -r docker stop
+          docker ps -aq --filter name=\$SERVICE | xargs -r docker rm
+          echo \"Starting new container for \$SERVICE...\"
+          docker run -d --name \$SERVICE -p 8080-8086:8080-8086 $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
+        else
+          echo \"\$SERVICE does not exist in the applications directory. Skipping...\"
+        fi
       done
     "
