@@ -38,6 +38,7 @@ build:
     done
 
 
+
 deploy_microservices:
   stage: deploy
   image: alpine:latest
