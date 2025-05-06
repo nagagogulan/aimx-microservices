@@ -6,12 +6,10 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""  # Disable TLS for simplicity in CI
 
-services:
-  - docker:dind
 
 build_backend:
   stage: build
-  image: golang:1.21
+  image: golang:1.23.1
   tags:
     - docker
   before_script:
@@ -25,7 +23,7 @@ build_backend:
         cd - > /dev/null;
       done
   only:
-    - feature/base_setup
+    - dev
 
 
 # stages:
