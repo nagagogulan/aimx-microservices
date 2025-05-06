@@ -1,3 +1,4 @@
+image: golang:1.23-alpine
 build:
   stage: build
   tags:
