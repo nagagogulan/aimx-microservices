@@ -1,10 +1,8 @@
-image: node:latest  # Define a valid base image
-
 stages:
   - build
   
 variables:
-  DOCKER_IMAGE: nagagogulan/aimx
+  DOCKER_IMAGE: nagagogulan/aimx-go-backend
 
 build:
   stage: build
@@ -14,12 +12,13 @@ build:
     - apt-get update && apt-get install -y docker.io
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
-    - echo "Building Docker image for the app"
-    - docker build -t $DOCKER_IMAGE:latest .
+    - echo "Building Go Docker image for the app"
+    - docker build -t $DOCKER_IMAGE:latest .  # This uses your Dockerfile to build the image
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - docker push $DOCKER_IMAGE:latest
   only:
     - dev
+
 
 
 
