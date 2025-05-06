@@ -1,7 +1,6 @@
 stages:
   - build
  
-
 variables:
   DOCKER_IMAGE: nagagogulan/aimx
 
@@ -9,9 +8,8 @@ build:
   stage: build
   tags:
     - docker
-  # image: node:latest  # Using node:latest for the build environment
   before_script:
-    # Install Docker inside the container
+    # Optional: Install Docker if required
     - apt-get update && apt-get install -y docker.io
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
@@ -21,6 +19,7 @@ build:
     - docker push $DOCKER_IMAGE:latest
   only:
     - dev
+
 
 
 # stages:
