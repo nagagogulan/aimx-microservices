@@ -13,7 +13,7 @@ build:
   tags:
     - docker
   before_script:
-    - apt-get update && apt-get install -y docker.io
+    - apk add --no-cache docker-cli
     - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
     - |
@@ -73,5 +73,3 @@ deploy_microservices:
           esac
         done
       "
-  only:
-    - dev
