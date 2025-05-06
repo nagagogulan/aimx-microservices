@@ -18,7 +18,24 @@ build:
     - echo "SERVICES: $SERVICES"  # Debugging line
     - SERVICES=$(echo $SERVICES | tr -s ' ' '\n')  # Remove any extra spaces/newlines
     - echo "Starting the loop..."
-    - for SERVICE in $SERVICES; do echo "Processing service: $SERVICE"; SERVICE_PATH="applications/$SERVICE"; echo "Service path: $SERVICE_PATH"; if [ -d "$SERVICE_PATH" ]; then echo "Listing contents of $SERVICE_PATH directory:"; ls -l $SERVICE_PATH || exit 1; cd $SERVICE_PATH || exit 1; docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .; docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest; cd - > /dev/null; else echo "$SERVICE_PATH directory does not exist!"; exit 1; fi; done
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Processing service: $SERVICE"  # Debugging line
+        SERVICE_PATH="applications/$SERVICE"
+        echo "Service path: $SERVICE_PATH"  # Debugging line
+        if [ -d "$SERVICE_PATH" ]; then
+          echo "Listing contents of $SERVICE_PATH directory:"
+          ls -l $SERVICE_PATH || exit 1  # Ensure the service directory exists
+          cd $SERVICE_PATH || exit 1  # Change into the service directory
+          docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+          docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+          cd - > /dev/null  # Return to previous directory silently
+        else
+          echo "$SERVICE_PATH directory does not exist!"  # Handle the missing directory
+          exit 1
+        fi
+      done
+
 
 
 
