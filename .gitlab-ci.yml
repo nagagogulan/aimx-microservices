@@ -19,21 +19,20 @@ build:
   script:
   - echo "Listing all files in the repository:"
   - ls -R
-  - echo "Listing contents of backend directory:"
-  - ls backend
-  - echo "Listing contents of backend/applications directory:"
-  - ls backend/applications
+  - echo "Listing contents of applications directory:"
+  - ls applications
   - echo "Now trying to cd into the identity directory:"
-  - cd backend/applications/identity || exit 1  # Exit if this directory doesn't exist
+  - cd applications/identity || exit 1  # Exit if this directory doesn't exist
   - |
     for SERVICE in $SERVICES; do
       echo "Building $SERVICE..."
-      ls -l backend/applications/  # Ensure contents are visible for each build
-      cd backend/applications/$SERVICE || exit 1  # Exit if the directory doesn't exist
+      ls -l applications/  # Ensure contents are visible for each build
+      cd applications/$SERVICE || exit 1  # Exit if the directory doesn't exist
       docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
       docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
       cd - > /dev/null  # Return to previous directory silently
     done
+
 
 
 deploy_microservices:
