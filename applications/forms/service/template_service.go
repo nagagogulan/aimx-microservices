@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	errcom "github.com/PecozQ/aimx-library/apperrors"
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
@@ -44,13 +43,6 @@ func (s *service) CreateTemplate(ctx context.Context, template entity.Template) 
 
 	// Log the FilterFieldsRequest
 	fmt.Println("FilterFieldsRequest:", filterFieldsRequest)
-
-	// Call AddSearchfilterFields to add the filter fields
-	errs := s.filterfieldRepo.AddSearchfilterFields(ctx, filterFieldsRequest)
-	if errs != nil {
-		fmt.Println("Error in AddSearchfilterFields:", errs)
-		return nil, errcom.ErrNotFound
-	}
 
 	return createdTemplate, nil
 }
@@ -111,11 +103,6 @@ func (s *service) UpdateTemplate(ctx context.Context, id string, template entity
 	fmt.Println("FilterFieldsRequest:", filterFieldsRequest)
 
 	// Call AddSearchfilterFields to add the filter fields
-	errs := s.filterfieldRepo.UpdateSearchfilterFields(ctx, filterFieldsRequest)
-	if errs != nil {
-		fmt.Println("Error in AddSearchfilterFields:", errs)
-		return nil, errcom.ErrNotFound
-	}
 	return updatedTemplate, nil
 }
 func (s *service) DeleteTemplate(ctx context.Context, id string) (*model.Response, error) {
