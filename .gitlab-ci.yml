@@ -22,14 +22,10 @@ build:
         echo "Building $SERVICE..."
         cd applications/$SERVICE || exit 1
 
-        echo "Running go mod tidy and vendor..."
         go mod tidy
         go mod vendor
 
-        echo "Building Docker image..."
         docker build -t ${DOCKER_IMAGE_PREFIX}-${SERVICE}:latest .
-
-        echo "Pushing Docker image..."
         docker push ${DOCKER_IMAGE_PREFIX}-${SERVICE}:latest
 
         cd - > /dev/null
