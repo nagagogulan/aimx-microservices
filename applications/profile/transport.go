@@ -13,10 +13,15 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
-func MakeHTTPHandler(endpoints Endpoints) http.Handler {
+func MakeHTTPHandler(s service.Service) http.Handler {
+	fmt.Println("connect http handuler")
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(service.EncodeError)}
+
 	r := gin.New()
+	endpoints := NewEndpoint(s)
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
@@ -39,6 +44,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.GetUserProfileEndpoint,
 			decodeUUIDParam, // This will now extract 'id' from the URL path
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		// PUT: /profile
@@ -46,6 +52,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.UpdateUserProfileEndpoint,
 			decodeUpdateUserRequest, // Decode body to user
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 
@@ -56,18 +63,21 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.CreateGeneralSettingEndpoint,
 			decodeGeneralSettingRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		general.PUT("/", gin.WrapF(httptransport.NewServer(
 			endpoints.UpdateGeneralSettingEndpoint,
 			decodeGeneralSettingRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		general.GET("/", gin.WrapF(httptransport.NewServer(
 			endpoints.GetAllGeneralSettingEndpoint,
 			decodeEmptyRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 
@@ -77,6 +87,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.GetAllNonSingHealthOrganizationsEndpoint,
 			decodeEmptyRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 
@@ -86,12 +97,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.UpdateOrganizationSettingByOrgIDEndpoint,
 			decodeUpdateOrganizationSettingRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		settings.POST("/get", gin.WrapF(httptransport.NewServer(
 			endpoints.GetOrganizationSettingByOrgIDEndpoint,
 			decodeGetOrganizationSettingRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 
