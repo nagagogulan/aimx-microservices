@@ -15,10 +15,12 @@ clone:
   script:
     - apk update && apk add git
     - git clone --branch $GIT_BRANCH $GIT_REPO_URL source
+    - ls -alh # List the contents of the current directory to check if 'source' exists
     - cd source
     - git config --global url."git@github.com:".insteadof "https://github.com/"  # Ensure SSH is used for GitHub
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - go env -w GO111MODULE=on
+    - ls -alh # List contents of 'source' to check if files are there
 
 build:
   stage: build
@@ -30,6 +32,7 @@ build:
     - export GOPRIVATE=github.com/PecozQ/*
     - export GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
+    - ls -alh # List contents of 'source' before proceeding with build
   script:
     - go mod tidy
     - go mod vendor
@@ -41,7 +44,6 @@ build:
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd - > /dev/null
       done
-
 
 
 
