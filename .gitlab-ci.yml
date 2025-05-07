@@ -8,18 +8,14 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "git@whatsdare.com:fullstack/aimx/backend.git"  # SSH URL for the Git repository
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"  # GitHub token for HTTPS clone
   GIT_BRANCH: "dev"
 
 clone:
   stage: clone
   script:
     - apk update && apk add git  # Install Git
-    - mkdir -p ~/.ssh  # Ensure SSH directory exists
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa  # Add the private key to the SSH directory
-    - chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the SSH key
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  # Disable strict host checking
-    - git clone -b $GIT_BRANCH $GIT_REPO_URL source  # Clone the repository using SSH
+    - git clone -b $GIT_BRANCH $GIT_REPO_URL source  # Clone the repository using GitHub token over HTTPS
 
 build:
   stage: build
