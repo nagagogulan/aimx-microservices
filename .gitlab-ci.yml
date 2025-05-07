@@ -8,27 +8,28 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "git@github.com:PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
+  GIT_REPO_URL: "git@whatsdare.com:fullstack/aimx/backend.git"  # SSH URL for the Git repository
   GIT_BRANCH: "dev"
-  GITHUB_TOKEN: "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"  # Use the GitHub token for authentication
 
 clone:
   stage: clone
   script:
-    - apk update && apk add git  # Install Git in the container
-    - git clone -b $GIT_BRANCH https://$GITHUB_TOKEN@github.com/PecozQ/aimx-library.git source  # Use token for authentication
+    - apk update && apk add git  # Install Git
+    - mkdir -p ~/.ssh  # Ensure SSH directory exists
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa  # Add the private key to the SSH directory
+    - chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the SSH key
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  # Disable strict host checking
+    - git clone -b $GIT_BRANCH $GIT_REPO_URL source  # Clone the repository using SSH
 
 build:
   stage: build
   services:
     - docker:dind
   before_script:
-    - apk update && apk add docker
-    - export GOPRIVATE=github.com/PecozQ/*  # Set GOPRIVATE for private repos
-    - go env -w GO111MODULE=on              # Enable Go modules
-    - go env -w GOPRIVATE=github.com/PecozQ/*  # Ensure Go uses private repos
-    - git config --global url."git@github.com:".insteadof "https://github.com/"  # Ensure SSH is used instead of HTTPS for GitHub
-    - export DOCKER_HOST="unix:///var/run/docker.sock"  # Set Docker host for Docker-in-Docker
+    - apk update && apk add docker  # Install Docker
+    - export GOPRIVATE=github.com/PecozQ/*  # Set GOPRIVATE if needed
+    - export GO111MODULE=on  # Enable Go modules
+    - export DOCKER_HOST="unix:///var/run/docker.sock"  # Docker host configuration
   script:
     - go mod tidy
     - go mod vendor
@@ -49,11 +50,11 @@ deploy_microservices:
   only:
     - dev
   before_script:
-    - apk add --no-cache openssh
-    - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+    - apk add --no-cache openssh  # Install SSH for deployment
+    - mkdir -p ~/.ssh  # Ensure SSH directory exists
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa  # Add the private key to the SSH directory
+    - chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the SSH key
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  # Disable strict host checking
   script:
     - |
       ssh $EC2_USER@$EC2_HOST "
