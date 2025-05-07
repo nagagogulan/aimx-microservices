@@ -10,18 +10,20 @@ variables:
   SERVICES: "identity forms roles dataset profile user_management"
   GIT_REPO_URL: "git@github.com:PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
   GIT_BRANCH: "dev"
+  GITHUB_TOKEN: "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"  # Use the GitHub token for authentication
 
 clone:
   stage: clone
   script:
-    - git clone -b $GIT_BRANCH $GIT_REPO_URL source
+    - apk update && apk add git  # Install Git in the container
+    - git clone -b $GIT_BRANCH https://$GITHUB_TOKEN@github.com/PecozQ/aimx-library.git source  # Use token for authentication
 
 build:
   stage: build
   services:
     - docker:dind
   before_script:
-    - apk update && apk add docker git
+    - apk update && apk add docker
     - export GOPRIVATE=github.com/PecozQ/*  # Set GOPRIVATE for private repos
     - go env -w GO111MODULE=on              # Enable Go modules
     - go env -w GOPRIVATE=github.com/PecozQ/*  # Ensure Go uses private repos
