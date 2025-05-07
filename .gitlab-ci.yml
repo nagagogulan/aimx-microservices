@@ -1,7 +1,6 @@
 image: golang:1.23-alpine
 
 
-
 stages:
   - setup
   - build
@@ -10,6 +9,8 @@ setup_environment:
   stage: setup
   script:
     - echo "Setting Go environment variables..."
+    # Install git since it's missing in the golang:1.23-alpine image
+    - apk add --no-cache git
     # Set GOPRIVATE to handle private Go modules
     - export GOPRIVATE=github.com/PecozQ
     # Set GO111MODULE to enable Go modules support
