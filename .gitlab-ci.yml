@@ -13,7 +13,7 @@ build:
   tags:
     - docker
   before_script:
-    - apt-get update && apt-get install -y docker.io
+    - apk add --no-cache git docker
     - export DOCKER_HOST="unix:///var/run/docker.sock"
 
   script:
@@ -21,6 +21,9 @@ build:
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
         cd applications/$SERVICE || exit 1
+
+        # Clone the public library repo before dependency resolution
+        git clone https://github.com/Nagagogulan2/aimx-lib.git
 
         # Run Go mod tidy and vendor
         go mod tidy
