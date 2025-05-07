@@ -70,8 +70,7 @@ func main() {
 	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
 
 	s := service.NewService(userRepo, generalSettingRepo, orgRepo, orgSettingRepo)
-	endpoints := base.NewEndpoint(s)                // 💡 create Endpoints
-	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
+	httpHandlers := base.MakeHTTPHandler(s)
 
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(8085),
