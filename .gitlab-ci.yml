@@ -1,75 +1,28 @@
 image: golang:1.23-alpine
 
+
+
 stages:
-  - clone
+  - setup
   - build
-  - deploy
 
-variables:
-  DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"  # GitHub token for HTTPS clone
-  GIT_BRANCH: "dev"
-
-clone:
-  stage: clone
+setup_environment:
+  stage: setup
   script:
-    - apk update && apk add git  # Install Git
-    - git clone -b $GIT_BRANCH $GIT_REPO_URL source  # Clone the repository using GitHub token over HTTPS
+    - echo "Setting Go environment variables..."
+    # Set GOPRIVATE to handle private Go modules
+    - export GOPRIVATE=github.com/PecozQ
+    # Set GO111MODULE to enable Go modules support
+    - go env -w GO111MODULE=on
+    # Set GOPRIVATE to include private GitHub modules
+    - go env -w GOPRIVATE=github.com/PecozQ/*
+    # Configure Git to use SSH URL instead of HTTPS for GitHub
+    - git config --global url."git@github.com:".insteadof "https://github.com/"
+    - echo "Environment setup complete."
 
 build:
   stage: build
-  services:
-    - docker:dind
-  before_script:
-    - apk update && apk add docker  # Install Docker
-    - export GOPRIVATE=github.com/PecozQ/*  # Set GOPRIVATE if needed
-    - export GO111MODULE=on  # Enable Go modules
-    - export DOCKER_HOST="unix:///var/run/docker.sock"  # Docker host configuration
   script:
+    - echo "Running Go mod tidy..."
     - go mod tidy
-    - go mod vendor
-    - |
-      for SERVICE in $SERVICES; do
-        echo "Building $SERVICE..."
-        cd applications/$SERVICE || { echo "Service '$SERVICE' not found"; exit 1; }
-        go mod tidy
-        go mod vendor
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        cd - > /dev/null
-      done
-
-deploy_microservices:
-  stage: deploy
-  image: alpine:latest
-  only:
-    - dev
-  before_script:
-    - apk add --no-cache openssh  # Install SSH for deployment
-    - mkdir -p ~/.ssh  # Ensure SSH directory exists
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa  # Add the private key to the SSH directory
-    - chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the SSH key
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  # Disable strict host checking
-  script:
-    - |
-      ssh $EC2_USER@$EC2_HOST "
-        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-
-        for SERVICE in $SERVICES; do
-          echo \"Deploying \$SERVICE...\"
-          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
-
-          docker ps -q --filter name=\$SERVICE | xargs -r docker stop
-          docker ps -aq --filter name=\$SERVICE | xargs -r docker rm
-
-          case \$SERVICE in
-            identity) docker run -d --name identity -p 8081:8081 $DOCKER_IMAGE_PREFIX-identity:latest ;;
-            forms) docker run -d --name forms -p 8082:8082 $DOCKER_IMAGE_PREFIX-forms:latest ;;
-            roles) docker run -d --name roles -p 8083:8083 $DOCKER_IMAGE_PREFIX-roles:latest ;;
-            dataset) docker run -d --name dataset -p 8084:8084 $DOCKER_IMAGE_PREFIX-dataset:latest ;;
-            profile) docker run -d --name profile -p 8085:8085 $DOCKER_IMAGE_PREFIX-profile:latest ;;
-            user_management) docker run -d --name user_management -p 8086:8086 $DOCKER_IMAGE_PREFIX-user_management:latest ;;
-          esac
-        done
-      "
+    # Your additional build steps can go here
