@@ -12,14 +12,14 @@ build:
   tags:
     - docker
   before_script:
-    # Install Docker and Git
     - apk update && apk add docker git
-    
-    # Set Go environment variables
+
+    # GitHub authentication for private repos
+    - git config --global url."https://Nagagogulan2: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@github.com/".insteadOf "https://github.com/"
+
+    # Set Go environment
     - export GOPRIVATE=github.com/PecozQ/*
     - export GO111MODULE=on
-    
-    # Install Go modules and set GOPATH (if needed)
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - go env -w GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
@@ -29,20 +29,17 @@ build:
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
 
-        # Navigate to the service directory
         cd applications/$SERVICE || exit 1
 
-        # Run Go module tidy and vendor commands
         go mod tidy
         go mod vendor
 
-        # Build and push Docker image
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        
-        # Go back to the previous directory
+
         cd - > /dev/null
       done
+
 
 
 
