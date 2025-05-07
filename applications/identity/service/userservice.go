@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -60,23 +61,23 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 
 	domain := strings.Split(req.Email, "@")
 	if len(domain) < 2 {
-		return nil, errcom.ErrInvalidEmailFormat
+		return nil, NewCustomError(errcom.ErrInvalidEmail, errors.New("invalid email format"))
 	}
 
 	org, err := s.OrgRepo.GetOrganizationByDomain(ctx, domain[1])
 	if err != nil {
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, errors.New("no organization found for this domain"))
 	}
 	var metadata dto.OrgMetadata
 	if err := json.Unmarshal(org.Metadata, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal organization metadata: %w", err)
 	}
 	if org.CurrentUserCount >= metadata.MaxUserCount {
-		return nil, errcom.ErrUserLimitReached
+		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("maximum user limit reached for organization"))
 	}
 	if org.DeletedAt != nil {
 		// Check if the organization has been deactivated
-		return nil, errcom.ErrOrganizationDeactivated
+		return nil, NewCustomError(errcom.ErrFieldValidation, errors.New("organization has been deactivated, you do not have access to login"))
 	}
 
 	// Generate OTP & Secret Key
@@ -102,8 +103,8 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if existingUser == nil {
 		err := s.TempUserRepo.SaveOTP(ctx, req, otp)
 		if err != nil {
-			commonlib.LogMessage(s.logger, commonlib.Error, "Createuser", err.Error(), err, "CreateBy", req.Email)
-			return nil, errcom.ErrNotFound
+			//commonlib.LogMessage(s.logger, commonlib.Error, "Createuser", err.Error(), err, "CreateBy", req.Email)
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 	} else {
 		// If user exists but doesn't have an OTP and MFP is disabled, update OTP
@@ -136,25 +137,25 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		fmt.Errorf("User Not Found : %w", err)
 	}
 	if res != nil && req.Email != res.Email {
-		return nil, errcom.ErrInvalidEmail
+		return nil, NewCustomError(errcom.ErrInvalidEmail, err)
 	}
 	if req.OTP != res.OTP {
-		return nil, errcom.ErrInvalidOTP
+		return nil, NewCustomError(errcom.ErrInvalidOTP, err)
 	}
 	if res != nil && !res.IS_MFA_Enabled && res.Secret == "" {
 		if time.Since(res.ExpireOTP) > 5*time.Minute {
 			err := s.TempUserRepo.DeleteOTP(ctx, req.Email)
 			if err != nil {
-				return nil, errcom.ErrNotFound
+				return nil, NewCustomError(errcom.ErrNotFound, err)
 			}
-			return nil, errcom.ErrOTPExpired
+			return nil, NewCustomError(errcom.ErrOTPExpired, err)
 		}
 		errors := s.TempUserRepo.DeleteOTP(ctx, req.Email)
 		if errors != nil {
-			return nil, errcom.ErrNotFound
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		if res != nil && res.IS_MFA_Enabled {
-			return nil, errcom.Err2FAlreadyVerified
+			return nil, fmt.Errorf("2FA already verified")
 		}
 		// Generate a new TOTP secret for the user
 		secret, err := totp.Generate(totp.GenerateOpts{
@@ -356,11 +357,11 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		userData, err = s.UserRepo.GetUserByEmail(ctx, req.Email)
 		if err != nil {
 			fmt.Println("Failed to fetch user details:", err)
-			return nil, errcom.ErrNotFound
+			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 
 		if userData != nil && userData.Status == entities.Deactivated {
-			return nil, errcom.ErrUserDeactivated
+			return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("user is deactivated and cannot log in"))
 		}
 	}
 
@@ -376,7 +377,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 			ExpireOTP:      userData.ExpireOTP,
 		}
 	} else {
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no user data found"))
 	}
 
 	// Step 3: Validate OTP
@@ -388,7 +389,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	})
 
 	if err != nil || !isValid {
-		return nil, errcom.ErrInvalidOTP
+		return nil, NewCustomError(errcom.ErrFieldValidation, fmt.Errorf("invalid OTP"))
 	}
 
 	// Step 4: If MFA is not enabled, update QR verify status
@@ -405,7 +406,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	// Step 5: Get organization details by email domain
 	domainParts := strings.Split(req.Email, "@")
 	if len(domainParts) < 2 {
-		return nil, errcom.ErrInvalidEmailFormat
+		return nil, NewCustomError(errcom.ErrInvalidEmail, fmt.Errorf("invalid email format"))
 	}
 	orgDomain := domainParts[1]
 
@@ -413,21 +414,21 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	org, err := s.OrgRepo.GetOrganizationByDomain(ctx, orgDomain)
 	if err != nil {
 		log.Println("Organization not found:", err)
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("organization not found"))
 	}
 
 	// Step 6: Fetch SingHealthAdmin details (for role validation)
 	_, err = s.OrgRepo.GetSingHealthAdminDetails(ctx)
 	if err != nil {
 		log.Println("Error fetching SingHealthAdmin organization details:", err)
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no SingHealth admin organization found"))
 	}
 
 	// Step 7: Fetch all roles from RoleRepo
 	roles, err := s.RoleRepo.GetAllRoles(ctx)
 	if err != nil {
 		log.Println("Error fetching role details:", err)
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("no roles found"))
 	}
 
 	// Map roles by their name for easy access (with UUID)
@@ -477,7 +478,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	// Step 12: Save the new user to the database
 	if err := s.UserRepo.CreateUser(ctx, newUser); err != nil {
 		fmt.Println("Failed to create new user:", err)
-		return nil, errcom.ErrFieldValidation
+		return nil, NewCustomError(errcom.ErrFieldValidation, err)
 	}
 
 	// Step 13: (Optional) Delete temp user if it was successfully moved to UserRepo
@@ -501,7 +502,7 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 	accessSecret, refreshSecret, err := generateJWTSecrets()
 	if err != nil {
 		fmt.Println("JWT secret keys not found:", err)
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("env file not found"))
 	}
 
 	auth := middleware.TokenDetails{
@@ -525,7 +526,7 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 	accessSecret, refreshSecret, err := generateJWTSecrets()
 	if err != nil {
 		fmt.Println("JWT secret keys not found:", err)
-		return nil, errcom.ErrNotFound
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("env file not found"))
 	}
 
 	auth := middleware.TokenDetails{
