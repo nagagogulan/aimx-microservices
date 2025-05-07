@@ -72,10 +72,10 @@ func main() {
 	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 
 	httpServer := http.Server{
-		Addr:    ":" + strconv.Itoa(8085),
+		Addr:    ":" + strconv.Itoa(8087),
 		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
 	}
 
-	fmt.Println("HTTP server started on port", 8085)
+	fmt.Println("HTTP server started on port", 8087)
 	log.Fatal(httpServer.ListenAndServe())
 }
