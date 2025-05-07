@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
@@ -20,7 +21,9 @@ type Endpoints struct {
 	GetAllGeneralSettingEndpoint             endpoint.Endpoint
 	GetAllNonSingHealthOrganizationsEndpoint endpoint.Endpoint
 	UpdateOrganizationSettingByOrgIDEndpoint endpoint.Endpoint
-    GetOrganizationSettingByOrgIDEndpoint    endpoint.Endpoint
+	GetOrganizationSettingByOrgIDEndpoint    endpoint.Endpoint
+	CreateOrganizationSettingEndpoint endpoint.Endpoint
+
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -32,7 +35,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetAllGeneralSettingEndpoint:             makeGetAllGeneralSettingEndpoint(s),
 		GetAllNonSingHealthOrganizationsEndpoint: makeGetAllNonSingHealthOrganizationsEndpoint(s),
 		UpdateOrganizationSettingByOrgIDEndpoint: MakeUpdateOrganizationSettingByOrgIDEndpoint(s),
-        GetOrganizationSettingByOrgIDEndpoint: MakeGetOrganizationSettingByOrgIDEndpoint(s),
+		GetOrganizationSettingByOrgIDEndpoint:    MakeGetOrganizationSettingByOrgIDEndpoint(s),
+		CreateOrganizationSettingEndpoint: makeCreateOrganizationSettingEndpoint(s),
 
 	}
 }
@@ -70,7 +74,9 @@ func makeCreateGeneralSettingEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.GeneralSettingRequest)
 		err := s.CreateGeneralSetting(ctx, req)
 		if err != nil {
-			return nil, err
+			// return nil, err
+			return nil, service.NewAppError(fmt.Errorf("general setting already exists"), http.StatusBadRequest, "General setting already exists, cannot create", nil)
+
 		}
 		return map[string]string{"message": "Successfully added"}, nil
 	}
@@ -102,17 +108,38 @@ func makeGetAllNonSingHealthOrganizationsEndpoint(s service.Service) endpoint.En
 }
 
 func MakeUpdateOrganizationSettingByOrgIDEndpoint(s service.Service) endpoint.Endpoint {
-    return func(ctx context.Context, request interface{}) (interface{}, error) {
-        req := request.(*dto.OrganizationSettingRequest)
-        err := s.UpdateOrganizationSettingByOrgID(ctx, req)  // <-- Match service signature
-        return map[string]string{"message": "Updated successfully"}, err
-    }
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.OrganizationSettingRequest)
+		err := s.UpdateOrganizationSettingByOrgID(ctx, req) // <-- Match service signature
+		return map[string]string{"message": "Updated successfully"}, err
+	}
 }
 
 func MakeGetOrganizationSettingByOrgIDEndpoint(s service.Service) endpoint.Endpoint {
-    return func(ctx context.Context, request interface{}) (interface{}, error) {
-        req := request.(*dto.OrganizationSettingRequest)
-        setting, err := s.GetOrganizationSettingByOrgID(ctx, req.OrgID)
-        return setting, err
-    }
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.OrganizationSettingRequest)
+		setting, err := s.GetOrganizationSettingByOrgID(ctx, req.OrgID)
+		return setting, err
+	}
+}
+
+func makeCreateOrganizationSettingEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.OrganizationSettingRequest)
+		setting := &entities.OrganizationSetting{
+			OrgID:                   req.OrgID,
+			DefaultDeletionDays:     req.DefaultDeletionDays,
+			DefaultArchivingDays:    req.DefaultArchivingDays,
+			MaxActiveProjects:       req.MaxActiveProjects,
+			MaxUsersPerOrganization: req.MaxUsersPerOrganization,
+			MaxProjectDocketSize:    req.MaxProjectDocketSize,
+			MaxProjectDocketSizeUnit: req.MaxProjectDocketSizeUnit,
+			ScheduledEvaluationTime: req.ScheduledEvaluationTime,
+		}
+		err := s.CreateOrganizationSetting(ctx, setting)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]string{"message": "Organization setting created successfully"}, nil
+	}
 }

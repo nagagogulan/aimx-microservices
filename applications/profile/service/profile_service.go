@@ -16,10 +16,11 @@ type Service interface {
 	GetUserProfile(ctx context.Context, id uuid.UUID) (*dto.UserResponseWithDetails, error)
 	CreateGeneralSetting(ctx context.Context, setting *dto.GeneralSettingRequest) error
 	UpdateGeneralSetting(ctx context.Context, setting *dto.GeneralSettingRequest) (*dto.GeneralSettingResponse, error)
-	GetAllGeneralSettings(ctx context.Context) ([]*dto.GeneralSettingResponse, error)
+	GetAllGeneralSettings(ctx context.Context) (*dto.GeneralSettingResponse, error)
 	GetAllNonSingHealthOrganizations(ctx context.Context) ([]*dto.OrganizationListResponse, error)
 	UpdateOrganizationSettingByOrgID(ctx context.Context, setting *dto.OrganizationSettingRequest) error
 	GetOrganizationSettingByOrgID(ctx context.Context, organizationID uuid.UUID) (*dto.OrganizationSettingResponse, error)
+	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
 
 }
 
@@ -27,21 +28,20 @@ type service struct {
 	repo               repository.UserCRUDService
 	generalSettingRepo repository.GeneralSettingRepository
 	orgRepo            repository.OrganizationRepositoryService
-	orgSettingRepo  repository.OrganizationSettingRepository
-
+	orgSettingRepo     repository.OrganizationSettingRepository
 }
 
 func NewService(
 	repo repository.UserCRUDService,
 	generalSettingRepo repository.GeneralSettingRepository,
 	orgRepo repository.OrganizationRepositoryService,
-	orgSettingRepo  repository.OrganizationSettingRepository,
+	orgSettingRepo repository.OrganizationSettingRepository,
 ) Service {
 	return &service{
 		repo:               repo,
 		generalSettingRepo: generalSettingRepo,
 		orgRepo:            orgRepo,
-		orgSettingRepo: orgSettingRepo,
+		orgSettingRepo:     orgSettingRepo,
 	}
 }
 
@@ -54,6 +54,16 @@ func (s *service) GetUserProfile(ctx context.Context, id uuid.UUID) (*dto.UserRe
 }
 
 func (s *service) CreateGeneralSetting(ctx context.Context, setting *dto.GeneralSettingRequest) error {
+	existingSetting, err := s.generalSettingRepo.GetAllGeneralSetting() // Method to get the existing record
+	if err != nil {
+		return fmt.Errorf("failed to check existing general setting: %w", err)
+	}
+
+	if existingSetting != nil {
+		// If a record already exists, update it instead of creating a new one
+		return fmt.Errorf("general setting already exists")
+	}
+	fmt.Printf("calledddddd")
 	// Map string to int
 	fmt.Println(common.ENUM_TO_HASH, setting.MaxProjectDocketSizeUnit)
 	unitMap := common.ENUM_TO_HASH["MaxProjectDocketSizeUnit"]
@@ -121,31 +131,34 @@ func (s *service) UpdateGeneralSetting(ctx context.Context, setting *dto.General
 	return response, nil
 }
 
-func (s *service) GetAllGeneralSettings(ctx context.Context) ([]*dto.GeneralSettingResponse, error) {
-	settings, err := s.generalSettingRepo.GetAllGeneralSetting()
+func (s *service) GetAllGeneralSettings(ctx context.Context) (*dto.GeneralSettingResponse, error) {
+	// Fetch the single general setting record
+	setting, err := s.generalSettingRepo.GetAllGeneralSetting() // This will return a single record now
 	if err != nil {
 		return nil, err
 	}
+	if setting == nil {
+		return nil, fmt.Errorf("general setting not found") // Handle case when no setting is found
+	}
 
-	var response []*dto.GeneralSettingResponse
-	for _, setting := range settings {
-		unitEnum := common.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][setting.MaxProjectDocketSizeUnit]
-		if unitEnum == "" {
-			unitEnum = "UNKNOWN"
-		}
+	// Map the integer value to a string unit using the enum
+	unitEnum := common.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][setting.MaxProjectDocketSizeUnit] // No need to use len() here
+	if unitEnum == "" {
+		unitEnum = "UNKNOWN"
+	}
 
-		response = append(response, &dto.GeneralSettingResponse{
-			ID:                       setting.ID,
-			DefaultDeletionDays:      setting.DefaultDeletionDays,
-			DefaultArchivingDays:     setting.DefaultArchivingDays,
-			MaxActiveProjects:        setting.MaxActiveProjects,
-			MaxUsersPerOrganization:  setting.MaxUsersPerOrganization,
-			MaxProjectDocketSize:     setting.MaxProjectDocketSize,
-			MaxProjectDocketSizeUnit: unitEnum, // Return string back
-			ScheduledEvaluationTime:  setting.ScheduledEvaluationTime,
-			CreatedAt:                setting.CreatedAt,
-			UpdatedAt:                setting.UpdatedAt,
-		})
+	// Return the mapped GeneralSettingResponse
+	response := &dto.GeneralSettingResponse{
+		ID:                       setting.ID,
+		DefaultDeletionDays:      setting.DefaultDeletionDays,
+		DefaultArchivingDays:     setting.DefaultArchivingDays,
+		MaxActiveProjects:        setting.MaxActiveProjects,
+		MaxUsersPerOrganization:  setting.MaxUsersPerOrganization,
+		MaxProjectDocketSize:     setting.MaxProjectDocketSize,
+		MaxProjectDocketSizeUnit: unitEnum, // Return string back
+		ScheduledEvaluationTime:  setting.ScheduledEvaluationTime,
+		CreatedAt:                setting.CreatedAt,
+		UpdatedAt:                setting.UpdatedAt,
 	}
 
 	return response, nil
@@ -168,21 +181,29 @@ func (s *service) GetAllNonSingHealthOrganizations(ctx context.Context) ([]*dto.
 	return response, nil
 }
 
+func (s *service) CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error {
+	// Check if the organization setting already exists
+	existingSetting, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, setting.OrgID.String())  // Convert OrgID to string
+	if err == nil && existingSetting != nil {
+		return fmt.Errorf("organization setting already exists")  // Using fmt.Errorf instead of errors.New
+	}
+	return s.orgSettingRepo.CreateOrganizationSetting(ctx, setting)
+}
+
 func (s *service) UpdateOrganizationSettingByOrgID(ctx context.Context, setting *dto.OrganizationSettingRequest) error {
 	entity := &entities.OrganizationSetting{
-		ID:                      setting.ID,
-		OrgID:          setting.OrgID,
-		DefaultDeletionDays:     setting.DefaultDeletionDays,
-		DefaultArchivingDays:    setting.DefaultArchivingDays,
-		MaxActiveProjects:       setting.MaxActiveProjects,
-		MaxUsersPerOrganization: setting.MaxUsersPerOrganization,
-		MaxProjectDocketSize:    setting.MaxProjectDocketSize,
+		ID:                       setting.ID,
+		OrgID:                    setting.OrgID,
+		DefaultDeletionDays:      setting.DefaultDeletionDays,
+		DefaultArchivingDays:     setting.DefaultArchivingDays,
+		MaxActiveProjects:        setting.MaxActiveProjects,
+		MaxUsersPerOrganization:  setting.MaxUsersPerOrganization,
+		MaxProjectDocketSize:     setting.MaxProjectDocketSize,
 		MaxProjectDocketSizeUnit: setting.MaxProjectDocketSizeUnit,
-		ScheduledEvaluationTime: setting.ScheduledEvaluationTime,
+		ScheduledEvaluationTime:  setting.ScheduledEvaluationTime,
 	}
 	return s.orgSettingRepo.UpdateOrganizationSettingByOrgID(ctx, entity)
 }
-
 
 func (s *service) GetOrganizationSettingByOrgID(ctx context.Context, orgID uuid.UUID) (*dto.OrganizationSettingResponse, error) {
 	setting, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, orgID.String())
@@ -192,7 +213,7 @@ func (s *service) GetOrganizationSettingByOrgID(ctx context.Context, orgID uuid.
 
 	return &dto.OrganizationSettingResponse{
 		ID:                       setting.ID,
-		OrgID:           setting.OrgID,
+		OrgID:                    setting.OrgID,
 		DefaultDeletionDays:      setting.DefaultDeletionDays,
 		DefaultArchivingDays:     setting.DefaultArchivingDays,
 		MaxActiveProjects:        setting.MaxActiveProjects,
