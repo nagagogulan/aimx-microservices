@@ -1,42 +1,43 @@
 image: golang:1.23-alpine
 
 stages:
+  - clone
   - build
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
+  GIT_REPO_URL: "https://Nagagogulan2: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@github.com/PecozQ/aimx-library.git"
+  GIT_BRANCH: "dev"
+
+clone:
+  stage: clone
+  script:
+    - apk update && apk add git
+    - git clone --branch $GIT_BRANCH $GIT_REPO_URL source
 
 build:
   stage: build
   tags:
     - docker
   before_script:
-    - apk update && apk add docker git
-
-    # GitHub authentication for private repos
-    - git config --global url."https://Nagagogulan2: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@github.com/".insteadOf "https://github.com/"
-
-    # Set Go environment
+    - apk update && apk add docker
+    - cd source
     - export GOPRIVATE=github.com/PecozQ/*
     - export GO111MODULE=on
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - go env -w GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
-    
   script:
+    - cd source
     - |
       for SERVICE in $SERVICES; do
         echo "Building $SERVICE..."
-
         cd applications/$SERVICE || exit 1
-
         go mod tidy
         go mod vendor
-
         docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-
         cd - > /dev/null
       done
 
