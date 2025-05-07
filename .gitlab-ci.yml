@@ -12,8 +12,16 @@ build:
   tags:
     - docker
   before_script:
-    # Install Docker
+    # Install Docker and Git
     - apk update && apk add docker git
+    
+    # Set Go environment variables
+    - export GOPRIVATE=github.com/PecozQ/*
+    - export GO111MODULE=on
+    
+    # Install Go modules and set GOPATH (if needed)
+    - go env -w GOPRIVATE=github.com/PecozQ/*
+    - go env -w GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
     
   script:
@@ -35,6 +43,7 @@ build:
         # Go back to the previous directory
         cd - > /dev/null
       done
+
 
 
 # deploy_microservices:
