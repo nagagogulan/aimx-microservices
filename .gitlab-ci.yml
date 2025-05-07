@@ -21,7 +21,7 @@ build:
   services:
     - docker:dind
   before_script:
-    - apk update && apk add docker
+    - apk update && apk add docker git
     - export GOPRIVATE=github.com/PecozQ/*  # Set GOPRIVATE for private repos
     - go env -w GO111MODULE=on              # Enable Go modules
     - go env -w GOPRIVATE=github.com/PecozQ/*  # Ensure Go uses private repos
