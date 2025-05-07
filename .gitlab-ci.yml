@@ -1,36 +1,28 @@
-image: golang:1.23-alpine
 
+image: golang:1.23-alpine
 stages:
   - build
-  - deploy
-
+ 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity forms roles dataset profile user_management"
-
+  SERVICES: "identity forms roles dataset profile user_management"  
 build:
   stage: build
   tags:
     - docker
   before_script:
-    - apk add --no-cache docker git openssh
-    - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan github.com >> ~/.ssh/known_hosts
-    - export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
+    - apt-get update && apt-get install -y docker.io
     - export DOCKER_HOST="unix:///var/run/docker.sock"
-  script: |
-    for SERVICE in $SERVICES; do
-      echo "Building $SERVICE..."
-      cd applications/$SERVICE || exit 1
-      go mod tidy
-      go mod vendor
-      docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      cd - > /dev/null
-    done
 
+  script:
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building $SERVICE..."
+        cd applications/$SERVICE || exit 1
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        cd - > /dev/null
+      done
 
 
 # deploy_microservices:
