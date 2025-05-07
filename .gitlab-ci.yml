@@ -7,11 +7,15 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
 
 build:
   stage: build
   script:
     - apk update && apk add docker git
+    - echo "Cloning the repository..."
+    - git clone $GIT_REPO_URL
+    - cd aimx-library  # Make sure to cd into the cloned repo
     - echo "Building services..."
     - |
       for SERVICE in $SERVICES; do
