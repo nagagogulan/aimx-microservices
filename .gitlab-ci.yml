@@ -25,7 +25,11 @@ build:
   image: docker:latest
   stage: build
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
@@ -42,6 +46,7 @@ build:
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd ..
       done
+
 
 
 
