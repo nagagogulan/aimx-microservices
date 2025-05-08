@@ -31,7 +31,7 @@ build:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
-    - cd source/applications || { echo "'applications' directory not found"; exit 1; }
+    - cd applications
     - |
       for SERVICE in $SERVICES; do
         echo "Building Docker image for $SERVICE..."
@@ -42,6 +42,7 @@ build:
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd ..
       done
+
 
 
 deploy_microservices:
