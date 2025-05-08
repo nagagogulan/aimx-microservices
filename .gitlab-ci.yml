@@ -41,9 +41,8 @@ build:
     - go mod tidy
     - echo "Running go mod vendor..."
     - go mod vendor
-    - echo "Running go build..."
-    - go build ./...
-    - echo "Build completed."
+    - cd cmd
+    - go run main.go
 
 
 
