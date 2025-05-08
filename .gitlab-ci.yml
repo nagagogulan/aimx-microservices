@@ -1,4 +1,5 @@
-image: golang:1.23-alpine
+
+image: golang:1.20-alpine
 
 stages:
   - clone
@@ -7,6 +8,7 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
+  SERVICES: "identity forms roles dataset profile user_management"
   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
 
@@ -15,8 +17,9 @@ clone:
   script:
     - apk update && apk add git
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
-    - echo "Cloning complete. Current directory: $(pwd)"
-    - ls -R source
+  artifacts:
+    paths:
+      - source/
 
 build:
   image: docker:latest
@@ -29,21 +32,24 @@ build:
   before_script:
     - apk update && apk add git go
     - cd source
-    - echo "Current directory after cloning repo: $(pwd)"
-    - ls -R
   script:
-    - echo "Running go mod tidy and vendor for dataset service..."
-    - cd applications/dataset 
-    - echo "Inside $(pwd)"
-    - ls -R
+    - echo "Running go mod tidy and vendor..."
     - go mod tidy
     - go mod vendor
-    - echo "Building Docker image for dataset..."
-    - docker build -t $DOCKER_IMAGE_PREFIX-dataset:latest .
-    - echo "Pushing Docker image for dataset..."
-    - docker push $DOCKER_IMAGE_PREFIX-dataset:latest
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building $SERVICE..."
+        cd applications/$SERVICE || { echo "Service '$SERVICE' not found"; exit 1; }
 
-deploy:
-  stage: deploy
-  script:
-    - echo "All services built and pushed successfully."
+        echo "Tidying modules..."
+        go mod tidy
+        go mod vendor
+
+        echo "Building Docker image for $SERVICE..."
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+
+        echo "Pushing Docker image for $SERVICE..."
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+
+        cd - > /dev/null
+      done
