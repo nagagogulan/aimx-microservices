@@ -32,10 +32,8 @@ build:
   - echo "Listing project files at root..."
   - ls -la
 
-  - echo "Listing contents of source/ directory..."
-  - cd source && ls -la
 
-  - echo "Listing contents of source/applications/ directory..."
+  - echo "Listing contents of /applications/ directory..."
   - cd applications && ls -la
 
   - echo "Navigating to dataset..."
