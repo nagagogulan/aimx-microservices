@@ -32,6 +32,7 @@ build:
   script:
     - for SERVICE in $SERVICES; do
         echo "Building and tagging Docker image for $SERVICE...";
+        cd applications && ls -la
         cd $SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
         go mod tidy
         go mod vendor
