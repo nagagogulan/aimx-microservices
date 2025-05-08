@@ -2,44 +2,22 @@ image: golang:1.23-alpine
 
 stages:
   - build
-  - deploy
 
-variables:
-  DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
+before_script:
+  - apk add --no-cache git
+  - go env -w GO111MODULE=on
+  - go env -w GOPRIVATE=github.com/PecozQ/*
+  - git config --global url."git@github.com:".insteadof "https://github.com/"
 
 build:
   stage: build
   script:
-    - apk update && apk add docker git
-    - echo "Cloning the repository..."
-    - git clone $GIT_REPO_URL
-    - cd aimx-library  # Make sure to cd into the cloned repo
-    - echo "Building services..."
-    - |
-      for SERVICE in $SERVICES; do
-        echo "Building $SERVICE..."
-        cd applications/$SERVICE || { echo "Service '$SERVICE' not found"; exit 1; }
-        go mod tidy
-        go mod vendor
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        cd - > /dev/null
-      done
-
-deploy:
-  stage: deploy
-  script:
-    - echo "Deploying to EC2..."
-    - |
-      for SERVICE in $SERVICES; do
-        echo "Deploying $SERVICE..."
-        ssh $EC2_USER@$EC2_HOST "
-          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker pull $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-          docker ps -q --filter name=$SERVICE | xargs -r docker stop
-          docker ps -aq --filter name=$SERVICE | xargs -r docker rm
-          docker run -d --name $SERVICE -p 8080:8080 $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        "
-      done
+    - echo "Listing project files..."
+    - ls -la
+    - echo "Navigating to applications/identity..."
+    - cd applications/identity || { echo "Directory not found!"; exit 1; }
+    - echo "Running go mod tidy..."
+    - go mod tidy
+    - echo "Running go build..."
+    - go build ./...
+    - echo "Build completed."
