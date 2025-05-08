@@ -36,6 +36,7 @@ build:
     - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
     - cd applications
+    - ls -ll
     - |
       for SERVICE in $SERVICES; do
         echo "Building Docker image for $SERVICE..."
