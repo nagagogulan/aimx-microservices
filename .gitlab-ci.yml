@@ -29,25 +29,27 @@ build:
   before_script:
     - apk update && apk add git go
   script:
-    - echo "Listing project files at root..."
-    - ls -la
-    
+  - echo "Listing project files at root..."
+  - ls -la
 
-    - echo "Listing contents of applications/ directory..."
-    - cd applications && ls -la
-    
+  - echo "Listing contents of source/ directory..."
+  - cd source && ls -la
 
-    - echo "Navigating to applications/dataset..."
-    - cd applications/dataset || { echo "Directory not found!"; exit 1; }
+  - echo "Listing contents of source/applications/ directory..."
+  - cd applications && ls -la
 
-    - echo "Running go mod tidy..."
-    - go mod tidy
+  - echo "Navigating to dataset..."
+  - cd dataset || { echo "Directory not found!"; exit 1; }
 
-    - echo "Running go mod vendor..."
-    - go mod vendor
+  - echo "Running go mod tidy..."
+  - go mod tidy
 
-    - echo "Running go build..."
-    - go build ./...
+  - echo "Running go mod vendor..."
+  - go mod vendor
 
-    - echo "Build completed."
+  - echo "Running go build..."
+  - go build ./...
+
+  - echo "Build completed."
+
 
