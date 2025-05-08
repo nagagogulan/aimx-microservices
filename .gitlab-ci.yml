@@ -35,9 +35,19 @@ build:
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
     - |
+      echo "Listing the contents of applications directory..."
+      ls -la applications  # List the contents to verify the service directories
+
       for SERVICE in $SERVICES; do
         echo "Building and tagging Docker image for $SERVICE..."
-        cd applications/$SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
+        # Ensure the service directory exists before moving to it
+        if [ -d "applications/$SERVICE" ]; then
+          cd applications/$SERVICE
+        else
+          echo "Directory for service '$SERVICE' not found!"
+          exit 1
+        fi
+
         go mod tidy
         go mod vendor
         docker build -t backend_$SERVICE:latest .
