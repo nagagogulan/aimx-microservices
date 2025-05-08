@@ -24,7 +24,12 @@ setup_environment:
 build:
   stage: build
   script:
-    - echo "Navigating to backend/applications/identity..."
-    - cd backend/applications/identity
-    - echo "Running Go mod tidy..."
+    - ls -la
+    - echo "Navigating to target directory..."
+    - cd backend/applications/identity || (echo "Directory not found!" && exit 1)
+    - echo "Running go mod tidy..."
     - go mod tidy
+    - echo "Current directory: $(pwd)"
+    - echo "Listing contents of backend/applications:"
+    - ls -la backend/applications
+
