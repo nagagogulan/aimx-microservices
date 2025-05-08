@@ -16,17 +16,10 @@ clone:
   script:
     - apk update && apk add git
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
-  
 
 build:
   image: docker:latest
   stage: build
-  services:
-    - name: docker:dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
@@ -47,8 +40,6 @@ build:
         cd ../..
       done
     - echo "Build, tag, and push completed for all services."
-
-  
 
 deploy_microservices:
   stage: deploy
