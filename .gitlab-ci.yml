@@ -17,8 +17,8 @@ clone:
     - apk update && apk add git
     - echo "Cloning repo..."
     - git clone --branch $GIT_BRANCH $GIT_REPO_URL source || { echo "Git clone failed"; exit 1; }
-    - ls -alh source
-    - cd source || { echo "'source' directory missing"; exit 1; }
+    
+  
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - go env -w GO111MODULE=on
 
