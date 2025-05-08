@@ -233,7 +233,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 				if err != nil {
 					return nil, errcom.ErrNotFound
 				}
-
+				fmt.Println("****************", orgid)
 				errs := s.orgSettingRepo.DeleteOrganizationSettingByOrgID(ctx, orgid.String())
 				if errs != nil {
 					return nil, errcom.ErrNotFound
