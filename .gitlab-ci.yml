@@ -31,11 +31,10 @@ build:
   script:
     - echo "Listing project files at root..."
     - ls -la
-    - echo "Navigating to source/ directory..."
-    - cd source
+    
 
     - echo "Listing contents of applications/ directory..."
-    - ls -la applications/
+    - cd applications && ls -la
 
     - echo "Navigating to applications/dataset..."
     - cd applications/dataset || { echo "Directory not found!"; exit 1; }
