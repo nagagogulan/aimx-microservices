@@ -187,12 +187,12 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		return nil, fmt.Errorf("failed to fetch general settings: %w", err)
 	}
 
-	if len(generalSettings) == 0 {
+	if generalSettings == nil {
 		return nil, fmt.Errorf("no general settings found")
 	}
 
 	// Step 3: Use general settings
-	firstSetting := generalSettings[0]
+	firstSetting := generalSettings
 
 	if status == "APPROVED" && org.Type == 1 {
 		orgreq.UserCount = 0
