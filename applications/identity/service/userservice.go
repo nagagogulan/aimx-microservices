@@ -68,6 +68,9 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if err != nil {
 		return nil, NewCustomError(errcom.ErrNotFound, errors.New("no organization found for this domain"))
 	}
+	if org == nil {
+		return nil, errcom.ErrOrganizationRegister
+	}
 	var metadata dto.OrgMetadata
 	if err := json.Unmarshal(org.Metadata, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal organization metadata: %w", err)
