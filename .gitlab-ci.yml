@@ -32,7 +32,7 @@ build:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
     - echo "Listing contents of source/applications directory..."
-    - cd source/applications && ls -la
+    - cd applications && ls -la
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
     - |
