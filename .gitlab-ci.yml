@@ -8,7 +8,7 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "git@github.com:PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
   GIT_BRANCH: "dev"
 
 clone:
