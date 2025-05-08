@@ -1,4 +1,4 @@
-image: golang:1.20-alpine
+image: golang:1.23-alpine
 
 stages:
   - clone
@@ -8,54 +8,43 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
+  GIT_REPO_URL: "git@github.com:PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
   GIT_BRANCH: "dev"
-  PROJECT_REPO_URL: "https://github.com/PecozQ/your-application-repo.git"  # Add your project repo URL here
-  DOCKER_HOST: tcp://docker:2375  # Configure Docker to talk to dind service
 
 clone:
   stage: clone
   script:
     - apk update && apk add git
-    - git clone -b "$GIT_BRANCH" "$PROJECT_REPO_URL" applications  # Clone the main application repo
-    - cd applications 
+    - echo "Cloning repo..."
+    - git clone --branch $GIT_BRANCH $GIT_REPO_URL source || { echo "Git clone failed"; exit 1; }
+    - ls -alh source
+    - cd source || { echo "'source' directory missing"; exit 1; }
+    - go env -w GOPRIVATE=github.com/PecozQ/*
+    - go env -w GO111MODULE=on
 
 build:
-  image: docker:latest
   stage: build
   services:
-    - name: docker:dind
-      alias: docker
-  variables:
-    DOCKER_TLS_CERTDIR: ""  # Disable Docker TLS as it's not necessary here
+    - docker:dind
   before_script:
-    - apk update && apk add git go
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
-    - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+    - apk update && apk add docker
+    - cd source
+    - export GOPRIVATE=github.com/PecozQ/*
+    - export GO111MODULE=on
+    - export DOCKER_HOST="unix:///var/run/docker.sock"
   script:
+    - go mod tidy
+    - go mod vendor
     - |
-      echo "Listing the contents of applications directory..."
-      ls -la applications  # List the contents to verify the service directories
-
       for SERVICE in $SERVICES; do
-        echo "Building and tagging Docker image for $SERVICE..."
-        # Ensure the service directory exists before moving to it
-        if [ -d "applications/$SERVICE" ]; then
-          cd applications/$SERVICE
-        else
-          echo "Directory for service '$SERVICE' not found!"
-          exit 1
-        fi
-
+        echo "Building $SERVICE..."
+        cd $SERVICE || { echo "Service '$SERVICE' not found"; exit 1; }
         go mod tidy
         go mod vendor
-        docker build -t backend_$SERVICE:latest .
-        docker tag backend_$SERVICE:latest $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        cd ../../
+        cd - > /dev/null
       done
-    - echo "Build, tag, and push completed for all services."
 
 deploy_microservices:
   stage: deploy
@@ -70,7 +59,7 @@ deploy_microservices:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
     - |
-      ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+      ssh $EC2_USER@$EC2_HOST "
         docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 
         for SERVICE in $SERVICES; do
