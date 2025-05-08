@@ -8,15 +8,10 @@ setup_environment:
   stage: setup
   script:
     - echo "Setting Go environment variables..."
-    # Install git since it's missing in the golang:1.23-alpine image
     - apk add --no-cache git
-    # Set GOPRIVATE to handle private Go modules
     - export GOPRIVATE=github.com/PecozQ
-    # Enable Go modules
     - go env -w GO111MODULE=on
-    # Set GOPRIVATE again for wildcard usage
     - go env -w GOPRIVATE=github.com/PecozQ/*
-    # Use SSH instead of HTTPS for GitHub
     - git config --global url."git@github.com:".insteadof "https://github.com/"
     - echo "Environment setup complete."
 
@@ -26,7 +21,8 @@ build:
     - echo "Listing project files..."
     - ls -la
     - echo "Navigating to target directory..."
-    - cd backend/applications/identity || (echo "Directory not found!" && exit 1)
+    - if [ ! -d backend/applications/identity ]; then echo "Directory not found!"; exit 1; fi
+    - cd backend/applications/identity
     - echo "Running go mod tidy..."
     - go mod tidy
     - echo "Current directory: $(pwd)"
