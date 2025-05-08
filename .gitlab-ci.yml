@@ -14,8 +14,10 @@ build:
   script:
     - echo "Listing project files..."
     - ls -la
-    - echo "Navigating to backend/applications/identity..."
-    - cd backend/applications/identity || { echo "Directory not found!"; exit 1; }
+    - echo "Navigating to applications/identity..."
+    - cd applications/identity || { echo "Directory not found!"; exit 1; }
+    - echo "Running go mod tidy..."
     - go mod tidy
+    - echo "Running go build..."
     - go build ./...
     - echo "Build completed."
