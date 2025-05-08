@@ -41,11 +41,13 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		"xlsx": true,
 		"zip":  true,
 	}
-	validImageExtensions := map[string]bool{
+
+	validExtensions := map[string]bool{
 		"jpg":  true,
 		"jpeg": true,
 		"png":  true,
-		"gif":  true,
+		"docx": true,
+		"pdf":  true,
 	}
 	ext := strings.ToLower(req.Extension)
 	var filePath string
@@ -56,7 +58,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		}
 		filePath = fmt.Sprintf("dataset/%s/sample/%s_%s", id.String(), timestamp, id.String())
 	case 1:
-		if !validImageExtensions[ext] {
+		if !validExtensions[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png, .gif allowed")
 		}
 		filePath = fmt.Sprintf("images/%s/%s_%s", id.String(), timestamp, id.String())
