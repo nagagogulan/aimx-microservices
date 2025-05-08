@@ -27,10 +27,9 @@ build:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
-    - ls -la
     - echo "Listing contents of /applications/ directory..."
     - cd applications && ls -la
-    - cd /applications
+    - cd applications
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
     - for SERVICE in $SERVICES; do
