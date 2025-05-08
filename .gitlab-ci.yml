@@ -16,9 +16,7 @@ clone:
   script:
     - apk update && apk add git
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
-  artifacts:
-    paths:
-      - source/
+  
 
 build:
   image: docker:latest
