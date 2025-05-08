@@ -38,7 +38,7 @@ build:
     - |
       for SERVICE in $SERVICES; do
         echo "Building and tagging Docker image for $SERVICE..."
-        cd source/applications/$SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
+        cd applications/$SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
         go mod tidy
         go mod vendor
         docker build -t backend_$SERVICE:latest .
