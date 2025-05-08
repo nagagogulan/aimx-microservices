@@ -1,4 +1,4 @@
-image: golang:1.23-alpine
+image: golang:1.20-alpine
 
 stages:
   - clone
@@ -7,52 +7,40 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
+  SERVICES: "identity dataset profile forms roles user_management"
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
 
 clone:
   stage: clone
   script:
     - apk update && apk add git
-    - echo "Cloning repo..."
-    - git clone --branch $GIT_BRANCH $GIT_REPO_URL source || { echo "Git clone failed"; exit 1; }
-    
-  
-    - go env -w GOPRIVATE=github.com/PecozQ/*
-    - go env -w GO111MODULE=on
+    - echo "Cloning repository..."
+    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
+  artifacts:
+    paths:
+      - source/
 
 build:
+  image: docker:latest
   stage: build
   services:
     - docker:dind
   before_script:
-    - apk update && apk add docker git
-    - export GOPRIVATE=github.com/PecozQ/*
-    - export GO111MODULE=on
-    - export DOCKER_HOST="unix:///var/run/docker.sock"
+    - apk update && apk add git go
+    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+    - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
-    - cd applications || { echo "'applications' directory missing"; exit 1; }
-
-    # Get list of changed services in applications folder
-    - CHANGED_SERVICES=$(git diff --name-only origin/$CI_DEFAULT_BRANCH | grep '^applications/' | cut -d '/' -f 2 | sort -u)
-    
-
-    - |
-      for SERVICE in $CHANGED_SERVICES; do
-        if [ -d "$SERVICE" ]; then
-          echo "Building $SERVICE..."
-          cd $SERVICE
-          go mod tidy
-          go mod vendor
-          docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-          docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-          cd ..
-        else
-          echo "Directory $SERVICE does not exist, skipping..."
-        fi
+    - cd applications || { echo "'applications' directory not found"; exit 1; }
+    - for SERVICE in $SERVICES; do
+        echo "Building Docker image for $SERVICE...";
+        cd $SERVICE || { echo "$SERVICE directory not found"; exit 1; }
+        go mod tidy
+        go mod vendor
+        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        cd ..
       done
-
 
 deploy_microservices:
   stage: deploy
