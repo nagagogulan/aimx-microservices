@@ -35,7 +35,7 @@ build:
 
     - echo "Listing contents of applications/ directory..."
     - cd applications && ls -la
-    - echo "Current directory: $(pwd)"
+    -
 
     - echo "Navigating to applications/dataset..."
     - cd applications/dataset || { echo "Directory not found!"; exit 1; }
