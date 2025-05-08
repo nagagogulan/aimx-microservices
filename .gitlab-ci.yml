@@ -33,23 +33,34 @@ build:
     - apk update && apk add git go
     - cd source
   script:
-    - echo "Running go mod tidy and vendor..."
+    - echo "Listing available services in applications/ directory..."
+    - ls -la applications/
+
+    - echo "Running go mod tidy and vendor for dataset..."
+    - cd applications/dataset
     - go mod tidy
     - go mod vendor
+    - cd - > /dev/null
+
+    - echo "Processing services..."
     - |
       for SERVICE in $SERVICES; do
-        echo "Building $SERVICE..."
-        cd applications/$SERVICE || { echo "Service '$SERVICE' not found"; exit 1; }
+        if [ -d "applications/$SERVICE" ]; then
+          echo "Building $SERVICE..."
+          cd applications/$SERVICE
 
-        echo "Tidying modules..."
-        go mod tidy
-        go mod vendor
+          echo "Tidying modules..."
+          go mod tidy
+          go mod vendor
 
-        echo "Building Docker image for $SERVICE..."
-        docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
+          echo "Building Docker image for $SERVICE..."
+          docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
 
-        echo "Pushing Docker image for $SERVICE..."
-        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+          echo "Pushing Docker image for $SERVICE..."
+          docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
 
-        cd - > /dev/null
+          cd - > /dev/null
+        else
+          echo "Skipping $SERVICE: directory not found"
+        fi
       done
