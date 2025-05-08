@@ -36,7 +36,7 @@ build:
 
     # Get list of changed services in applications folder
     - CHANGED_SERVICES=$(git diff --name-only origin/$CI_DEFAULT_BRANCH | grep '^applications/' | cut -d '/' -f 2 | sort -u)
-    - echo "Changed services: $CHANGED_SERVICES"
+    
 
     - |
       for SERVICE in $CHANGED_SERVICES; do
