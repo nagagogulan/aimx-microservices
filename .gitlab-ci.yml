@@ -35,7 +35,7 @@ build:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
-  - cd source/applications
+  - cd applications
   - ls -ll
   - |
     for SERVICE in $SERVICES; do
