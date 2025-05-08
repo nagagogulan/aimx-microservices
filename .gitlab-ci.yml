@@ -29,7 +29,6 @@ build:
     - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
     - echo "Listing contents of /applications/ directory..."
     - cd applications && ls -la
-    - cd applications
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
     - for SERVICE in $SERVICES; do
