@@ -35,6 +35,34 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		}
 		orgDomain := domainParts[1]
 
+		formList, err := s.formRepo.GetFormAll(ctx, form.Type)
+		if err != nil {
+			return nil, err
+		}
+		for _, form := range formList {
+			for _, field := range form.Fields {
+				if field.Label == "Admin Email Address" {
+					fmt.Println("Found Admin Email Address field:")
+					fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
+
+					// Assert that field.Value is a string
+					email, ok := field.Value.(string)
+					if !ok {
+						return nil, errcom.ErrInvalidEmail // Or fmt.Errorf("email value is not a string")
+					}
+					domainParts := strings.Split(email, "@")
+					if len(domainParts) != 2 {
+						return nil, errcom.ErrInvalidEmail
+					}
+
+					orgDomainInForm := domainParts[1]
+					if orgDomain == orgDomainInForm && form.Status != 2 {
+						return nil, fmt.Errorf("Domain Already Exists")
+					}
+				}
+			}
+		}
+
 		existingOrg, err := s.organizationRepo.GetOrganizationByDomain(ctx, orgDomain)
 		if err != nil {
 			return nil, errcom.ErrInvalidEmail
@@ -42,6 +70,14 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		if !commonlib.IsEmpty(existingOrg) {
 			fmt.Println("the existing org is given as:", existingOrg)
 			return nil, errcom.ErrDuplicateEmail
+		}
+		if existingOrg != nil && form.Status == 2 {
+			createdForm, err := s.formRepo.CreateForm(ctx, form)
+			if err != nil {
+				commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdForm)
+				return nil, err
+			}
+			return createdForm, err
 		}
 	}
 
@@ -177,10 +213,32 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		return nil, err
 	}
 
-	if status != "APPROVED" || status != "REJECTED" {
-		return &model.Response{Message: "Form updated successfully"}, nil
-	}
+	if updatedForm.Status == 2 {
+		for _, field := range updatedForm.Fields {
+			if field.Label == "Admin Email Address" {
+				fmt.Println("Found Admin Email Address field:")
+				fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
 
+				// Assert that field.Value is a string
+				email, ok := field.Value.(string)
+				if !ok {
+					return nil, errcom.ErrInvalidEmail // Or fmt.Errorf("email value is not a string")
+				}
+				domainParts := strings.Split(email, "@")
+				if len(domainParts) != 2 {
+					return nil, errcom.ErrInvalidEmail
+				}
+
+				orgDomainInForm := domainParts[1]
+				err := s.organizationRepo.DeleteOrganizationByDomain(ctx, orgDomainInForm)
+				if err != nil {
+					return nil, errcom.ErrNotFound
+				}
+
+			}
+		}
+
+	}
 	// to get all the general setting value
 	generalSettings, err := s.globalSettingRepo.GetAllGeneralSetting()
 	if err != nil {
@@ -236,7 +294,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	sendEmail(orgreq.Email, status)
 
 	// Final response message
-	if status == "APPROVED" && updatedForm {
+	if status == "APPROVED" && updatedForm != nil {
 		return &model.Response{Message: "Form successfully approved"}, nil
 	}
 	return &model.Response{Message: "Form rejected"}, nil
