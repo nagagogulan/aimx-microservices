@@ -68,7 +68,6 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			return nil, errcom.ErrInvalidEmail
 		}
 		if !commonlib.IsEmpty(existingOrg) {
-			fmt.Println("the existing org is given as:", existingOrg)
 			return nil, errcom.ErrDuplicateEmail
 		}
 		if existingOrg != nil && form.Status == 2 {
@@ -79,6 +78,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			}
 			return createdForm, err
 		}
+
 	}
 
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
@@ -228,10 +228,14 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 				if len(domainParts) != 2 {
 					return nil, errcom.ErrInvalidEmail
 				}
-
 				orgDomainInForm := domainParts[1]
-				err := s.organizationRepo.DeleteOrganizationByDomain(ctx, orgDomainInForm)
+				orgid, err := s.organizationRepo.DeleteOrganizationByDomain(ctx, orgDomainInForm)
 				if err != nil {
+					return nil, errcom.ErrNotFound
+				}
+
+				errs := s.orgSettingRepo.DeleteOrganizationSettingByOrgID(ctx, orgid.String())
+				if errs != nil {
 					return nil, errcom.ErrNotFound
 				}
 
