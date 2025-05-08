@@ -28,26 +28,22 @@ build:
     - docker:dind
   before_script:
     - apk update && apk add git go
+    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+    - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
   script:
-  - echo "Listing project files at root..."
-  - ls -la
+    - echo "Listing project files at root..."
+    - ls -la
+    - echo "Listing contents of /applications/ directory..."
+    - cd applications && ls -la
+    - echo "Navigating to dataset..."
+    - cd dataset || { echo "Directory not found!"; exit 1; }
+    - echo "Running go mod tidy..."
+    - go mod tidy
+    - echo "Running go mod vendor..."
+    - go mod vendor
+    - echo "Running go build..."
+    - go build ./...
+    - echo "Build completed."
 
-
-  - echo "Listing contents of /applications/ directory..."
-  - cd applications && ls -la
-
-  - echo "Navigating to dataset..."
-  - cd dataset || { echo "Directory not found!"; exit 1; }
-
-  - echo "Running go mod tidy..."
-  - go mod tidy
-
-  - echo "Running go mod vendor..."
-  - go mod vendor
-
-  - echo "Running go build..."
-  - go build ./...
-
-  - echo "Build completed."
 
 
