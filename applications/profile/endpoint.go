@@ -22,8 +22,7 @@ type Endpoints struct {
 	GetAllNonSingHealthOrganizationsEndpoint endpoint.Endpoint
 	UpdateOrganizationSettingByOrgIDEndpoint endpoint.Endpoint
 	GetOrganizationSettingByOrgIDEndpoint    endpoint.Endpoint
-	CreateOrganizationSettingEndpoint endpoint.Endpoint
-
+	CreateOrganizationSettingEndpoint        endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -36,8 +35,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetAllNonSingHealthOrganizationsEndpoint: makeGetAllNonSingHealthOrganizationsEndpoint(s),
 		UpdateOrganizationSettingByOrgIDEndpoint: MakeUpdateOrganizationSettingByOrgIDEndpoint(s),
 		GetOrganizationSettingByOrgIDEndpoint:    MakeGetOrganizationSettingByOrgIDEndpoint(s),
-		CreateOrganizationSettingEndpoint: makeCreateOrganizationSettingEndpoint(s),
-
+		CreateOrganizationSettingEndpoint:        makeCreateOrganizationSettingEndpoint(s),
 	}
 }
 
@@ -119,6 +117,10 @@ func MakeGetOrganizationSettingByOrgIDEndpoint(s service.Service) endpoint.Endpo
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*dto.OrganizationSettingRequest)
 		setting, err := s.GetOrganizationSettingByOrgID(ctx, req.OrgID)
+		if err != nil {
+			return nil, service.NewAppError(fmt.Errorf("No record found"), http.StatusBadRequest, "No record found", nil)
+
+		}
 		return setting, err
 	}
 }
@@ -127,14 +129,14 @@ func makeCreateOrganizationSettingEndpoint(s service.Service) endpoint.Endpoint 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*dto.OrganizationSettingRequest)
 		setting := &entities.OrganizationSetting{
-			OrgID:                   req.OrgID,
-			DefaultDeletionDays:     req.DefaultDeletionDays,
-			DefaultArchivingDays:    req.DefaultArchivingDays,
-			MaxActiveProjects:       req.MaxActiveProjects,
-			MaxUsersPerOrganization: req.MaxUsersPerOrganization,
-			MaxProjectDocketSize:    req.MaxProjectDocketSize,
+			OrgID:                    req.OrgID,
+			DefaultDeletionDays:      req.DefaultDeletionDays,
+			DefaultArchivingDays:     req.DefaultArchivingDays,
+			MaxActiveProjects:        req.MaxActiveProjects,
+			MaxUsersPerOrganization:  req.MaxUsersPerOrganization,
+			MaxProjectDocketSize:     req.MaxProjectDocketSize,
 			MaxProjectDocketSizeUnit: req.MaxProjectDocketSizeUnit,
-			ScheduledEvaluationTime: req.ScheduledEvaluationTime,
+			ScheduledEvaluationTime:  req.ScheduledEvaluationTime,
 		}
 		err := s.CreateOrganizationSetting(ctx, setting)
 		if err != nil {
