@@ -1,4 +1,4 @@
-image: golang:1.20-alpine
+image: golang:1.23-alpine
 
 stages:
   - clone
@@ -10,6 +10,7 @@ variables:
   SERVICES: "identity forms roles dataset profile user_management"
   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
+  DOCKER_HOST: tcp://docker:2375  # Configure Docker to talk to dind service
 
 clone:
   stage: clone
@@ -24,14 +25,11 @@ build:
     - name: docker:dind
       alias: docker
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
+    DOCKER_TLS_CERTDIR: ""  # Disable Docker TLS as it's not necessary here
   before_script:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
-    - echo "Listing contents of source/applications directory..."
-    - cd applications && ls -la
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
     - |
@@ -43,7 +41,7 @@ build:
         docker build -t backend_$SERVICE:latest .
         docker tag backend_$SERVICE:latest $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-        cd ../..
+        cd ../../
       done
     - echo "Build, tag, and push completed for all services."
 
@@ -60,7 +58,7 @@ deploy_microservices:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
     - |
-      ssh $EC2_USER@$EC2_HOST "
+      ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
         docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 
         for SERVICE in $SERVICES; do
