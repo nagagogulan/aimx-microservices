@@ -1,4 +1,4 @@
-image: golang:1.23-alpine
+image: golang:1.20-alpine
 
 stages:
   - clone
@@ -10,13 +10,15 @@ variables:
   SERVICES: "identity forms roles dataset profile user_management"
   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
+  PROJECT_REPO_URL: "https://github.com/PecozQ/your-application-repo.git"  # Add your project repo URL here
   DOCKER_HOST: tcp://docker:2375  # Configure Docker to talk to dind service
 
 clone:
   stage: clone
   script:
     - apk update && apk add git
-    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
+    - git clone -b "$GIT_BRANCH" "$PROJECT_REPO_URL" applications  # Clone the main application repo
+    - cd applications 
 
 build:
   image: docker:latest
@@ -35,7 +37,7 @@ build:
     - |
       for SERVICE in $SERVICES; do
         echo "Building and tagging Docker image for $SERVICE..."
-        cd $SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
+        cd applications/$SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
         go mod tidy
         go mod vendor
         docker build -t backend_$SERVICE:latest .
