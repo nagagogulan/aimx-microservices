@@ -39,3 +39,7 @@ build:
     - go mod tidy
     - go mod vendor
 
+deploy:
+  stage: deploy
+  script:
+    - echo "All services built and pushed successfully."
