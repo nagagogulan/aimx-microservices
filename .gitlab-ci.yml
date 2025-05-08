@@ -31,9 +31,10 @@ build:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
-    - cd applications || { echo "'applications' directory not found"; exit 1; }
-    - for SERVICE in $SERVICES; do
-        echo "Building Docker image for $SERVICE...";
+    - cd source/applications || { echo "'applications' directory not found"; exit 1; }
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building Docker image for $SERVICE..."
         cd $SERVICE || { echo "$SERVICE directory not found"; exit 1; }
         go mod tidy
         go mod vendor
@@ -41,6 +42,7 @@ build:
         docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
         cd ..
       done
+
 
 deploy_microservices:
   stage: deploy
