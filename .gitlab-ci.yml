@@ -8,7 +8,7 @@ stages:
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   SERVICES: "identity forms roles dataset profile user_management"
-  GIT_REPO_URL: "git@github.com:PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"  # Just the repo URL without 'git clone'
   GIT_BRANCH: "dev"
 
 clone:
@@ -28,7 +28,6 @@ build:
     - docker:dind
   before_script:
     - apk update && apk add docker
-    - cd source
     - export GOPRIVATE=github.com/PecozQ/*
     - export GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
