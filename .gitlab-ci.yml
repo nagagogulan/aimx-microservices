@@ -14,7 +14,7 @@ variables:
 clone:
   stage: clone
   script:
-    - apk update && apk add git
+    - apk update && apk add git docker
     - echo "Cloning repository..."
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
   artifacts:
