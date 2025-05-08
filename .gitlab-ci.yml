@@ -22,27 +22,33 @@ build:
   image: docker:latest
   stage: build
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/aimx-library
-    - echo "Listing contents of /applications/ directory..."
-    - cd applications && ls -la
+    - echo "Listing contents of source/applications directory..."
+    - cd source/applications && ls -la
     - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   script:
-  - |
-    for SERVICE in $SERVICES; do
-      echo "Building and tagging Docker image for $SERVICE..."
-      cd $SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
-      go mod tidy
-      go mod vendor
-      docker build -t backend_$SERVICE:latest .
-      docker tag backend_$SERVICE:latest $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      cd ../..
-    done
-  - echo "Build, tag, and push completed for all services."
+    - |
+      for SERVICE in $SERVICES; do
+        echo "Building and tagging Docker image for $SERVICE..."
+        cd source/applications/$SERVICE || { echo "$SERVICE directory not found!"; exit 1; }
+        go mod tidy
+        go mod vendor
+        docker build -t backend_$SERVICE:latest .
+        docker tag backend_$SERVICE:latest $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
+        cd ../..
+      done
+    - echo "Build, tag, and push completed for all services."
+
+  
 
 deploy_microservices:
   stage: deploy
