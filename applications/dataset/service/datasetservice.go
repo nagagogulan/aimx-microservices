@@ -51,6 +51,13 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		"docx": true,
 		"pdf":  true,
 	}
+	validDocketFileFormats := map[string]bool{
+		"pkl":    true,
+		"joblib": true,
+		"pth":    true,
+		"h5":     true,
+		"onnx":   true,
+	}
 	ext := strings.ToLower(req.Extension)
 	var filePath string
 	switch enumLabel {
@@ -61,12 +68,16 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		filePath = fmt.Sprintf("dataset/%s/sample/%s_%s", id.String(), timestamp, id.String())
 	case 1:
 		if !validImageExtensions[ext] {
-			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png, .gif allowed")
+			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png allowed")
 		}
 		filePath = fmt.Sprintf("images/%s/%s_%s", id.String(), timestamp, id.String())
 	case 2:
 		if !validFileFormats[ext] {
 			filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
+		}
+	case 3:
+		if !validDocketFileFormats[ext] {
+			filePath = fmt.Sprintf("docket/%s/%s_%s", id.String(), timestamp, id.String())
 		}
 	default:
 		return nil, fmt.Errorf("unsupported file format")
