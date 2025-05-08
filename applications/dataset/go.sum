@@ -1,5 +1,5 @@
-github.com/PecozQ/aimx-library v0.0.286 h1:UuttOl2etGVh5mXB2/QsNkpDvghT1sASI69eHbTqI6k=
-github.com/PecozQ/aimx-library v0.0.286/go.mod h1:uLTf3Uw1yoGhF2mUvRuAUuLwxgNbtRyx5zBUioqlcsc=
+github.com/PecozQ/aimx-library v0.0.416 h1:PoCQZNqfVvioGvHwt4L5K9jf0WXa/1Zgu+SNMcroYdQ=
+github.com/PecozQ/aimx-library v0.0.416/go.mod h1:EAQDPUEAIdz28J35uUwDg31LF7NaaabgwNytv8+BmoI=
 github.com/bytedance/sonic v1.13.2 h1:8/H1FempDZqC4VqjptGo14QQlJx8VdZJegxs6wwfqpQ=
 github.com/bytedance/sonic v1.13.2/go.mod h1:o68xyaF9u2gvVBuGHPlUVCy+ZfmNNO5ETf1+KgkJhz4=
 github.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=

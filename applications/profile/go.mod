@@ -3,8 +3,7 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.406
-	github.com/gin-contrib/cors v1.7.5
+	github.com/PecozQ/aimx-library v0.0.416
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
