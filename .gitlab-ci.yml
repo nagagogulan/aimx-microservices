@@ -24,6 +24,7 @@ setup_environment:
 build:
   stage: build
   script:
+    - echo "Navigating to backend/applications/identity..."
+    - cd backend/applications/identity
     - echo "Running Go mod tidy..."
     - go mod tidy
-    # Your additional build steps can go here
