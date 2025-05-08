@@ -15,6 +15,8 @@ clone:
   script:
     - apk update && apk add git
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
+    - echo "Cloning complete. Current directory: $(pwd)"
+    - ls -R # List the directory structure to verify files
 
 build:
   image: docker:latest
@@ -27,17 +29,13 @@ build:
   before_script:
     - apk update && apk add git go
     - cd source
+    - echo "Current directory after cloning repo: $(pwd)"  # Debugging line
+    - ls -R  # List directory to verify files
   script:
     - echo "Running go mod tidy and vendor for dataset service..."
-    - cd applications/dataset || { echo "Dataset service not found"; exit 1; }
+    - cd applications/dataset || { echo "Dataset service not found in $(pwd)"; exit 1; }
+    - echo "Inside $(pwd)"  # Debugging line
+    - ls -R  # Verify files in the dataset service directory
     - go mod tidy
     - go mod vendor
-
-    echo "Building Docker image for dataset..."
-    docker build -t $DOCKER_IMAGE_PREFIX-dataset:latest .
-
-    echo "Pushing Docker image for dataset..."
-    docker push $DOCKER_IMAGE_PREFIX-dataset:latest
-
-    cd - > /dev/null
 
