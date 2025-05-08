@@ -1,29 +1,21 @@
 image: golang:1.23-alpine
 
 stages:
-  - setup
   - build
 
-setup_environment:
-  stage: setup
-  script:
-    - echo "Setting Go environment variables..."
-    - apk add --no-cache git
-    - export GOPRIVATE=github.com/PecozQ
-    - go env -w GO111MODULE=on
-    - go env -w GOPRIVATE=github.com/PecozQ/*
-    - git config --global url."git@github.com:".insteadof "https://github.com/"
-    - echo "Environment setup complete."
+before_script:
+  - apk add --no-cache git
+  - go env -w GO111MODULE=on
+  - go env -w GOPRIVATE=github.com/PecozQ/*
+  - git config --global url."git@github.com:".insteadof "https://github.com/"
 
 build:
   stage: build
   script:
     - echo "Listing project files..."
     - ls -la
-    - echo "Navigating to target directory..."
-    - cd backend/applications/identity
-    - echo "Running go mod tidy..."
+    - echo "Navigating to backend/applications/identity..."
+    - cd backend/applications/identity || { echo "Directory not found!"; exit 1; }
     - go mod tidy
-    - echo "Current directory: $(pwd)"
-    - echo "Listing contents of backend/applications:"
-    - ls -la ../
+    - go build ./...
+    - echo "Build completed."
