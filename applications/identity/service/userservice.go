@@ -152,7 +152,7 @@ func (s *service) VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*mode
 		}
 		errors := s.TempUserRepo.DeleteOTP(ctx, req.Email)
 		if errors != nil {
-			return nil, NewCustomError(errcom.ErrNotFound, err)
+			return nil, errcom.ErrNotFound
 		}
 		if res != nil && res.IS_MFA_Enabled {
 			return nil, fmt.Errorf("2FA already verified")
@@ -442,7 +442,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 
 	// Determine role based on conditions
 	if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && org.IsSingHealthAdmin {
-		role = roleMap["Super-Admin"]
+		role = roleMap["SuperAdmin"]
 	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && org.IsSingHealthAdmin {
 		role = roleMap["Collaborator"]
 	} else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && !org.IsSingHealthAdmin {
