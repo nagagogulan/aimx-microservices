@@ -1,6 +1,5 @@
 image: golang:1.23-alpine
 
-
 stages:
   - setup
   - build
@@ -13,17 +12,18 @@ setup_environment:
     - apk add --no-cache git
     # Set GOPRIVATE to handle private Go modules
     - export GOPRIVATE=github.com/PecozQ
-    # Set GO111MODULE to enable Go modules support
+    # Enable Go modules
     - go env -w GO111MODULE=on
-    # Set GOPRIVATE to include private GitHub modules
+    # Set GOPRIVATE again for wildcard usage
     - go env -w GOPRIVATE=github.com/PecozQ/*
-    # Configure Git to use SSH URL instead of HTTPS for GitHub
+    # Use SSH instead of HTTPS for GitHub
     - git config --global url."git@github.com:".insteadof "https://github.com/"
     - echo "Environment setup complete."
 
 build:
   stage: build
   script:
+    - echo "Listing project files..."
     - ls -la
     - echo "Navigating to target directory..."
     - cd backend/applications/identity || (echo "Directory not found!" && exit 1)
@@ -31,5 +31,4 @@ build:
     - go mod tidy
     - echo "Current directory: $(pwd)"
     - echo "Listing contents of backend/applications:"
-    - ls -la backend/applications
-
+    - ls -la ../
