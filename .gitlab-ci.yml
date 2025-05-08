@@ -28,7 +28,6 @@ build:
     - docker:dind
   before_script:
     - apk update && apk add docker
-    - cd source
     - export GOPRIVATE=github.com/PecozQ/*
     - export GO111MODULE=on
     - export DOCKER_HOST="unix:///var/run/docker.sock"
