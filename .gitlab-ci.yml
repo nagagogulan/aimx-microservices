@@ -21,7 +21,6 @@ build:
     - echo "Listing project files..."
     - ls -la
     - echo "Navigating to target directory..."
-    - if [ ! -d backend/applications/identity ]; then echo "Directory not found!"; exit 1; fi
     - cd backend/applications/identity
     - echo "Running go mod tidy..."
     - go mod tidy
