@@ -65,7 +65,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 			return nil, fmt.Errorf("invalid dataset file extension: only .csv and .xlsx allowed")
 		}
 		fmt.Println("**********************", id.String())
-		filePath = fmt.Sprintf("dataset/%s/sample/%s_%s", id.String(), timestamp, id.String())
+		filePath = fmt.Sprintf("datasetfile/%s/sample/%s_%s", id.String(), timestamp, id.String())
 		fmt.Println("**********************", filePath)
 	case 1:
 		if !validImageExtensions[ext] {
@@ -82,7 +82,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		if !validDocketFileFormats[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .pkl, .joblib, .pth, .h5 , .onnx allowed")
 		}
-		filePath = fmt.Sprintf("docket/%s/%s_%s", id.String(), timestamp, id.String())
+		filePath = fmt.Sprintf("docketfile/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
 		return nil, fmt.Errorf("unsupported file format")
 	}
