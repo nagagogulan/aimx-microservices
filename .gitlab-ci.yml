@@ -23,13 +23,13 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: docker:20.10.16  # Docker CLI image
+  image: docker:latest  # Docker CLI image
   stage: build
   tags:
     - docker
 
   services:
-    - name: docker:20.10.16-dind
+    - name: docker:latest
       alias: docker
 
   variables:
