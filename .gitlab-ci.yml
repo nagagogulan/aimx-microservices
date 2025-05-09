@@ -20,6 +20,7 @@ clone:
 
 build-identity:
   image: golang:1.23
+  iamge: docker:20.10.16
   stage: build
   services:
     - name: docker:latest
