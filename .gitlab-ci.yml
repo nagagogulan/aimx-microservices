@@ -36,7 +36,7 @@ build-all-services:
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - docker info
   script:
-  - - cd applications
+  - cd applications
   - |
     for service in $SERVICES; do
       echo "🔧 Processing $service"
@@ -49,6 +49,7 @@ build-all-services:
       docker push $DOCKER_IMAGE_PREFIX-$service:latest
       cd ..
     done
+
 
 
       
