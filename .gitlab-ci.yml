@@ -35,16 +35,9 @@ build:
   script:
   - cd applications
   - ls -ll
-  - |
-    for SERVICE in $SERVICES; do
-      echo "Building Docker image for $SERVICE..."
+  
 
-      if [ ! -d "$SERVICE" ]; then
-        echo "Directory $SERVICE does not exist in $(pwd)"
-        exit 1
-      fi
-
-      cd $SERVICE
+      cd identity
       go mod tidy
       go mod vendor
       docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
