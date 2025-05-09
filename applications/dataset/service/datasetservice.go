@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,54 +35,37 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	if err != nil {
 		log.Fatalf("failed to generate UUID: %v", err)
 	}
+
 	enumLabel := common.ValueMapper(req.FormType, "FileFormat", "ENUM_TO_HASH")
-	//timestampStr := time.Now().UTC().Format("20060102T150405Z")
 	timestamp := time.Now().Format("20060102_150405")
-	validDatasetExtensions := map[string]bool{
-		"csv":  true,
-		"xlsx": true,
-		"zip":  true,
-	}
-	validImageExtensions := map[string]bool{
-		"jpg":  true,
-		"jpeg": true,
-		"png":  true,
-	}
-	validFileFormats := map[string]bool{
-		"docx": true,
-		"pdf":  true,
-	}
-	validDocketFileFormats := map[string]bool{
-		"pkl":    true,
-		"joblib": true,
-		"pth":    true,
-		"h5":     true,
-		"onnx":   true,
-	}
+
+	validDatasetExtensions := map[string]bool{"csv": true, "xlsx": true, "zip": true}
+	validImageExtensions := map[string]bool{"jpg": true, "jpeg": true, "png": true}
+	validFileFormats := map[string]bool{"docx": true, "pdf": true}
+	validDocketFileFormats := map[string]bool{"pkl": true, "joblib": true, "pth": true, "h5": true, "onnx": true}
+
 	ext := strings.ToLower(req.Extension)
 	var filePath string
+
 	switch enumLabel {
 	case 0:
 		if !validDatasetExtensions[ext] {
-			return nil, fmt.Errorf("invalid dataset file extension: only .csv and .xlsx allowed")
+			return nil, fmt.Errorf("invalid dataset file extension: only .csv, .xlsx, .zip allowed")
 		}
-		fmt.Println("**********************", id.String())
-		filePath = fmt.Sprintf("datasetfile/%s/sample/%s_%s", id.String(), timestamp, id.String())
-		fmt.Println("**********************", filePath)
+		filePath = fmt.Sprintf("datasetfile/%s/%s_%s", id.String(), timestamp, id.String())
 	case 1:
 		if !validImageExtensions[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png allowed")
 		}
 		filePath = fmt.Sprintf("images/%s/%s_%s", id.String(), timestamp, id.String())
-
 	case 2:
 		if !validFileFormats[ext] {
-			return nil, fmt.Errorf("invalid image file extension: only .docx, .pdf allowed")
+			return nil, fmt.Errorf("invalid file format: only .docx, .pdf allowed")
 		}
 		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
 	case 3:
 		if !validDocketFileFormats[ext] {
-			return nil, fmt.Errorf("invalid image file extension: only .pkl, .joblib, .pth, .h5 , .onnx allowed")
+			return nil, fmt.Errorf("invalid docket format: only .pkl, .joblib, .pth, .h5, .onnx allowed")
 		}
 		filePath = fmt.Sprintf("docketfile/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
@@ -90,18 +75,31 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("unable to create upload dir: %w", err)
 	}
-	//originalName := filepath.Base(req.FileName)
 
-	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id, req.Extension)
+	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id.String(), ext)
+	fullPath := filepath.Join(filePath, newFileName)
 
-	path := filepath.Join(filePath, newFileName)
+	// Create destination file
+	outFile, err := os.Create(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file: %w", err)
+	}
+	defer outFile.Close()
 
-	if err := os.WriteFile(path, req.Content, 0644); err != nil {
-		return nil, fmt.Errorf("unable to write file: %w", err)
+	// Convert []byte to io.Reader
+	contentReader := bytes.NewReader(req.Content)
+
+	// Stream the file content to disk
+	if _, err := io.Copy(outFile, contentReader); err != nil {
+		return nil, fmt.Errorf("failed to stream file: %w", err)
 	}
 
-	return &model.UploadResponse{ID: id, FilePath: path}, nil
+	return &model.UploadResponse{
+		ID:       id,
+		FilePath: fullPath,
+	}, nil
 }
+
 func (s *fileService) GetFile(ctx context.Context, filePath string) ([]byte, string, error) {
 	// Check if the file exists
 	if _, err := os.Stat(filePath); err != nil {
