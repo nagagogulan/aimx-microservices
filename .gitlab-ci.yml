@@ -38,7 +38,7 @@ build-identity:
     - echo "Pushing Docker image"
     - docker push $DOCKER_IMAGE_PREFIX-identity:latest
   tags: 
-    -Docker-go
+    - docker-go
 
 
 deploy_microservices:
