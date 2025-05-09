@@ -37,9 +37,10 @@ build-identity:
     - go mod tidy
     - go mod vendor
     - echo "Building Docker image for identity service"
-    - docker build --pull -t $DOCKER_IMAGE_PREFIX-identity:latest .
+    - docker build -t identity .
     - echo "Pushing Docker image"
-    - docker push $DOCKER_IMAGE_PREFIX-identity:latest
+    - docker tag identity:latest nagagogulan/aimx-identity:latest
+    - docker push nagagogulan/aimx-identity:latest
 
 deploy_microservices:
   stage: deploy
