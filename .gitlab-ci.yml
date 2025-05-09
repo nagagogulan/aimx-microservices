@@ -26,7 +26,8 @@ build-identity:
   image: docker:20.10.16  # Use Docker CLI image
   stage: build
   services:
-    - docker:20.10.16-dind  # Docker-in-Docker service
+    - name: docker:20.10.16-dind
+      alias: docker  
 
   variables:
     DOCKER_HOST: tcp://docker:2375/
