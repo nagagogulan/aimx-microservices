@@ -31,6 +31,9 @@ build-identity:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - apt-get update && apt-get install -y docker.io
+    - export DOCKER_HOST="unix:///var/run/docker.sock"
+
 
   script:
     - cd applications/identity
