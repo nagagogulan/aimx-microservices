@@ -19,10 +19,13 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: docker:20.10.16  # Use Docker image with Docker CLI
+  image: golang:1.23  # Use Golang image
   stage: build
+  services:
+    - name: docker:20.10.16  # Docker service to run Docker commands
+      alias: docker
   before_script:
-    - apk update && apk add git go  # Install Go and other dependencies
+    - apk update && apk add git go docker  # Install Docker
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin  # Docker login
@@ -36,6 +39,7 @@ build-identity:
     - docker push $DOCKER_IMAGE_PREFIX-identity:latest
   tags: 
     - Docker-Go
+
 
 
 
