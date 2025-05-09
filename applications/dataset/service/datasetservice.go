@@ -64,7 +64,9 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		if !validDatasetExtensions[ext] {
 			return nil, fmt.Errorf("invalid dataset file extension: only .csv and .xlsx allowed")
 		}
+		fmt.Println("**********************", id.String())
 		filePath = fmt.Sprintf("dataset/%s/sample/%s_%s", id.String(), timestamp, id.String())
+		fmt.Println("**********************", filePath)
 	case 1:
 		if !validImageExtensions[ext] {
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png allowed")
