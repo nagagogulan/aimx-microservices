@@ -25,6 +25,8 @@ clone:
 build-identity:
   image: docker:20.10.16  # Docker CLI image
   stage: build
+  tags:
+    - docker
 
   services:
     - name: docker:20.10.16-dind
