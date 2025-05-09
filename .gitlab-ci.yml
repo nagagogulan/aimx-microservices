@@ -30,7 +30,7 @@ build-identity:
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
-    - cd applications/identity
+    - cd applications/dataset
     - go mod tidy
     - go mod vendor
     - echo "Building Docker image for identity service"
