@@ -45,7 +45,6 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		"jpg":  true,
 		"jpeg": true,
 		"png":  true,
-		"gif":  true,
 	}
 	validFileFormats := map[string]bool{
 		"docx": true,
@@ -71,14 +70,17 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png allowed")
 		}
 		filePath = fmt.Sprintf("images/%s/%s_%s", id.String(), timestamp, id.String())
+
 	case 2:
 		if !validFileFormats[ext] {
-			filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
+			return nil, fmt.Errorf("invalid image file extension: only .docx, .pdf allowed")
 		}
+		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
 	case 3:
 		if !validDocketFileFormats[ext] {
-			filePath = fmt.Sprintf("docket/%s/%s_%s", id.String(), timestamp, id.String())
+			return nil, fmt.Errorf("invalid image file extension: only .pkl, .joblib, .pth, .h5 , .onnx allowed")
 		}
+		filePath = fmt.Sprintf("docket/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
 		return nil, fmt.Errorf("unsupported file format")
 	}
