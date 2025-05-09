@@ -19,31 +19,30 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: docker:latest
+  image: docker:20.10.16
   stage: build
   services:
-    - name: docker:dind
+    - name: docker:20.10.16-dind
       alias: docker
-  
-
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk update && apk add git go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - apt-get update && apt-get install -y docker.io
-    - export DOCKER_HOST="unix:///var/run/docker.sock"
-
-
   script:
-    - cd applications/identity
+    - cd source/applications/identity
     - go mod tidy
     - go mod vendor
     - echo "Building Docker image for identity service"
-    - docker build -t identity .
+    - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
     - echo "Pushing Docker image"
-    - docker tag identity:latest nagagogulan/aimx-identity:latest
-    - docker push nagagogulan/aimx-identity:latest
+    - docker push $DOCKER_IMAGE_PREFIX-identity:latest
+  tags:
+    - docker
+
 
 deploy_microservices:
   stage: deploy
