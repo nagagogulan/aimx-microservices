@@ -30,8 +30,7 @@ build-identity:
       alias: docker  
 
   variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""  # Disable TLS to avoid conflicts
+    
     GOPRIVATE: github.com/PecozQ/*
 
   before_script:
@@ -46,8 +45,7 @@ build-identity:
     - docker build -t dataset:latest .
     
 
-  tags:
-    - Docker-Go
+  
 
 
 deploy_microservices:
