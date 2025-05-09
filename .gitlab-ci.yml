@@ -25,14 +25,18 @@ clone:
 build-all-services:
   image: golang:1.23
   stage: build
+  services:
+    - name: docker:stable-dind
+      alias: docker
+  tags:
+    - docker-go
   before_script:
     - apt-get update && apt-get install -y docker.io git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - go env -w GOPRIVATE=$GOPRIVATE
-    - docker info  # Validate Docker availability
-  tags:
-    - docker-go
+    - go env -w GOPRIVATE=github.com/PecozQ/*
+    - docker info
   script:
+    - cd source
     - for service in $SERVICES; do
         echo "🔧 Processing service: $service";
         cd applications/$service || exit 1;
@@ -44,16 +48,6 @@ build-all-services:
         docker push $DOCKER_IMAGE_PREFIX-$service:latest;
         cd - || exit 1;
       done
-
-  
-  services:
-    - name: docker:stable-dind
-      alias: docker
-
-
-
-  
-
 
 deploy_microservices:
   stage: deploy
@@ -68,22 +62,21 @@ deploy_microservices:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
     - |
-      bash -c '
-      ssh $EC2_USER@$EC2_HOST "
-        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-        for SERVICE in $SERVICES; do
-          echo \"Deploying \$SERVICE...\"
-          docker pull $DOCKER_IMAGE_PREFIX-\$SERVICE:latest
-          docker ps -q --filter name=\$SERVICE | xargs -r docker stop || true
-          docker ps -aq --filter name=\$SERVICE | xargs -r docker rm || true
-          case \$SERVICE in
-            identity) docker run -d --name identity -p 8081:8081 $DOCKER_IMAGE_PREFIX-identity:latest ;;
-            forms) docker run -d --name forms -p 8082:8082 $DOCKER_IMAGE_PREFIX-forms:latest ;;
-            roles) docker run -d --name roles -p 8083:8083 $DOCKER_IMAGE_PREFIX-roles:latest ;;
-            dataset) docker run -d --name dataset -p 8084:8084 $DOCKER_IMAGE_PREFIX-dataset:latest ;;
-            profile) docker run -d --name profile -p 8085:8085 $DOCKER_IMAGE_PREFIX-profile:latest ;;
-            user_management) docker run -d --name user_management -p 8086:8086 $DOCKER_IMAGE_PREFIX-user_management:latest ;;
+      ssh "$EC2_USER@$EC2_HOST" << 'EOF'
+        docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+        for SERVICE in identity forms roles dataset profile user_management; do
+          echo "Deploying $SERVICE..."
+          docker pull "$DOCKER_IMAGE_PREFIX-$SERVICE:latest"
+          docker ps -q --filter name="$SERVICE" | xargs -r docker stop || true
+          docker ps -aq --filter name="$SERVICE" | xargs -r docker rm || true
+
+          case "$SERVICE" in
+            identity) docker run -d --name identity -p 8081:8081 "$DOCKER_IMAGE_PREFIX-identity:latest" ;;
+            forms) docker run -d --name forms -p 8082:8082 "$DOCKER_IMAGE_PREFIX-forms:latest" ;;
+            roles) docker run -d --name roles -p 8083:8083 "$DOCKER_IMAGE_PREFIX-roles:latest" ;;
+            dataset) docker run -d --name dataset -p 8084:8084 "$DOCKER_IMAGE_PREFIX-dataset:latest" ;;
+            profile) docker run -d --name profile -p 8085:8085 "$DOCKER_IMAGE_PREFIX-profile:latest" ;;
+            user_management) docker run -d --name user_management -p 8086:8086 "$DOCKER_IMAGE_PREFIX-user_management:latest" ;;
           esac
         done
-      "
-      '
+      EOF
