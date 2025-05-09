@@ -23,26 +23,33 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: golang:1.23
+  image: docker:20.10.16  # Use Docker CLI image
   stage: build
   services:
-    - name: docker:dind
-      alias: docker
+    - docker:20.10.16-dind  # Docker-in-Docker service
+
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""  # Disable TLS to avoid conflicts
+    GOPRIVATE: github.com/PecozQ/*
+
   before_script:
-    - apt-get update && apt-get install -y docker.io git
+    - apk add --no-cache git go  # Install Git & Go
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - go env -w GOPRIVATE=github.com/PecozQ/*
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
   script:
-    - cd applications/dataset
+    - cd source/applications/identity  # adjust path if needed
     - go mod tidy
     - go mod vendor
     - echo "Building Docker image for identity service"
     - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
     - echo "Pushing Docker image"
     - docker push $DOCKER_IMAGE_PREFIX-identity:latest
+
   tags:
     - Docker-Go
+
 
 deploy_microservices:
   stage: deploy
