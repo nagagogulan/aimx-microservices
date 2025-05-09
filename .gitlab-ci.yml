@@ -22,25 +22,30 @@ clone:
     - echo "Cloning repository..."
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
-build-identity:
+build-all-services:
   image: golang:1.23
   stage: build
   before_script:
     - apt-get update && apt-get install -y docker.io git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - go env -w GOPRIVATE=github.com/PecozQ/*
-    
-  script:
-    - docker info  # Ensure Docker is accessible
-    - cd applications/dataset
-    - go mod tidy
-    - go mod vendor
-    - echo "Building Docker image for identity service"
-    - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
-    - echo "Pushing Docker image"
-    - docker push $DOCKER_IMAGE_PREFIX-identity:latest
+    - go env -w GOPRIVATE=$GOPRIVATE
+    - docker info  # Validate Docker availability
   tags:
-    - Docker-Go
+    - docker-go
+  script:
+    - for service in $SERVICES; do
+        echo "🔧 Processing service: $service";
+        cd applications/$service || exit 1;
+        go mod tidy;
+        go mod vendor;
+        echo "🐳 Building Docker image: $DOCKER_IMAGE_PREFIX-$service:latest";
+        docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
+        echo "🚀 Pushing Docker image: $DOCKER_IMAGE_PREFIX-$service:latest";
+        docker push $DOCKER_IMAGE_PREFIX-$service:latest;
+        cd - || exit 1;
+      done
+
+  
   services:
     - name: docker:stable-dind
       alias: docker
