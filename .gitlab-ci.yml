@@ -36,7 +36,7 @@ build-all-services:
     - go env -w GOPRIVATE=github.com/PecozQ/*
     - docker info
   script:
-  - cd applications
+  - - cd applications
   - |
     for service in $SERVICES; do
       echo "🔧 Processing $service"
@@ -45,15 +45,11 @@ build-all-services:
       go mod vendor
       echo "🐳 Building image: $DOCKER_IMAGE_PREFIX-$service:latest"
       docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .
-
-      # Tag and push the Docker image
-      echo "🚀 Tagging Docker image for $service"
-      docker tag $service:latest $DOCKER_IMAGE_PREFIX-$service:latest
-  
-      echo "🚀 Pushing Docker image for $service"
+      echo "🚀 Pushing image: $DOCKER_IMAGE_PREFIX-$service:latest"
       docker push $DOCKER_IMAGE_PREFIX-$service:latest
-  
-      cd - || exit 1
+      cd ..
+    done
+
 
       
 
