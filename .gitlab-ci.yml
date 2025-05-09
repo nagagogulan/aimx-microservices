@@ -7,7 +7,6 @@ stages:
 
 variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  SERVICES: "identity dataset profile forms roles user_management"
   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
 
@@ -21,23 +20,30 @@ clone:
     paths:
       - source/
 
-build:
+build-identity:
   image: docker:latest
   stage: build
   services:
     - name: docker:dind
       alias: docker
-  
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375/
+
   before_script:
     - apk update && apk add git go
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+    - git config --global url."https://${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
   script:
-  - cd applications/identity
-  - go mod tidy
-  - go mod vendor
-  - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
-  - docker push $DOCKER_IMAGE_PREFIX-identity:latest
+    - cd source/applications/identity
+    - go mod tidy
+    - go mod vendor
+    - echo "Building Docker image for identity service"
+    - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
+    - echo "Pushing Docker image"
+    - docker push $DOCKER_IMAGE_PREFIX-identity:latest
 
 
 
