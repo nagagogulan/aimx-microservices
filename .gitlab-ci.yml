@@ -33,17 +33,12 @@ build:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
   script:
-  - cd applications
-  - ls -ll
-  
+  - cd applications/identity
+  - go mod tidy
+  - go mod vendor
+  - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
+  - docker push $DOCKER_IMAGE_PREFIX-identity:latest
 
-      cd identity
-      go mod tidy
-      go mod vendor
-      docker build -t $DOCKER_IMAGE_PREFIX-$SERVICE:latest .
-      docker push $DOCKER_IMAGE_PREFIX-$SERVICE:latest
-      cd ..
-    done
 
 
 
