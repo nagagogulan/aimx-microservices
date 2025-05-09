@@ -38,16 +38,16 @@ build-all-services:
   script:
     - cd source
     - for service in $SERVICES; do
-        echo "🔧 Processing service: $service";
+        
         cd applications/$service || exit 1;
         go mod tidy;
         go mod vendor;
-        echo "🐳 Building Docker image: $DOCKER_IMAGE_PREFIX-$service:latest";
+        
         docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
-        echo "🚀 Pushing Docker image: $DOCKER_IMAGE_PREFIX-$service:latest";
+        
         docker push $DOCKER_IMAGE_PREFIX-$service:latest;
         cd - || exit 1;
-      done
+      
 
 deploy_microservices:
   stage: deploy
@@ -80,3 +80,4 @@ deploy_microservices:
           esac
         done
       EOF
+
