@@ -29,7 +29,7 @@ build-identity:
     - apt-get update && apt-get install -y docker.io git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - go env -w GOPRIVATE=github.com/PecozQ/*
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    
   script:
     - docker info  # Ensure Docker is accessible
     - cd applications/dataset
