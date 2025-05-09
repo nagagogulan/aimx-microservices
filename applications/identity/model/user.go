@@ -31,6 +31,13 @@ type Response struct {
 	Secret         string `json:"secret"`
 	JWTToken       string `json:"jwtToken"`
 	User_Id		uuid.UUID `json:"user_id"`
+	Refresh_Token string  `json:"refresh_token"`
+	Role_Id    uuid.UUID `json:"role_id"`
+}
+
+type RefreshTokenResponse struct {
+	Message        string `json:"message"`
+	JWTToken       string `json:"jwtToken"`
 }
 
 func (UserAuthDetail) TableName() string {

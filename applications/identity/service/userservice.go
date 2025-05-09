@@ -520,8 +520,13 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 	if err != nil {
 		return nil, err
 	}
+	err = s.UserRepo.UpdateRefreshToken(ctx, userData.ID, jwtToken.RefreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update refresh token: %v", err)
+	}
 
-	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled, User_Id: userData.ID}, nil
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled,
+		User_Id: userData.ID, Refresh_Token: jwtToken.RefreshToken, Role_Id: userData.RoleID}, nil
 }
 
 // Helper function to generate JWT for a new user
@@ -545,5 +550,39 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 		return nil, err
 	}
 
-	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled, User_Id: newUser.ID}, nil
+	err = s.UserRepo.UpdateRefreshToken(ctx, newUser.ID, jwtToken.RefreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update refresh token: %v", err)
+	}
+
+	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: newUser.IsMFAEnabled,
+		User_Id: newUser.ID, Refresh_Token: jwtToken.RefreshToken, Role_Id: newUser.RoleID}, nil
+}
+
+func (s *service) UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDetail) (*model.RefreshTokenResponse, error) {
+	accessSecret, refreshSecret, err := generateJWTSecrets()
+	if err != nil {
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("failed to get JWT secrets: %w", err))
+	}
+
+	userDetail, err := s.UserRepo.GetUserByID(ctx, req.UserId)
+	if err != nil {
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("User doesn't exist: %w", err))
+	}
+
+	if userDetail.RefreshToken != req.RefreshToken {
+		return nil, NewCustomError(errcom.ErrUnauthorized, fmt.Errorf("invalid refresh token"))
+	}
+
+	claims, err := middleware.ValidateJWT(req.RefreshToken, refreshSecret)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+	}
+
+	res, err := middleware.GenerateAccessToken(claims, []byte(accessSecret))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate token: %v", err)
+	}
+
+	return &model.RefreshTokenResponse{Message: "Access token generated successfully", JWTToken: res.AccessToken}, nil
 }

@@ -14,6 +14,8 @@ type Service interface {
 	LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
 	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
 	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
+	UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDetail) (*model.RefreshTokenResponse  ,error)
+
 }
 
 type service struct {

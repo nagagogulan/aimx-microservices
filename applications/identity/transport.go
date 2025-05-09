@@ -54,6 +54,12 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/refresh-token", gin.WrapH(httptransport.NewServer(
+		endpoints.RefreshTokenEndpoint,
+		decodeRefreshTokenRequest,
+		encodeResponse,
+		options...,
+	)))
 	return r
 }
 
@@ -87,4 +93,13 @@ func decodeVerifyTOTPUserRequest(ctx context.Context, r *http.Request) (interfac
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+func decodeRefreshTokenRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req dto.RefreshAuthDetail
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+	return &req, nil
 }

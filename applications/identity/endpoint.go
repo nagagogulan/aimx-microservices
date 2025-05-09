@@ -21,6 +21,7 @@ type Endpoints struct {
 	verifyOTPEndpoint  endpoint.Endpoint
 	// SendQREndpoint       endpoint.Endpoint
 	SendQRVerifyEndpoint endpoint.Endpoint
+	RefreshTokenEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -29,6 +30,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		CreateUserEndpoint:   Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
 		verifyOTPEndpoint:    Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
 		SendQRVerifyEndpoint: Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
+		RefreshTokenEndpoint: Middleware(makeRefreshTokenEndpoint(s), common.TimeoutMs),
 	}
 }
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
@@ -69,6 +71,24 @@ func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
 			return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken, User_Id: res.User_Id}, nil
 		}
 		fmt.Println(res)
-		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken, User_Id: res.User_Id}, nil
+		return model.Response{Message: res.Message, IS_MFA_Enabled: res.IS_MFA_Enabled, JWTToken: res.JWTToken,
+			User_Id: res.User_Id, Refresh_Token: res.Refresh_Token, Role_Id: res.Role_Id}, nil
+	}
+}
+
+func makeRefreshTokenEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.RefreshAuthDetail)
+
+		res, err := s.UpdateAccessToken(ctx, req)
+		if err != nil {
+			// Do not try to access `res` if `err` is not nil
+			return nil, service.NewAppError(err, http.StatusUnauthorized, err.Error(), nil)
+		}
+
+		return model.RefreshTokenResponse{
+			Message:  res.Message,
+			JWTToken: res.JWTToken,
+		}, nil
 	}
 }
