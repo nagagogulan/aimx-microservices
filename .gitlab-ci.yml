@@ -19,7 +19,7 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: docker:20.10.16
+  image: golang:1.23
   stage: build
   services:
     - name: docker:latest
@@ -37,7 +37,8 @@ build-identity:
     - docker build -t $DOCKER_IMAGE_PREFIX-identity:latest .
     - echo "Pushing Docker image"
     - docker push $DOCKER_IMAGE_PREFIX-identity:latest
-  
+  tags: 
+    -Docker-go
 
 
 deploy_microservices:
