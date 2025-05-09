@@ -23,17 +23,25 @@ clone:
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
 build-identity:
-  image: golang:1.23.1  # Go + Git pre-installed
+  image: docker:20.10.16  # Docker CLI image
   stage: build
 
-  variables:
-    GOPRIVATE: github.com/PecozQ/*
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
 
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+    GOPRIVATE: github.com/PecozQ/*
+  
   before_script:
+    - apk add --no-cache curl git
+    - curl -LO https://go.dev/dl/go1.23.1.linux-amd64.tar.gz
+    - rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz
+    - export PATH=$PATH:/usr/local/go/bin
     - go version
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - apt-get update && apt-get install -y docker.io
-    - export DOCKER_HOST="unix:///var/run/docker.sock"
+    - git config --global url."https://<your-token>@github.com/".insteadOf "https://github.com/"
 
   script:
     - cd applications/dataset
@@ -41,6 +49,7 @@ build-identity:
     - go mod vendor
     - echo "Building Docker image for identity service"
     - docker build -t dataset:latest .
+
 
 
   
