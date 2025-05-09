@@ -36,7 +36,7 @@ build-identity:
   before_script:
   - apk add --no-cache git curl
   - curl -LO https://go.dev/dl/go1.23.linux-amd64.tar.gz
-  - rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz
+  - rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz
   - export PATH=$PATH:/usr/local/go/bin
   - go version  # confirm version
   - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
