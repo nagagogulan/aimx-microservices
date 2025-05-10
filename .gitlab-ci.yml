@@ -38,17 +38,15 @@ build-all-services:
   
   
   script:
-    - cd applications/
-    - for service in $SERVICES; do
-        
-        cd applications/$service || exit 1;
-        go mod tidy;
-        go mod vendor;
-        
-        docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
-        
-        docker push $DOCKER_IMAGE_PREFIX-$service:latest;
-        cd - || exit 1;
+  - cd applications/
+  - for service in $SERVICES; do
+      cd applications/$service || exit 1;
+      go mod tidy;
+      go mod vendor;
+      docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
+      docker push $DOCKER_IMAGE_PREFIX-$service:latest;
+      cd - || exit 1;
+    done
 
 
 
