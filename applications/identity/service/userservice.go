@@ -440,13 +440,40 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 		roleMap[role.Name] = role.ID // Store UUID directly
 	}
 
+	// temporary function for to gget multiple admins
+	organizations, err := s.OrgRepo.GetAllSingHealthAdminOrganizations(ctx)
+	if err != nil {
+		log.Println("Organization not found:", err)
+		return nil, NewCustomError(errcom.ErrNotFound, fmt.Errorf("organization not found"))
+	}
+	// temporary function for to gget multiple admins
+	emails := []string{}
+	for _, org := range organizations {
+		emails = append(emails, org.OrganizationEmail)
+	}
+
 	// Step 8: Determine the role based on the provided conditions
 	var role uuid.UUID // Use uuid.UUID to store the role
 
+	// actual if condtition
+
 	// Determine role based on conditions
-	if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && org.IsSingHealthAdmin {
+	// if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && org.IsSingHealthAdmin {
+	// 	role = roleMap["SuperAdmin"]
+	// } else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && org.IsSingHealthAdmin {
+	// 	role = roleMap["Collaborator"]
+	// } else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && !org.IsSingHealthAdmin {
+	// 	role = roleMap["Admin"]
+	// } else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && !org.IsSingHealthAdmin {
+	// 	role = roleMap["User"]
+	// } else {
+	// 	return nil, fmt.Errorf("user does not have access to login this page")
+	// }
+
+	// temporary if condition for to manage multiple role
+	if orgDomain == org.OrganizationDomain && emailInList(req.Email, emails) && org.IsSingHealthAdmin {
 		role = roleMap["SuperAdmin"]
-	} else if orgDomain == org.OrganizationDomain && req.Email != org.OrganizationEmail && org.IsSingHealthAdmin {
+	} else if orgDomain == org.OrganizationDomain && !emailInList(req.Email, emails) && org.IsSingHealthAdmin {
 		role = roleMap["Collaborator"]
 	} else if orgDomain == org.OrganizationDomain && req.Email == org.OrganizationEmail && !org.IsSingHealthAdmin {
 		role = roleMap["Admin"]
@@ -585,4 +612,14 @@ func (s *service) UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDet
 	}
 
 	return &model.RefreshTokenResponse{Message: "Access token generated successfully", JWTToken: res.AccessToken}, nil
+}
+
+// temporary function for multiple admin
+func emailInList(email string, emailList []string) bool {
+	for _, e := range emailList {
+		if e == email {
+			return true
+		}
+	}
+	return false
 }
