@@ -9,7 +9,7 @@ variables:
   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
   GIT_BRANCH: "dev"
-  SERVICES: "identity"
+  SERVICES: "identity dataset"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: unix:///var/run/docker.sock
