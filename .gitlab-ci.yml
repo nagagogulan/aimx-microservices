@@ -73,7 +73,7 @@ deploy_microservices:
   - |
     ssh "$EC2_USER@$EC2_HOST" << EOF
       docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-      for SERVICE in identity forms roles dataset profile user_management; do
+      for SERVICE in identity dataset; do
         echo "Deploying \$SERVICE..."
         docker pull "$DOCKER_IMAGE_PREFIX-\$SERVICE:latest"
         docker ps -q --filter name="\$SERVICE" | xargs -r docker stop || true
