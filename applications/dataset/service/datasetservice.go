@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,6 +21,7 @@ type Service interface {
 	GetFile(ctx context.Context, filePath string) ([]byte, string, error)
 	//GetFileList(ctx context.Context) ([]string, error)
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
+	OpenFile(ctx context.Context, filePath string) (*os.File, error)
 }
 
 type fileService struct{}
@@ -33,7 +33,7 @@ func NewService() Service {
 func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
-		log.Fatalf("failed to generate UUID: %v", err)
+		return nil, fmt.Errorf("failed to generate UUID: %v", err)
 	}
 
 	enumLabel := common.ValueMapper(req.FormType, "FileFormat", "ENUM_TO_HASH")
@@ -47,6 +47,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	ext := strings.ToLower(req.Extension)
 	var filePath string
 
+	// File extension validation based on file type
 	switch enumLabel {
 	case 0:
 		if !validDatasetExtensions[ext] {
@@ -72,12 +73,20 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		return nil, fmt.Errorf("unsupported file format")
 	}
 
+	// Create necessary directories
 	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("unable to create upload dir: %w", err)
 	}
 
+	// Construct full file path
 	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id.String(), ext)
 	fullPath := filepath.Join(filePath, newFileName)
+
+	// Check if file exceeds a certain size (e.g., 50MB)
+	const maxSize = 50 * 1024 * 1024 // 50 MB
+	if len(req.Content) > maxSize {
+		return nil, fmt.Errorf("file size exceeds the maximum allowed size of 50MB")
+	}
 
 	// Create destination file
 	outFile, err := os.Create(fullPath)
@@ -86,14 +95,13 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	}
 	defer outFile.Close()
 
-	// Convert []byte to io.Reader
+	// Stream the file content to the new file
 	contentReader := bytes.NewReader(req.Content)
-
-	// Stream the file content to disk
 	if _, err := io.Copy(outFile, contentReader); err != nil {
 		return nil, fmt.Errorf("failed to stream file: %w", err)
 	}
 
+	// Return response
 	return &model.UploadResponse{
 		ID:       id,
 		FilePath: fullPath,
@@ -133,21 +141,42 @@ func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileR
 	return nil
 }
 
-// func (s *fileService) GetFileList(ctx context.Context) ([]string, error) {
-// 	dir := "C:\\Users\\nithiyav\\Documents"
+func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
 
-// 	// Read directory entries
-// 	files, err := os.ReadDir(dir)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("unable to read directory: %w", err)
-// 	}
+	baseURL := "http://13.229.196.7:8084/api/v1/dataset/cmd/"
+	localRoot := dir
 
-// 	var fileList []string
-// 	for _, file := range files {
-// 		if !file.IsDir() {
-// 			fileList = append(fileList, file.Name()) // or fileList = append(fileList, filepath.Join(dir, file.Name()))
-// 		}
-// 	}
+	// Remove the base URL prefix
+	relativePath := strings.TrimPrefix(fileURL, baseURL)
 
-// 	return fileList, nil
-// }
+	// Use OS-specific separators
+	relativePath = filepath.FromSlash(relativePath)
+
+	// Join with the local path
+	localFilePath := filepath.Join(localRoot, relativePath)
+
+	// Check file existence and handle any errors
+	if _, err := os.Stat(localFilePath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("file does not exist: %s", localFilePath)
+		}
+		// Handle other errors like permission denied or others
+		return nil, fmt.Errorf("error checking file existence: %w", err)
+	}
+
+	// Open the file
+	file, err := os.Open(localFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+
+	// Ensure the file is closed when done, if the function is extended
+	// defer file.Close()
+
+	return file, nil
+}
