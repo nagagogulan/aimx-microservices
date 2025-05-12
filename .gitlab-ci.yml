@@ -44,9 +44,11 @@ build-all-services:
       go mod tidy;
       go mod vendor;
       docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
-      docker push $DOCKER_IMAGE_PREFIX-$service:latest;
+      docker tag $DOCKER_IMAGE_PREFIX-$service:latest nagagogulan/aimx-$service:latest;
+      docker push nagagogulan/aimx-$service:latest;
       cd - || exit 1;
     done
+
 
 
 
