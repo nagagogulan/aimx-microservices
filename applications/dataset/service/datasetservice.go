@@ -148,17 +148,10 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 	}
 	fmt.Println("Current Working Directory:", dir)
 
-	baseURL := "http://13.229.196.7:8084/api/v1/dataset/cmd/"
 	localRoot := dir
 
-	// Remove the base URL prefix
-	relativePath := strings.TrimPrefix(fileURL, baseURL)
-
-	// Use OS-specific separators
-	relativePath = filepath.FromSlash(relativePath)
-
 	// Join with the local path
-	localFilePath := filepath.Join(localRoot, relativePath)
+	localFilePath := filepath.Join(localRoot, fileURL)
 
 	// Check file existence and handle any errors
 	if _, err := os.Stat(localFilePath); err != nil {
