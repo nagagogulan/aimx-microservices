@@ -484,20 +484,18 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 
 func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	// Extract the organization_id from the URL path using http.Request
-	orgIDStr := strings.TrimPrefix(r.URL.Path, "/api/v1/organization/deactivate/") // Extract organization_id from path
-
-	if orgIDStr == "" {
-		return nil, fmt.Errorf("organization_id is required")
-	}
+	orgid := strings.TrimSpace(r.URL.Query().Get("organization_id"))
+	status := strings.TrimSpace(r.URL.Query().Get("status"))
 
 	// Convert the string to UUID
-	orgID, err := uuid.FromString(orgIDStr)
+	orgID, err := uuid.FromString(orgid)
 	if err != nil {
 		return nil, fmt.Errorf("invalid organization ID: %v", err)
 	}
 
 	return dto.DeactivateOrganizationRequest{
 		OrganizationID: orgID,
+		Status:         status,
 	}, nil
 }
 

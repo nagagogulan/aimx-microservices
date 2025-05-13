@@ -35,7 +35,7 @@ type Service interface {
 
 	GetCommentsById(ctx context.Context, interactionId string) ([]*dto.CommentData, error)
 
-	DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error
+	DeactivateOrganization(ctx context.Context, orgID uuid.UUID, status string) error
 }
 
 type service struct {
