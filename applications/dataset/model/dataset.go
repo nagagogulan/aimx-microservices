@@ -1,6 +1,8 @@
 package model
 
-import "github.com/gofrs/uuid"
+import (
+	"github.com/gofrs/uuid"
+)
 
 type UploadRequest struct {
 	FileName  string `json:"fileName"`
@@ -31,4 +33,21 @@ type DeleteFileRequest struct {
 type DeleteFileResponse struct {
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
+}
+
+type OpenFileRequest struct {
+	FileURL string `json:"fileURL"`
+}
+
+// type OpenFileResponse struct {
+// 	File *os.File `json:"file,omitempty"`
+// 	Err  string   `json:"err,omitempty"`
+// }
+
+type OpenFileResponse struct {
+	FileName    string `json:"fileName"`
+	FileSize    int64  `json:"fileSize"`
+	FilePath    string `json:"filePath"`
+	FilePreview string `json:"filePreview"` // Add this field
+	Err         string `json:"err,omitempty"`
 }
