@@ -57,6 +57,9 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 
 					orgDomainInForm := domainParts[1]
 					if orgDomain == orgDomainInForm && form.Status != 2 {
+						if form.Status == 10 {
+							return nil, fmt.Errorf("Your account is deactivated. Please contact the admin")
+						}
 						return nil, fmt.Errorf("Domain Already Exists")
 					}
 				}
