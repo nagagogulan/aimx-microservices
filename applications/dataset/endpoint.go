@@ -1,10 +1,11 @@
 package base
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
@@ -91,24 +92,26 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return model.OpenFileResponse{Err: err.Error()}, nil
 		}
+		defer file.Close()
 
-		// Read the file contents
-		fileContent, err := ioutil.ReadFile(file.Name())
-		if err != nil {
+		scanner := bufio.NewScanner(file)
+		var lines []string
+		for i := 0; i < 10 && scanner.Scan(); i++ {
+			lines = append(lines, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
 			return model.OpenFileResponse{Err: fmt.Sprintf("failed to read file: %v", err)}, nil
 		}
 
-		// Return file metadata along with the content (preview)
 		fileInfo, err := file.Stat()
 		if err != nil {
 			return model.OpenFileResponse{Err: fmt.Sprintf("failed to get file info: %v", err)}, nil
 		}
-
 		return model.OpenFileResponse{
 			FileName:    fileInfo.Name(),
 			FileSize:    fileInfo.Size(),
 			FilePath:    file.Name(),
-			FilePreview: string(fileContent), // Preview file content
+			FilePreview: strings.Join(lines, "\n"),
 		}, nil
 	}
 }

@@ -151,11 +151,6 @@ func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, e
 }
 func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var request model.OpenFileRequest
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Errorf("Error getting current working directory:", err)
-	}
-	fmt.Println("&&&&&&&&&&&&&&&&", dir)
 	filepath := strings.TrimSpace(r.URL.Query().Get("filepath"))
 	request.FileURL = filepath
 	fmt.Println("check path testttt", filepath)
