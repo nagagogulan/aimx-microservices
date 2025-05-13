@@ -57,6 +57,9 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 
 					orgDomainInForm := domainParts[1]
 					if orgDomain == orgDomainInForm && form.Status != 2 {
+						if form.Status == 10 {
+							return nil, fmt.Errorf("Your account is deactivated. Please contact the admin")
+						}
 						return nil, fmt.Errorf("Domain Already Exists")
 					}
 				}
@@ -741,7 +744,43 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 	return res, nil
 }
 
-func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID) error {
+func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, status string) error {
 	// Call repository method to deactivate organization
-	return s.organizationRepo.DeactivateOrganization(ctx, orgID)
+	org, err := s.organizationRepo.DeactivateOrganization(ctx, orgID)
+	if err != nil {
+		return err
+	}
+	formList, err := s.formRepo.GetFormAll(ctx, 1)
+	if err != nil {
+		return err
+	}
+	for _, form := range formList {
+		for _, field := range form.Fields {
+			if field.Label == "Admin Email Address" {
+				fmt.Println("Found Admin Email Address field:")
+				fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
+
+				// Assert that field.Value is a string
+				email, ok := field.Value.(string)
+				if !ok {
+					return errcom.ErrInvalidEmail // Or fmt.Errorf("email value is not a string")
+				}
+				domainParts := strings.Split(email, "@")
+				if len(domainParts) != 2 {
+					return errcom.ErrInvalidEmail
+				}
+
+				orgDomainInForm := domainParts[1]
+
+				if org.OrganizationDomain == orgDomainInForm {
+					err := s.formRepo.UpdateDeactivateStatus(ctx, form.ID, status)
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+			}
+		}
+	}
+	return nil
 }

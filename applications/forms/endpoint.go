@@ -324,7 +324,7 @@ func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(dto.DeactivateOrganizationRequest)
 
 		// Call the service to deactivate the organization
-		err := s.DeactivateOrganization(ctx, req.OrganizationID)
+		err := s.DeactivateOrganization(ctx, req.OrganizationID,req.Status)
 		if err != nil {
 			return nil, fmt.Errorf("failed to deactivate organization: %v", err)
 		}
