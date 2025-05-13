@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
@@ -24,11 +27,11 @@ func main() {
 		DBName:     "aimxdb",
 
 		// rds
-		// DBHost:     "18.142.238.70",
+		// DBHost:     "localhost",
 		// DBPort:     5432,
-		// DBUser:     "myappuser",
-		// DBPassword: "SmartWork@123",
-		// DBName:     "aimxdb",
+		// DBUser:     "postgres",
+		// DBPassword: "password@123",
+		// DBName:     "localDb",
 
 		// build dev
 		// DBHost:     "localhost",
@@ -64,17 +67,41 @@ func main() {
 
 	defer sqlDB.Close()
 
+	uri := "mongodb://13.229.196.7:27017" // replace with your MongoDB URI
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Connect to MongoDB
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		log.Fatalf("Error connecting to MongoDB: %v", err)
+	}
+
+	// Ping the database
+	if err := client.Ping(ctx, nil); err != nil {
+		log.Fatalf("Could not ping to MongoDB: %v", err)
+	}
+
+	fmt.Println("Successfully connected to MongoDB!")
+
+	// Get a handle to a collection
+	db := client.Database("mydb")
+	//collection := db.Collection("templates")
+
 	userRepo := repository.NewUserCRUDRepository(DB)
 	generalSettingRepo := repository.NewGeneralSettingRepository(DB)
 	orgRepo := repository.NewOrganizationRepositoryService(DB)
 	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
+	formRepo := repository.NewFormRepository(db)
 
-	s := service.NewService(userRepo, generalSettingRepo, orgRepo, orgSettingRepo)
+	s := service.NewService(userRepo, generalSettingRepo, orgRepo, orgSettingRepo, formRepo)
 	httpHandlers := base.MakeHTTPHandler(s)
 
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(8085),
-		Handler:  service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
+		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
 	fmt.Println("HTTP server started on port", 8085)

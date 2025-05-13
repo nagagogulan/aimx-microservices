@@ -5,15 +5,37 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
+
+func init() {
+	// Get the current working directory (from where the command is run)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory:", err)
+	}
+	fmt.Println("Current Working Directory:", dir)
+
+	// Construct the path to the .env file in the root directory
+	envPath := filepath.Join(dir, "../.env")
+
+	// Load the .env file from the correct path
+	err = godotenv.Load(envPath)
+	if err != nil {
+		fmt.Errorf("Error loading .env file")
+	}
+}
 
 func MakeHTTPHandler(s service.Service) http.Handler {
 	fmt.Println("connect http handuler")
@@ -114,6 +136,16 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		).ServeHTTP))
 	}
 
+	overview := router.Group("/overview")
+	{
+		overview.GET("/", gin.WrapF(httptransport.NewServer(
+			endpoints.OverviewEndpoint,
+			decodeOverviewRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
+	}
+
 	return r
 }
 
@@ -186,4 +218,44 @@ func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (in
 		return nil, err
 	}
 	return &req, nil // Return pointer
+}
+
+func generateJWTSecrets() (string, error) {
+
+	accessSecret := os.Getenv("ACCESS_SECRET")
+
+	if accessSecret == "" {
+		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
+	}
+	return accessSecret, nil
+}
+
+func decodeOverviewRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return nil, fmt.Errorf("missing or invalid Authorization header")
+	}
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+	accessSecret, err := generateJWTSecrets()
+	if err != nil {
+		return nil, err
+	}
+	// Validate JWT and extract orgID
+	claims, err := middleware.ValidateJWT(tokenStr, accessSecret)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+	}
+	fmt.Println("claims", claims)
+
+	userIDStr := claims.UserID // assuming the struct has a field UserID
+	orgIDStr := claims.OrganizationID
+	if userIDStr == "" || orgIDStr == "" {
+		return nil, fmt.Errorf("Claim details not found in token")
+	}
+
+	return &dto.OverviewRequest{
+		UserID: userIDStr,
+		OrgID:  orgIDStr,
+	}, nil
 }

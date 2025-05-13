@@ -23,6 +23,7 @@ type Endpoints struct {
 	UpdateOrganizationSettingByOrgIDEndpoint endpoint.Endpoint
 	GetOrganizationSettingByOrgIDEndpoint    endpoint.Endpoint
 	CreateOrganizationSettingEndpoint        endpoint.Endpoint
+	OverviewEndpoint                         endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -36,6 +37,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		UpdateOrganizationSettingByOrgIDEndpoint: MakeUpdateOrganizationSettingByOrgIDEndpoint(s),
 		GetOrganizationSettingByOrgIDEndpoint:    MakeGetOrganizationSettingByOrgIDEndpoint(s),
 		CreateOrganizationSettingEndpoint:        makeCreateOrganizationSettingEndpoint(s),
+		OverviewEndpoint:                         makeOverviewEndpoint(s),
 	}
 }
 
@@ -143,5 +145,30 @@ func makeCreateOrganizationSettingEndpoint(s service.Service) endpoint.Endpoint 
 			return nil, err
 		}
 		return map[string]string{"message": "Organization setting created successfully"}, nil
+	}
+}
+
+func makeOverviewEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(*dto.OverviewRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid request")
+		}
+
+		userID, err := uuid.FromString(req.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid user_id UUID: %w", err)
+		}
+
+		var orgID *uuid.UUID
+		if req.OrgID != "" {
+			parsedOrgID, err := uuid.FromString(req.OrgID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid organization_id UUID: %w", err)
+			}
+			orgID = &parsedOrgID
+		}
+
+		return s.GenerateOverview(ctx, userID, orgID)
 	}
 }

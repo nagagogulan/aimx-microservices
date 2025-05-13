@@ -21,7 +21,7 @@ type Service interface {
 	UpdateOrganizationSettingByOrgID(ctx context.Context, setting *dto.OrganizationSettingRequest) error
 	GetOrganizationSettingByOrgID(ctx context.Context, organizationID uuid.UUID) (*dto.OrganizationSettingResponse, error)
 	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
-
+	GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID *uuid.UUID) (interface{}, error)
 }
 
 type service struct {
@@ -29,6 +29,8 @@ type service struct {
 	generalSettingRepo repository.GeneralSettingRepository
 	orgRepo            repository.OrganizationRepositoryService
 	orgSettingRepo     repository.OrganizationSettingRepository
+	formRepo          repository.FormRepositoryService
+
 }
 
 func NewService(
@@ -36,12 +38,14 @@ func NewService(
 	generalSettingRepo repository.GeneralSettingRepository,
 	orgRepo repository.OrganizationRepositoryService,
 	orgSettingRepo repository.OrganizationSettingRepository,
+	formRepo repository.FormRepositoryService,
 ) Service {
 	return &service{
 		repo:               repo,
 		generalSettingRepo: generalSettingRepo,
 		orgRepo:            orgRepo,
 		orgSettingRepo:     orgSettingRepo,
+		formRepo: formRepo,
 	}
 }
 
@@ -183,9 +187,9 @@ func (s *service) GetAllNonSingHealthOrganizations(ctx context.Context) ([]*dto.
 
 func (s *service) CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error {
 	// Check if the organization setting already exists
-	existingSetting, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, setting.OrgID.String())  // Convert OrgID to string
+	existingSetting, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, setting.OrgID.String()) // Convert OrgID to string
 	if err == nil && existingSetting != nil {
-		return fmt.Errorf("organization setting already exists")  // Using fmt.Errorf instead of errors.New
+		return fmt.Errorf("organization setting already exists") // Using fmt.Errorf instead of errors.New
 	}
 	return s.orgSettingRepo.CreateOrganizationSetting(ctx, setting)
 }
@@ -224,4 +228,110 @@ func (s *service) GetOrganizationSettingByOrgID(ctx context.Context, orgID uuid.
 		CreatedAt:                setting.CreatedAt,
 		UpdatedAt:                setting.UpdatedAt,
 	}, nil
+}
+
+func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID *uuid.UUID) (interface{}, error) {
+	userDetails, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	fmt.Printf("userDetails", userDetails)
+
+	role := userDetails.Role.Name // assuming it's part of dto.UserResponseWithDetails
+	// return role
+
+	// Now based on role, return KPIs
+	switch role {
+	case "SuperAdmin":
+		orgs, total, lastMonth, thisYear, err := s.orgRepo.GetAllNonSingHealthOrganizationsWithCounts()
+		if err != nil {
+			return nil, err
+		}
+		totalCount, lastMonthCount, thisYearCount, _ , err := s.repo.GetActiveUserCounts(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		total, lastMonth, thisYear,	_, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{
+			"organization": map[string]interface{}{
+				"items":       orgs,
+				"total_count": total,
+				"last_month":  lastMonth,
+				"this_year":   thisYear,
+			},
+			"users": map[string]interface{}{
+				"total_count": totalCount,
+				"last_month":  lastMonthCount,
+				"this_year":   thisYearCount,
+			},
+			"Project": map[string]interface{}{
+				"items":       latestForms,
+				"total_count": total,
+				"last_month":  lastMonth,
+				"this_year":   thisYear,
+			},
+		}, nil
+
+	case "Collaborator":
+		return map[string]interface{}{
+			"dashboard": "Collaborator KPIs here",
+			"role":      role,
+		}, nil
+	case "Admin":
+		totalCount, lastMonthCount, thisYearCount,userList, err := s.repo.GetActiveUserCounts(ctx, uuidToStringPtr(orgID))
+		if err != nil {
+			return nil, err
+		}
+		total, lastMonth, thisYear,	_, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{
+			"users": map[string]interface{}{
+				"items":       userList,
+				"total_count": totalCount,
+				"last_month":  lastMonthCount,
+				"this_year":   thisYearCount,
+			},
+			"Project": map[string]interface{}{
+				"items":       latestForms,
+				"total_count": total,
+				"last_month":  lastMonth,
+				"this_year":   thisYear,
+			},
+		}, nil
+	case "User":
+		_, _, _,	active, archived, pending, rejected, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
+		if err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{
+			"Project": map[string]interface{}{
+				"items":       latestForms,
+				"active_count": active,
+				"archive_count":  archived,
+				"pending_count":   pending,
+				"rejected_count": rejected,
+			},
+		}, nil
+
+	default:
+		return map[string]interface{}{
+			"dashboard": "Basic KPIs here",
+			"role":      role,
+		}, nil
+	}
+}
+
+func uuidToStringPtr(id *uuid.UUID) *string {
+	if id == nil {
+		return nil
+	}
+	s := id.String()
+	return &s
 }
