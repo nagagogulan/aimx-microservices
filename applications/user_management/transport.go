@@ -74,6 +74,10 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 }
 
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
+	claims, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// This assumes path ends with /:id
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) == 0 {
@@ -88,20 +92,9 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, fmt.Errorf("missing Authorization header")
-	}
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	if token == authHeader {
-		return nil, fmt.Errorf("invalid Authorization header format")
-	}
-
-	accessSecret, err := generateJWTSecrets()
-	// Validate JWT and extract orgID
-	claims, err := middleware.ValidateJWT(token, accessSecret)
+	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, fmt.Errorf("invalid token: %v", err)
+		return nil, err // Unauthorized or invalid token
 	}
 
 	// Parse pagination and search
@@ -139,14 +132,3 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	}, nil
 }
 
-// Fetch JWT secrets from environment variables
-func generateJWTSecrets() (string, error) {
-
-	accessSecret := os.Getenv("ACCESS_SECRET")
-
-	if accessSecret == "" {
-		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
-	}
-
-	return accessSecret, nil
-}

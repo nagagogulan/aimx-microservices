@@ -10,6 +10,7 @@ import (
 
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -70,6 +71,10 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 }
 
 func decodeCreateRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req dto.CreateRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -78,6 +83,10 @@ func decodeCreateRequest(_ context.Context, r *http.Request) (interface{}, error
 }
 
 func decodeUpdateRequestStatus(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	fmt.Println("called transport")
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
@@ -102,6 +111,10 @@ func decodeUpdateRequestStatus(_ context.Context, r *http.Request) (interface{},
 // }
 
 func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	return nil, nil
 }
 
@@ -111,11 +124,19 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 func decodeIDFromPath(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 	return uuid.FromString(idStr)
 }
 
 func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// Parse the query parameters from the request URL
 	orgIDStr := r.URL.Query().Get("org_id")
 	pageStr := r.URL.Query().Get("page")
@@ -172,6 +193,10 @@ func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interfac
 }
 
 func decodeGetAllRequestsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// Parse the query parameters from the request URL
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")

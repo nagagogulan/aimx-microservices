@@ -9,6 +9,7 @@ import (
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
@@ -76,7 +77,7 @@ func makeShortlistDocketEndpoint(s service.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, errcom.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
 		}
-		claims, err := decodeHeaderGetClaims(httpReq)
+		claims, err := middleware.DecodeHeaderGetClaims(httpReq)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +98,7 @@ func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, service.NewAppError(errors.New("failed to get HTTP request from context"), http.StatusInternalServerError, "Internal error", nil)
 		}
-		claims, err := decodeHeaderGetClaims(httpReq)
+		claims, err := middleware.DecodeHeaderGetClaims(httpReq)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +325,7 @@ func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(dto.DeactivateOrganizationRequest)
 
 		// Call the service to deactivate the organization
-		err := s.DeactivateOrganization(ctx, req.OrganizationID,req.Status)
+		err := s.DeactivateOrganization(ctx, req.OrganizationID, req.Status)
 		if err != nil {
 			return nil, fmt.Errorf("failed to deactivate organization: %v", err)
 		}

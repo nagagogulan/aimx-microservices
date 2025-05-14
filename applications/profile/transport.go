@@ -160,6 +160,10 @@ func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func decodeUpdateUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errs // Unauthorized or invalid token
+	}
 	var req dto.UpdateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -183,6 +187,10 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 func decodeGeneralSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errs // Unauthorized or invalid token
+	}
 	var req dto.GeneralSettingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -192,10 +200,18 @@ func decodeGeneralSettingRequest(_ context.Context, r *http.Request) (interface{
 }
 
 func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errs // Unauthorized or invalid token
+	}
 	return nil, nil
 }
 
 func decodeUpdateOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req dto.OrganizationSettingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -204,6 +220,10 @@ func decodeUpdateOrganizationSettingRequest(_ context.Context, r *http.Request) 
 }
 
 func decodeCreateOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errs // Unauthorized or invalid token
+	}
 	var req dto.OrganizationSettingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -213,6 +233,10 @@ func decodeCreateOrganizationSettingRequest(_ context.Context, r *http.Request) 
 }
 
 func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req dto.OrganizationSettingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -220,33 +244,11 @@ func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (in
 	return &req, nil // Return pointer
 }
 
-func generateJWTSecrets() (string, error) {
-
-	accessSecret := os.Getenv("ACCESS_SECRET")
-
-	if accessSecret == "" {
-		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
-	}
-	return accessSecret, nil
-}
-
 func decodeOverviewRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, fmt.Errorf("missing or invalid Authorization header")
-	}
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
-	accessSecret, err := generateJWTSecrets()
+	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err
+		return nil, err // Unauthorized or invalid token
 	}
-	// Validate JWT and extract orgID
-	claims, err := middleware.ValidateJWT(tokenStr, accessSecret)
-	if err != nil {
-		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
-	}
-	fmt.Println("claims", claims)
 
 	userIDStr := claims.UserID // assuming the struct has a field UserID
 	orgIDStr := claims.OrganizationID

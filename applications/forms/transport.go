@@ -15,15 +15,14 @@ import (
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
-	"github.com/PecozQ/aimx-library/middleware"
-	"github.com/gofrs/uuid"
-	"whatsdare.com/fullstack/aimx/backend/service"
-
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gofrs/uuid"
 	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
+	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
 func init() {
@@ -193,6 +192,10 @@ func MakeHttpHandler(s service.Service) http.Handler {
 }
 
 func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request dto.ShortListDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		fmt.Println("the error is givne as:", err)
@@ -202,6 +205,10 @@ func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interfa
 }
 
 func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request dto.RatingDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -209,37 +216,11 @@ func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interfac
 	return request, nil
 }
 
-func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, fmt.Errorf("missing Authorization header")
-	}
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	if token == authHeader {
-		return nil, fmt.Errorf("invalid Authorization header format")
-	}
-
-	accessSecret, err := generateJWTSecrets()
-	// Validate JWT and extract orgID
-	claims, err := middleware.ValidateJWT(token, accessSecret)
-	if err != nil {
-		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
-	}
-	fmt.Println("the claim is given as:", claims)
-	return claims, nil
-}
-
-// Fetch JWT secrets from environment variables
-func generateJWTSecrets() (string, error) {
-	accessSecret := os.Getenv("ACCESS_SECRET")
-	if accessSecret == "" {
-		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
-	}
-	return accessSecret, nil
-}
-
-// Decode register api request...
 func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 
 	var request entities.Template
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -254,6 +235,12 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
+	if request.Type == 1 {
+		_, err := middleware.DecodeHeaderGetClaims(r)
+		if err != nil {
+			return nil, err // Unauthorized or invalid token
+		}
+	}
 	// Extract Gin context
 	// newCtx, err := commonlib.ExtractGinContext(ctx)
 	// if err != nil {
@@ -262,6 +249,10 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	return &dto.FormDTO{Type: request.Type, Sections: request.Sections, Fields: request.Fields}, nil
 }
 func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request dto.FormType
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -278,6 +269,12 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
 
+	if typeStr == "1" {
+		_, err := middleware.DecodeHeaderGetClaims(r)
+		if err != nil {
+			return nil, err // Unauthorized or invalid token
+		}
+	}
 	req := &model.ParamRequest{}
 
 	if id != "" {
@@ -300,6 +297,10 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	return req, nil
 }
 func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	formName := strings.TrimSpace(r.URL.Query().Get("formname"))
 	typeStr := r.URL.Query().Get("type")
 	pageStr := r.URL.Query().Get("page")
@@ -335,6 +336,10 @@ func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (in
 }
 
 func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	typeStr := r.URL.Query().Get("type")
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
@@ -371,11 +376,18 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 }
 
 func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	return nil, nil
 }
 
 func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request entities.Template
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -385,6 +397,10 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 }
 
 func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request dto.UpdateFormRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -394,6 +410,10 @@ func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{},
 }
 
 func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	req := &model.ParamRequest{}
 
@@ -403,6 +423,10 @@ func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interfac
 	return req, nil
 }
 func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req model.SearchFormsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -411,6 +435,10 @@ func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, 
 }
 
 func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
 	req := &model.ParamRequest{}
@@ -432,6 +460,10 @@ func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (i
 	return req, nil
 }
 func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req model.SearchFormsRequest
 
 	// Get raw query params
@@ -483,6 +515,10 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 }
 
 func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// Extract the organization_id from the URL path using http.Request
 	orgid := strings.TrimSpace(r.URL.Query().Get("organization_id"))
 	status := strings.TrimSpace(r.URL.Query().Get("status"))

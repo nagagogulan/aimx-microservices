@@ -91,6 +91,10 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	return r
 }
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	// Create a new context with organization ID
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -127,6 +131,10 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req model.GetFileRequest
 
 	// Decode the request body into the GetFileRequest struct
@@ -143,6 +151,10 @@ func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, erro
 }
 
 func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var req model.DeleteFileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -150,6 +162,10 @@ func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
 	var request model.OpenFileRequest
 	filepath := strings.TrimSpace(r.URL.Query().Get("filepath"))
 	request.FileURL = filepath
@@ -157,38 +173,6 @@ func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, 
 	return request, nil
 }
 
-func decodeHeaderGetClaims(r *http.Request) (*middleware.Claims, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, fmt.Errorf("missing Authorization header")
-	}
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	if token == authHeader {
-		return nil, fmt.Errorf("invalid Authorization header format")
-	}
-
-	accessSecret, err := generateJWTSecrets()
-	if err != nil {
-		return nil, err
-	}
-	// Validate JWT and extract orgID
-	claims, err := middleware.ValidateJWT(token, accessSecret)
-	if err != nil {
-		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
-	}
-	return claims, nil
-}
-
-// Fetch JWT secrets from environment variables
-func generateJWTSecrets() (string, error) {
-
-	accessSecret := os.Getenv("ACCESS_SECRET")
-
-	if accessSecret == "" {
-		return "", fmt.Errorf("JWT secret keys are not set in environment variables")
-	}
-	return accessSecret, nil
-}
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
