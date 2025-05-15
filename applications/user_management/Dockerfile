@@ -17,8 +17,6 @@ WORKDIR /app
 # Copy built binary
 COPY --from=builder /app/user_management .
 
-# Copy the .env file to the root directory
-COPY .env /.
 
 EXPOSE 8086
 

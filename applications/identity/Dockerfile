@@ -17,11 +17,7 @@ WORKDIR /app
 # Copy built binary
 COPY --from=builder /app/identity .
 
-# Copy the .env file to the root directory
-COPY .env /.
 
 EXPOSE 8081
-
-WORKDIR /app
 
 CMD ["./identity"]
