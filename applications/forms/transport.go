@@ -235,7 +235,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	if request.Type == 1 {
+	if request.Type != 1 {
 		_, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
 			return nil, err // Unauthorized or invalid token
@@ -397,10 +397,6 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 }
 
 func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	_, err := middleware.DecodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err // Unauthorized or invalid token
-	}
 	var request dto.UpdateFormRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {

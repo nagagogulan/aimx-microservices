@@ -215,7 +215,6 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		}
 		return nil, err
 	}
-
 	if updatedForm.Status == 2 {
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Admin Email Address" {
@@ -270,6 +269,11 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		fmt.Println("The organization is givn eas:", organizationId)
+
+		errd := s.formRepo.UpdateOrgID(ctx, id, organizationId.OrganizationID.String())
+		if errd != nil {
+			return nil, errd
+		}
 
 		// Convert int unit to string
 		unitEnum := commonlib.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][firstSetting.MaxProjectDocketSizeUnit]
