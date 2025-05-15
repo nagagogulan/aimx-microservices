@@ -470,6 +470,7 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 	formType, _ := strconv.Atoi(strings.TrimSpace(query.Get("type")))
 	page, _ := strconv.Atoi(strings.TrimSpace(query.Get("page")))
 	pageSize, _ := strconv.Atoi(strings.TrimSpace(query.Get("pageSize")))
+	formStatus, _ := strconv.Atoi(strings.TrimSpace((query.Get("status"))))
 
 	// // Parse dynamic filters from query parameters
 	// filterFields := query["filter_fields"]
@@ -498,7 +499,8 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 
 	// Construct final request
 	req = model.SearchFormsRequest{
-		Type: formType,
+		Type:   formType,
+		Status: formStatus,
 		SearchParam: dto.SearchParam{
 			Page:     page,
 			PageSize: pageSize,
