@@ -74,7 +74,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 }
 
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
-	claims, err := middleware.DecodeHeaderGetClaims(r)
+	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
 		return nil, err // Unauthorized or invalid token
 	}
@@ -101,6 +101,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 	search := r.URL.Query().Get("search")
+	reqType := r.URL.Query().Get("type")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -121,7 +122,6 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 			return nil, fmt.Errorf("invalid filters: %v", err)
 		}
 	}
-
 	return map[string]interface{}{
 		"organisation_id": claims.OrganizationID,
 		"user_id":         claims.UserID,
@@ -129,6 +129,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 		"limit":           limit,
 		"search":          search,
 		"filters":         filters, // Include filters in the request
+		"type":			   reqType,
 	}, nil
 }
 

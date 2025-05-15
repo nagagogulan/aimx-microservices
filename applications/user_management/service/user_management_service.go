@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
@@ -9,7 +10,7 @@ import (
 )
 
 type Service interface {
-	ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string, filters map[string]interface{}) (dto.PaginatedUsersResponse, error)
+	ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string, filters map[string]interface{}, reqType string) (dto.UpdatedPaginationResponse, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeactivateUser(ctx context.Context, id uuid.UUID) error
 }
@@ -22,8 +23,14 @@ func NewService(repo repository.UserCRUDService) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string, filters map[string]interface{}) (dto.PaginatedUsersResponse, error) {
-	return s.repo.ListUsersByOrg(ctx, orgID, userID, page, limit, search, filters)
+func (s *service) ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string, filters map[string]interface{},  reqType string) (dto.UpdatedPaginationResponse, error) {
+	fmt.Printf("testttt", reqType)
+	if  reqType == "AllOrganization" {
+		return s.repo.ListUsersByCondition(ctx, nil, userID, page, limit, search, filters)
+	} else {
+		return s.repo.ListUsersByCondition(ctx, &orgID, userID, page, limit, search, filters)
+	}
+
 }
 
 func (s *service) DeleteUser(ctx context.Context, id uuid.UUID) error {
