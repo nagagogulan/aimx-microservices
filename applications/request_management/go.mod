@@ -3,7 +3,7 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.416
+	github.com/PecozQ/aimx-library v0.0.464
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
@@ -22,6 +22,7 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -35,8 +36,8 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.15.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/datatypes v1.2.5 // indirect
@@ -61,9 +62,9 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.mongodb.org/mongo-driver v1.17.3 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/gorm v1.25.11 // indirect
 )
