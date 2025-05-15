@@ -187,7 +187,6 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 }
 
 func (s *service) UpdateForm(ctx context.Context, id string, status string) (*model.Response, error) {
-
 	org, err := s.formRepo.GetFormById(ctx, id)
 	fmt.Println("The organization is givn eas: %v", org)
 	if err != nil {
@@ -214,6 +213,10 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		return nil, err
+	}
+
+	if org.Status == 0 {
+		return &model.Response{Message: "Form rejected"}, nil
 	}
 
 	if updatedForm.Status == 2 {
@@ -244,7 +247,6 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 
 			}
 		}
-
 	}
 	// to get all the general setting value
 	generalSettings, err := s.globalSettingRepo.GetAllGeneralSetting()
@@ -270,6 +272,11 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			return nil, NewCustomError(errcom.ErrNotFound, err)
 		}
 		fmt.Println("The organization is givn eas:", organizationId)
+
+		errd := s.formRepo.UpdateOrgID(ctx, id, organizationId.OrganizationID.String())
+		if errd != nil {
+			return nil, errd
+		}
 
 		// Convert int unit to string
 		unitEnum := commonlib.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][firstSetting.MaxProjectDocketSizeUnit]
@@ -538,7 +545,7 @@ func (s *service) SearchForms(ctx context.Context, name string, page int, limit 
 	return &response, nil
 }
 
-func (s *service) ListForms(ctx context.Context, formType int, page int, limit int, searchParam dto.SearchParam) (*model.GetFormResponse, error) {
+func (s *service) ListForms(ctx context.Context, formType int, formStatus int, page int, limit int, searchParam dto.SearchParam) (*model.GetFormResponse, error) {
 	var forms []dto.FormDTO
 	var total int64
 	var err error
@@ -550,7 +557,7 @@ func (s *service) ListForms(ctx context.Context, formType int, page int, limit i
 	// 	forms, total, err = s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
 	// }
 	fmt.Println("******************************", searchParam)
-	forms, total, err = s.formRepo.ListForms(ctx, formType, page, limit, searchParam)
+	forms, total, err = s.formRepo.ListForms(ctx, formType, formStatus, page, limit, searchParam)
 
 	if err != nil {
 		if errors.Is(err, errcom.ErrNotFound) {

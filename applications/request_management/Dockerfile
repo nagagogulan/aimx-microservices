@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=builder /app/request_management .
 
 # Copy the .env file to the root directory
-COPY .env /.
+
 
 EXPOSE 8087
 

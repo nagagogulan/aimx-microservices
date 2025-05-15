@@ -77,6 +77,7 @@ type GetFormResponse struct {
 }
 type SearchFormsRequest struct {
 	Type        int             `json:"type"`
+	Status      int             `json:"status"`
 	SearchParam dto.SearchParam `json:"searchparam"`
 }
 

@@ -99,9 +99,13 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if err != nil {
 		fmt.Errorf("failed to check user: %w", err)
 	}
+	if userDetails.Status == entities.Deactivated {
+		return &model.Response{Message: "Your account is currently deactivated. Please contact the administrator for assistance.", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
+	}
 	if userDetails != nil {
 		return &model.Response{Message: "User already exists with 2FA enabled", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
 	}
+
 	// If user does not exist, save OTP as new record
 	if existingUser == nil {
 		err := s.TempUserRepo.SaveOTP(ctx, req, otp)

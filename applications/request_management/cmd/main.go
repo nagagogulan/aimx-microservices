@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -15,27 +16,40 @@ import (
 )
 
 func main() {
+	// DB, err := pgsql.InitDB(&pgsql.Config{
+	// 	// my local host
+	// 	DBHost:     "13.229.196.7",
+	// 	DBPort:     5432,
+	// 	DBUser:     "myappuser",
+	// 	DBPassword: "SmartWork@123",
+	// 	DBName:     "aimxdb",
+
+	// 	// rds
+	// 	// DBHost:     "18.142.238.70",
+	// 	// DBPort:     5432,
+	// 	// DBUser:     "myappuser",
+	// 	// DBPassword: "SmartWork@123",
+	// 	// DBName:     "aimxdb",
+
+	// 	// build dev
+	// 	// DBHost:     "localhost",
+	// 	// DBPort:     5432,
+	// 	// DBUser:     "postgres",
+	// 	// DBPassword: "Admin",
+	// 	// DBName:     "mylocaldb",
+	// })
+	dbPortStr := os.Getenv("DBPORT")
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		fmt.Printf("Invalid DBPORT value: %v\n", err)
+		return
+	}
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		// my local host
-		DBHost:     "13.229.196.7",
-		DBPort:     5432,
-		DBUser:     "myappuser",
-		DBPassword: "SmartWork@123",
-		DBName:     "aimxdb",
-
-		// rds
-		// DBHost:     "18.142.238.70",
-		// DBPort:     5432,
-		// DBUser:     "myappuser",
-		// DBPassword: "SmartWork@123",
-		// DBName:     "aimxdb",
-
-		// build dev
-		// DBHost:     "localhost",
-		// DBPort:     5432,
-		// DBUser:     "postgres",
-		// DBPassword: "Admin",
-		// DBName:     "mylocaldb",
+		DBHost:     os.Getenv("DBHOST"),
+		DBPort:     dbPort,
+		DBUser:     os.Getenv("DBUSER"),
+		DBPassword: os.Getenv("DBPASSWORD"),
+		DBName:     os.Getenv("DBNAME"),
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)

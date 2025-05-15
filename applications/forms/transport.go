@@ -235,7 +235,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	if request.Type == 1 {
+	if request.Type != 1 {
 		_, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
 			return nil, err // Unauthorized or invalid token
@@ -397,10 +397,6 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 }
 
 func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	_, err := middleware.DecodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err // Unauthorized or invalid token
-	}
 	var request dto.UpdateFormRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -474,6 +470,7 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 	formType, _ := strconv.Atoi(strings.TrimSpace(query.Get("type")))
 	page, _ := strconv.Atoi(strings.TrimSpace(query.Get("page")))
 	pageSize, _ := strconv.Atoi(strings.TrimSpace(query.Get("pageSize")))
+	formStatus, _ := strconv.Atoi(strings.TrimSpace((query.Get("status"))))
 
 	// // Parse dynamic filters from query parameters
 	// filterFields := query["filter_fields"]
@@ -502,7 +499,8 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 
 	// Construct final request
 	req = model.SearchFormsRequest{
-		Type: formType,
+		Type:   formType,
+		Status: formStatus,
 		SearchParam: dto.SearchParam{
 			Page:     page,
 			PageSize: pageSize,

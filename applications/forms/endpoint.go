@@ -279,7 +279,7 @@ func makeListFormsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(model.SearchFormsRequest)
 
-		formList, err := s.ListForms(ctx, req.Type, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
+		formList, err := s.ListForms(ctx, req.Type, req.Status, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
 		if err != nil {
 			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
 		}

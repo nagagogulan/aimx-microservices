@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -59,12 +60,18 @@ func main() {
 	// defer client.Disconnect(context.Background())
 	// Set MongoDB URI
 
+	dbPortStr := os.Getenv("DBPORT")
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		fmt.Printf("Invalid DBPORT value: %v\n", err)
+		return
+	}
 	DB, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     "13.229.196.7",
-		DBPort:     5432,
-		DBUser:     "myappuser",
-		DBPassword: "SmartWork@123",
-		DBName:     "aimxdb",
+		DBHost:     os.Getenv("DBHOST"),
+		DBPort:     dbPort,
+		DBUser:     os.Getenv("DBUSER"),
+		DBPassword: os.Getenv("DBPASSWORD"),
+		DBName:     os.Getenv("DBNAME"),
 	})
 	if err != nil {
 		log.Fatalf("Error initializing DB: %v", err)
@@ -93,7 +100,7 @@ func main() {
 	// Close the DB connection when done (deferred)
 	defer sqlDB.Close()
 
-	uri := "mongodb://13.229.196.7:27017" // replace with your MongoDB URI
+	uri := os.Getenv("MONGO_URI") // replace with your MongoDB URI
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -113,7 +120,7 @@ func main() {
 	fmt.Println("Successfully connected to MongoDB!")
 
 	// Get a handle to a collection
-	db := client.Database("mydb")
+	db := client.Database(os.Getenv("MONGO_DBNAME"))
 	//collection := db.Collection("templates")
 
 	templateRepo := repository.NewTemplateRepository(db)
