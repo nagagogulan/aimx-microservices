@@ -202,7 +202,7 @@ func decodeGeneralSettingRequest(_ context.Context, r *http.Request) (interface{
 func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, errs := middleware.DecodeHeaderGetClaims(r)
 	if errs != nil {
-		return nil, errs // Unauthorized or invalid token
+		return nil, service.NewAppError(errs, http.StatusUnauthorized, errs.Error(), nil)
 	}
 	return nil, nil
 }
