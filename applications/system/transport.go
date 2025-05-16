@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"net/http"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 // MakeHTTPHandler configures HTTP handlers for the endpoints.
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 	r := gin.New()
 	r.Use(gin.Logger())
 
@@ -26,12 +29,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.SendNotificationEndpoint,
 			decodeSendNotificationRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		notificationAPI.POST("/update-token", gin.WrapF(httptransport.NewServer(
 			endpoints.UpdateFirebaseTokenEndpoint,
 			decodeUpdateFirebaseTokenRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 	}
@@ -41,6 +46,10 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 
 // decodeSendNotificationRequest decodes the HTTP request for sending a notification.
 func decodeSendNotificationRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req struct {
 		UserID  string `json:"user_id"`
 		Message string `json:"message"`
@@ -64,6 +73,10 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 func decodeUpdateFirebaseTokenRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req struct {
 		UserID        string `json:"user_id"`
 		FirebaseToken string `json:"firebase_token"`

@@ -41,7 +41,7 @@ func (s *service) SendNotification(userID, message string) error {
 	// Save the notification in the database
 	err := s.repo.CreateNotification(notification)
 	if err != nil {
-		return fmt.Errorf("error saving notification: %v", err)
+		return err
 	}
 
 	// Convert entity to DTO

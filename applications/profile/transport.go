@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
@@ -39,7 +40,7 @@ func init() {
 
 func MakeHTTPHandler(s service.Service) http.Handler {
 	fmt.Println("connect http handuler")
-	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(service.EncodeError)}
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 
 	r := gin.New()
 	endpoints := NewEndpoint(s)
@@ -210,7 +211,7 @@ func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error)
 func decodeUpdateOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req dto.OrganizationSettingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -222,7 +223,7 @@ func decodeUpdateOrganizationSettingRequest(_ context.Context, r *http.Request) 
 func decodeCreateOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, errs := middleware.DecodeHeaderGetClaims(r)
 	if errs != nil {
-		return nil, errs // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req dto.OrganizationSettingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -235,7 +236,7 @@ func decodeCreateOrganizationSettingRequest(_ context.Context, r *http.Request) 
 func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req dto.OrganizationSettingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -247,7 +248,7 @@ func decodeGetOrganizationSettingRequest(_ context.Context, r *http.Request) (in
 func decodeOverviewRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 
 	userIDStr := claims.UserID // assuming the struct has a field UserID

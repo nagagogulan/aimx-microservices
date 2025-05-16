@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -16,7 +18,7 @@ import (
 )
 
 func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
-
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 	r := gin.New()
 	r.Use(gin.Logger())
 
@@ -31,42 +33,43 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
 
 	// Role
+	// Role
 	role := router.Group("/roles")
-	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode))
-	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode))
-	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode))
-	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode))
-	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode))
+	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options...))
+	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options...))
+	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options...))
+	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options...))
+	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options...))
 
 	// Module
 	module := router.Group("/modules")
-	module.POST("/", wrapEndpoint(endpoints.CreateModule, decodeCreateModule, encode))
-	module.GET("/:id", wrapEndpoint(endpoints.GetModuleByID, decodeUUIDParam, encode))
-	module.PUT("/", wrapEndpoint(endpoints.UpdateModule, decodeUpdateModule, encode))
-	module.DELETE("/:id", wrapEndpoint(endpoints.DeleteModule, decodeUUIDParam, encode))
-	module.GET("/", wrapEndpoint(endpoints.ListModules, decodeEmpty, encode))
+	module.POST("/", wrapEndpoint(endpoints.CreateModule, decodeCreateModule, encode, options...))
+	module.GET("/:id", wrapEndpoint(endpoints.GetModuleByID, decodeUUIDParam, encode, options...))
+	module.PUT("/", wrapEndpoint(endpoints.UpdateModule, decodeUpdateModule, encode, options...))
+	module.DELETE("/:id", wrapEndpoint(endpoints.DeleteModule, decodeUUIDParam, encode, options...))
+	module.GET("/", wrapEndpoint(endpoints.ListModules, decodeEmpty, encode, options...))
 
 	// Permission
 	perm := router.Group("/permissions")
-	perm.POST("/", wrapEndpoint(endpoints.CreatePermission, decodeCreatePermission, encode))
-	perm.GET("/:id", wrapEndpoint(endpoints.GetPermissionByID, decodeUUIDParam, encode))
-	perm.PUT("/", wrapEndpoint(endpoints.UpdatePermission, decodeUpdatePermission, encode))
-	perm.DELETE("/:id", wrapEndpoint(endpoints.DeletePermission, decodeUUIDParam, encode))
-	perm.GET("/", wrapEndpoint(endpoints.ListPermissions, decodeEmpty, encode))
+	perm.POST("/", wrapEndpoint(endpoints.CreatePermission, decodeCreatePermission, encode, options...))
+	perm.GET("/:id", wrapEndpoint(endpoints.GetPermissionByID, decodeUUIDParam, encode, options...))
+	perm.PUT("/", wrapEndpoint(endpoints.UpdatePermission, decodeUpdatePermission, encode, options...))
+	perm.DELETE("/:id", wrapEndpoint(endpoints.DeletePermission, decodeUUIDParam, encode, options...))
+	perm.GET("/", wrapEndpoint(endpoints.ListPermissions, decodeEmpty, encode, options...))
 
 	// RMP
 	rmp := router.Group("/rolePermission")
-	rmp.POST("/", wrapEndpoint(endpoints.CreateRMP, decodeCreateRMP, encode))
-	rmp.GET("/:id", wrapEndpoint(endpoints.GetRMPByID, decodeUUIDParam, encode))
-	rmp.PUT("/", wrapEndpoint(endpoints.UpdateRMP, decodeUpdateRMP, encode))
-	rmp.DELETE("/:id", wrapEndpoint(endpoints.DeleteRMP, decodeUUIDParam, encode))
-	rmp.GET("/", wrapEndpoint(endpoints.ListRMPs, decodeEmpty, encode))
-	rmp.POST("/bulk", wrapEndpoint(endpoints.FlexibleBulkCreateRMP, decodeFlexibleCreateRMP, encode))
+	rmp.POST("/", wrapEndpoint(endpoints.CreateRMP, decodeCreateRMP, encode, options...))
+	rmp.GET("/:id", wrapEndpoint(endpoints.GetRMPByID, decodeUUIDParam, encode, options...))
+	rmp.PUT("/", wrapEndpoint(endpoints.UpdateRMP, decodeUpdateRMP, encode, options...))
+	rmp.DELETE("/:id", wrapEndpoint(endpoints.DeleteRMP, decodeUUIDParam, encode, options...))
+	rmp.GET("/", wrapEndpoint(endpoints.ListRMPs, decodeEmpty, encode, options...))
+	rmp.POST("/bulk", wrapEndpoint(endpoints.FlexibleBulkCreateRMP, decodeFlexibleCreateRMP, encode, options...))
+	rmp.POST("/bulk-update", wrapEndpoint(endpoints.FlexibleBulkUpdateRMP, decodeFlexibleBulkUpdateRMP, encode, options...))
 
+	// Role Details
 	roleDetails := router.Group("/getRoleDetails")
-	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode))
-	rmp.POST("/bulk-update", wrapEndpoint(endpoints.FlexibleBulkUpdateRMP, decodeFlexibleBulkUpdateRMP, encode)) // New endpoint
-
+	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode, options...))
 	return r
 }
 
@@ -78,23 +81,39 @@ func wrapEndpoint(ep endpoint.Endpoint, decoder httptransport.DecodeRequestFunc,
 // --- Decoders --- //
 
 func decodeEmpty(_ context.Context, _ *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	return nil, nil
 }
 
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 	return uuid.FromString(idStr)
 }
 
 func decodeCreateRole(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.CreateRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	return &req, nil
 }
 
 func decodeUpdateRole(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.UpdateRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -103,6 +122,10 @@ func decodeUpdateRole(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func decodeCreateModule(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.CreateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -111,22 +134,34 @@ func decodeCreateModule(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 func decodeUpdateModule(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.UpdateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	return &req, nil
 }
 
 func decodeCreatePermission(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.CreatePermissionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	return &req, nil
 }
 
 func decodeUpdatePermission(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.UpdatePermissionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
@@ -135,17 +170,25 @@ func decodeUpdatePermission(_ context.Context, r *http.Request) (interface{}, er
 }
 
 func decodeCreateRMP(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.CreateRMPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	return &req, nil
 }
 
 func decodeUpdateRMP(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var req dto.UpdateRMPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	return &req, nil
 }
@@ -157,6 +200,10 @@ func encode(_ context.Context, w http.ResponseWriter, response interface{}) erro
 }
 
 func decodeFlexibleCreateRMP(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var raw map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err
@@ -230,6 +277,10 @@ func decodeFlexibleCreateRMP(_ context.Context, r *http.Request) (interface{}, e
 }
 
 func decodeFlexibleBulkUpdateRMP(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
 	var raw map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		return nil, err

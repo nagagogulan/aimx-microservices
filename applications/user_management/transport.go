@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ func init() {
 }
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 	r := gin.New()
 	r.Use(gin.Logger())
 
@@ -56,18 +58,21 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.ListUsersEndpoint,
 			decodeListUsersRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.DELETE("/:id", gin.WrapF(httptransport.NewServer(
 			endpoints.DeleteUserEndpoint,
 			decodeUUIDParam,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.PUT("/deactivate/:id", gin.WrapF(httptransport.NewServer(
 			endpoints.DeactivateUserEndpoint,
 			decodeUUIDParam,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 	return r
@@ -76,7 +81,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// This assumes path ends with /:id
 	parts := strings.Split(r.URL.Path, "/")
@@ -94,7 +99,7 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 
 	// Parse pagination and search
@@ -129,7 +134,6 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 		"limit":           limit,
 		"search":          search,
 		"filters":         filters, // Include filters in the request
-		"type":			   reqType,
+		"type":            reqType,
 	}, nil
 }
-

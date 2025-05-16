@@ -2,7 +2,6 @@ package base
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -33,7 +32,7 @@ func makeSendNotificationEndpoint(s service.Service) endpoint.Endpoint {
 		// Call the service method to send the notification
 		err := s.SendNotification(userID, message)
 		if err != nil {
-			return nil, fmt.Errorf("error sending notification: %v", err)
+			return nil, err
 		}
 
 		// Return a success message after sending the notification
@@ -49,7 +48,7 @@ func makeUpdateFirebaseTokenEndpoint(s service.Service) endpoint.Endpoint {
 
 		err := s.UpdateFirebaseToken(userID, token)
 		if err != nil {
-			return nil, fmt.Errorf("failed to update firebase token: %v", err)
+			return nil, err
 		}
 
 		return map[string]string{"status": "success", "message": "Firebase token updated"}, nil

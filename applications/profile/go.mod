@@ -3,7 +3,7 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.465
+	github.com/PecozQ/aimx-library v0.0.470
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -30,7 +30,7 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.2 // indirect00
+	github.com/modern-go/reflect2 v1.0.2 // indirect; indirect00
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
