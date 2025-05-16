@@ -128,7 +128,7 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 			options...,
 		).ServeHTTP))
 
-		general.POST("/create", gin.WrapF(httptransport.NewServer(
+		settings.POST("/create", gin.WrapF(httptransport.NewServer(
 			endpoints.CreateOrganizationSettingEndpoint,
 			decodeCreateOrganizationSettingRequest,
 			encodeResponse,
@@ -189,7 +189,7 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 func decodeGeneralSettingRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, errs := middleware.DecodeHeaderGetClaims(r)
 	if errs != nil {
-		return nil, errs // Unauthorized or invalid token
+		return nil, service.NewAppError(errs, http.StatusUnauthorized, errs.Error(), nil)
 	}
 	var req dto.GeneralSettingRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
