@@ -91,10 +91,6 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	return r
 }
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	_, err := middleware.DecodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, err // Unauthorized or invalid token
-	}
 	// Create a new context with organization ID
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -133,7 +129,7 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req model.GetFileRequest
 
@@ -153,7 +149,7 @@ func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, erro
 func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req model.DeleteFileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -164,7 +160,7 @@ func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, e
 func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var request model.OpenFileRequest
 	filepath := strings.TrimSpace(r.URL.Query().Get("filepath"))

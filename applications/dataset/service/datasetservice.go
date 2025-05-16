@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/model"
@@ -33,7 +34,7 @@ func NewService() Service {
 func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate UUID: %v", err)
+		return nil, fmt.Errorf("failed to generate UUID")
 	}
 
 	enumLabel := common.ValueMapper(req.FormType, "FileFormat", "ENUM_TO_HASH")
@@ -51,26 +52,26 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	switch enumLabel {
 	case 0:
 		if !validDatasetExtensions[ext] {
-			return nil, fmt.Errorf("invalid dataset file extension: only .csv, .xlsx, .zip allowed")
+			return nil, errcom.ErrInvalidDatasetFileExtension
 		}
 		filePath = fmt.Sprintf("datasetfile/%s/%s_%s", id.String(), timestamp, id.String())
 	case 1:
 		if !validImageExtensions[ext] {
-			return nil, fmt.Errorf("invalid image file extension: only .jpg, .jpeg, .png allowed")
+			return nil, errcom.ErrInvalidImageFileExtension
 		}
 		filePath = fmt.Sprintf("images/%s/%s_%s", id.String(), timestamp, id.String())
 	case 2:
 		if !validFileFormats[ext] {
-			return nil, fmt.Errorf("invalid file format: only .docx, .pdf allowed")
+			return nil, errcom.ErrInvalidDocumentFileFormat
 		}
 		filePath = fmt.Sprintf("file/%s/%s_%s", id.String(), timestamp, id.String())
 	case 3:
 		if !validDocketFileFormats[ext] {
-			return nil, fmt.Errorf("invalid docket format: only .pkl, .joblib, .pth, .h5, .onnx allowed")
+			return nil, errcom.ErrInvalidDocketFormat
 		}
 		filePath = fmt.Sprintf("docketfile/%s/%s_%s", id.String(), timestamp, id.String())
 	default:
-		return nil, fmt.Errorf("unsupported file format")
+		return nil, errcom.ErrUnsupportedFileFormat
 	}
 
 	// Create necessary directories
@@ -82,23 +83,17 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id.String(), ext)
 	fullPath := filepath.Join(filePath, newFileName)
 
-	// Check if file exceeds a certain size (e.g., 50MB)
-	const maxSize = 50 * 1024 * 1024 // 50 MB
-	if len(req.Content) > maxSize {
-		return nil, fmt.Errorf("file size exceeds the maximum allowed size of 50MB")
-	}
-
 	// Create destination file
 	outFile, err := os.Create(fullPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create file: %w", err)
+		return nil, fmt.Errorf("unable to create file")
 	}
 	defer outFile.Close()
 
 	// Stream the file content to the new file
 	contentReader := bytes.NewReader(req.Content)
 	if _, err := io.Copy(outFile, contentReader); err != nil {
-		return nil, fmt.Errorf("failed to stream file: %w", err)
+		return nil, fmt.Errorf("failed to stream file")
 	}
 
 	// Return response
@@ -112,15 +107,15 @@ func (s *fileService) GetFile(ctx context.Context, filePath string) ([]byte, str
 	// Check if the file exists
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			return nil, "", fmt.Errorf("file not found: %w", err)
+			return nil, "", errcom.ErrFileNotFound
 		}
-		return nil, "", fmt.Errorf("unable to access file: %w", err)
+		return nil, "", fmt.Errorf("unable to access file")
 	}
 
 	// Read the file content
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to read file: %w", err)
+		return nil, "", fmt.Errorf("unable to read file")
 	}
 
 	// Extract filename from the file path
@@ -131,12 +126,12 @@ func (s *fileService) GetFile(ctx context.Context, filePath string) ([]byte, str
 func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error {
 
 	if _, err := os.Stat(filepath.FilePath); os.IsNotExist(err) {
-		return fmt.Errorf("file does not exist: %s", filepath)
+		return errcom.ErrFileDoesNotExist
 	}
 
 	// Delete the file
 	if err := os.Remove(filepath.FilePath); err != nil {
-		return fmt.Errorf("unable to delete file %s: %w", filepath, err)
+		return fmt.Errorf("unable to delete file")
 	}
 	return nil
 }
@@ -144,7 +139,7 @@ func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileR
 func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Errorf("Error getting current working directory:", err)
+		fmt.Errorf("Error getting current working directory")
 	}
 	fmt.Println("Current Working Directory:", dir)
 
@@ -165,7 +160,7 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 	// Open the file
 	file, err := os.Open(localFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("failed to open file")
 	}
 
 	// Ensure the file is closed when done, if the function is extended
