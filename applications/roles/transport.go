@@ -35,47 +35,47 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 	// Role
 	// Role
 	role := router.Group("/roles")
-	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options...))
-	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options...))
-	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options...))
-	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options...))
-	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options...))
+	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options))
+	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options))
+	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options))
+	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options))
+	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options))
 
 	// Module
 	module := router.Group("/modules")
-	module.POST("/", wrapEndpoint(endpoints.CreateModule, decodeCreateModule, encode, options...))
-	module.GET("/:id", wrapEndpoint(endpoints.GetModuleByID, decodeUUIDParam, encode, options...))
-	module.PUT("/", wrapEndpoint(endpoints.UpdateModule, decodeUpdateModule, encode, options...))
-	module.DELETE("/:id", wrapEndpoint(endpoints.DeleteModule, decodeUUIDParam, encode, options...))
-	module.GET("/", wrapEndpoint(endpoints.ListModules, decodeEmpty, encode, options...))
+	module.POST("/", wrapEndpoint(endpoints.CreateModule, decodeCreateModule, encode, options))
+	module.GET("/:id", wrapEndpoint(endpoints.GetModuleByID, decodeUUIDParam, encode, options))
+	module.PUT("/", wrapEndpoint(endpoints.UpdateModule, decodeUpdateModule, encode, options))
+	module.DELETE("/:id", wrapEndpoint(endpoints.DeleteModule, decodeUUIDParam, encode, options))
+	module.GET("/", wrapEndpoint(endpoints.ListModules, decodeEmpty, encode, options))
 
 	// Permission
 	perm := router.Group("/permissions")
-	perm.POST("/", wrapEndpoint(endpoints.CreatePermission, decodeCreatePermission, encode, options...))
-	perm.GET("/:id", wrapEndpoint(endpoints.GetPermissionByID, decodeUUIDParam, encode, options...))
-	perm.PUT("/", wrapEndpoint(endpoints.UpdatePermission, decodeUpdatePermission, encode, options...))
-	perm.DELETE("/:id", wrapEndpoint(endpoints.DeletePermission, decodeUUIDParam, encode, options...))
-	perm.GET("/", wrapEndpoint(endpoints.ListPermissions, decodeEmpty, encode, options...))
+	perm.POST("/", wrapEndpoint(endpoints.CreatePermission, decodeCreatePermission, encode, options))
+	perm.GET("/:id", wrapEndpoint(endpoints.GetPermissionByID, decodeUUIDParam, encode, options))
+	perm.PUT("/", wrapEndpoint(endpoints.UpdatePermission, decodeUpdatePermission, encode, options))
+	perm.DELETE("/:id", wrapEndpoint(endpoints.DeletePermission, decodeUUIDParam, encode, options))
+	perm.GET("/", wrapEndpoint(endpoints.ListPermissions, decodeEmpty, encode, options))
 
 	// RMP
 	rmp := router.Group("/rolePermission")
-	rmp.POST("/", wrapEndpoint(endpoints.CreateRMP, decodeCreateRMP, encode, options...))
-	rmp.GET("/:id", wrapEndpoint(endpoints.GetRMPByID, decodeUUIDParam, encode, options...))
-	rmp.PUT("/", wrapEndpoint(endpoints.UpdateRMP, decodeUpdateRMP, encode, options...))
-	rmp.DELETE("/:id", wrapEndpoint(endpoints.DeleteRMP, decodeUUIDParam, encode, options...))
-	rmp.GET("/", wrapEndpoint(endpoints.ListRMPs, decodeEmpty, encode, options...))
-	rmp.POST("/bulk", wrapEndpoint(endpoints.FlexibleBulkCreateRMP, decodeFlexibleCreateRMP, encode, options...))
-	rmp.POST("/bulk-update", wrapEndpoint(endpoints.FlexibleBulkUpdateRMP, decodeFlexibleBulkUpdateRMP, encode, options...))
+	rmp.POST("/", wrapEndpoint(endpoints.CreateRMP, decodeCreateRMP, encode, options))
+	rmp.GET("/:id", wrapEndpoint(endpoints.GetRMPByID, decodeUUIDParam, encode, options))
+	rmp.PUT("/", wrapEndpoint(endpoints.UpdateRMP, decodeUpdateRMP, encode, options))
+	rmp.DELETE("/:id", wrapEndpoint(endpoints.DeleteRMP, decodeUUIDParam, encode, options))
+	rmp.GET("/", wrapEndpoint(endpoints.ListRMPs, decodeEmpty, encode, options))
+	rmp.POST("/bulk", wrapEndpoint(endpoints.FlexibleBulkCreateRMP, decodeFlexibleCreateRMP, encode, options))
+	rmp.POST("/bulk-update", wrapEndpoint(endpoints.FlexibleBulkUpdateRMP, decodeFlexibleBulkUpdateRMP, encode, options))
 
 	// Role Details
 	roleDetails := router.Group("/getRoleDetails")
-	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode, options...))
+	roleDetails.GET("/:roleID", wrapEndpoint(endpoints.GetModulesAndPermissionsByRoleID, decodeUUIDParam, encode, options))
 	return r
 }
 
 // --- Endpoint Wrapper --- //
-func wrapEndpoint(ep endpoint.Endpoint, decoder httptransport.DecodeRequestFunc, encoder httptransport.EncodeResponseFunc) gin.HandlerFunc {
-	return gin.WrapF(httptransport.NewServer(ep, decoder, encoder).ServeHTTP)
+func wrapEndpoint(ep endpoint.Endpoint, decoder httptransport.DecodeRequestFunc, encoder httptransport.EncodeResponseFunc, option []httptransport.ServerOption) gin.HandlerFunc {
+	return gin.WrapF(httptransport.NewServer(ep, decoder, encoder, option...).ServeHTTP)
 }
 
 // --- Decoders --- //
