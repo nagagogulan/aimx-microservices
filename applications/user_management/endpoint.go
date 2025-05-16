@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -34,11 +35,11 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		case string:
 			parsed, err := uuid.FromString(v)
 			if err != nil {
-				return nil, fmt.Errorf("invalid organization_id: %v", err)
+				return nil, errcom.ErrInvalidOrganizationID
 			}
 			orgID = parsed
 		default:
-			return nil, fmt.Errorf("organization_id missing or invalid")
+			return nil, errcom.ErrInvalidOrganizationID
 		}
 		userIDRaw := req["user_id"]
 		var userID uuid.UUID
@@ -48,11 +49,11 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		case string:
 			parsed, err := uuid.FromString(v)
 			if err != nil {
-				return nil, fmt.Errorf("invalid user_id: %v", err)
+				return nil, errcom.ErrInvalidUserID
 			}
 			userID = parsed
 		default:
-			return nil, fmt.Errorf("user_id missing or invalid")
+			return nil, errcom.ErrInvalidUserID
 		}
 
 		page := req["page"].(int)
@@ -60,7 +61,7 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		search := req["search"].(string)
 		rawType, ok := req["type"].(string)
 		if !ok {
-			return nil, fmt.Errorf("reqType is missing or not a string")
+			return nil, errcom.ErrInvalidReqType
 		}
 		// Capture filters from request
 		filters := make(map[string]interface{})
@@ -87,12 +88,12 @@ func makeDeactivateUserEndpoint(handler func(context.Context, uuid.UUID) error) 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		id, ok := request.(string)
 		if !ok {
-			return nil, fmt.Errorf("expected string ID but got %T", request)
+			return nil, errcom.ErrExpectedStringID
 		}
 
 		uid, err := uuid.FromString(id)
 		if err != nil {
-			return nil, fmt.Errorf("invalid UUID: %w", err)
+			return nil, fmt.Errorf("invalid UUID")
 		}
 
 		if err := handler(ctx, uid); err != nil {
@@ -101,7 +102,7 @@ func makeDeactivateUserEndpoint(handler func(context.Context, uuid.UUID) error) 
 
 		return map[string]interface{}{
 			"status":  "success",
-			"message": fmt.Sprintf("User %s has been successfully deactivated", uid),
+			"message": fmt.Sprintf("User has been successfully deactivated"),
 		}, nil
 	}
 }

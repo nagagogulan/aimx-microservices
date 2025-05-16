@@ -3,7 +3,6 @@ package base
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
@@ -50,7 +49,7 @@ func makeGetUserProfileEndpoint(s service.Service) endpoint.Endpoint {
 
 		id, err := uuid.FromString(idStr)
 		if err != nil {
-			return nil, fmt.Errorf("invalid UUID: %v", err)
+			return nil, fmt.Errorf("invalid UUID")
 		}
 
 		return s.GetUserProfile(ctx, id)
@@ -75,7 +74,7 @@ func makeCreateGeneralSettingEndpoint(s service.Service) endpoint.Endpoint {
 		err := s.CreateGeneralSetting(ctx, req)
 		if err != nil {
 			// return nil, err
-			return nil, service.NewAppError(fmt.Errorf("general setting already exists"), http.StatusBadRequest, "General setting already exists, cannot create", nil)
+			return nil, err
 
 		}
 		return map[string]string{"message": "Successfully added"}, nil
@@ -120,7 +119,7 @@ func MakeGetOrganizationSettingByOrgIDEndpoint(s service.Service) endpoint.Endpo
 		req := request.(*dto.OrganizationSettingRequest)
 		setting, err := s.GetOrganizationSettingByOrgID(ctx, req.OrgID)
 		if err != nil {
-			return nil, service.NewAppError(fmt.Errorf("No record found"), http.StatusBadRequest, "No record found", nil)
+			return nil, err
 
 		}
 		return setting, err

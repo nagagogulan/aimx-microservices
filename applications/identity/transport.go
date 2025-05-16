@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -17,7 +18,7 @@ import (
 
 func MakeHTTPHandler(s service.Service) http.Handler {
 	fmt.Println("connect http handuler")
-	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(service.EncodeError)}
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 
 	r := gin.New()
 	endpoints := NewEndpoint(s)

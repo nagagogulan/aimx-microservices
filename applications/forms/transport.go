@@ -191,7 +191,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var request dto.ShortListDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -204,7 +204,7 @@ func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interfa
 func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var request dto.RatingDTO
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -216,7 +216,7 @@ func decodeRatingEndpointRequest(ctx context.Context, r *http.Request) (interfac
 func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 
 	var request entities.Template
@@ -240,7 +240,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if request.Type != 1 {
 		_, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
-			return nil, err // Unauthorized or invalid token
+			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 		}
 	}
 	// Extract Gin context
@@ -277,7 +277,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var request dto.FormType
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -298,7 +298,7 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	if typeStr == "1" {
 		_, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
-			return nil, err // Unauthorized or invalid token
+			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 		}
 	}
 	req := &model.ParamRequest{}
@@ -325,7 +325,7 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	formName := strings.TrimSpace(r.URL.Query().Get("formname"))
 	typeStr := r.URL.Query().Get("type")
@@ -364,7 +364,7 @@ func decodeSearchFormsByOrgNameRequest(ctx context.Context, r *http.Request) (in
 func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	typeStr := r.URL.Query().Get("type")
 	pageStr := r.URL.Query().Get("page")
@@ -404,7 +404,7 @@ func decodeGetFormByTypeRequest(ctx context.Context, r *http.Request) (interface
 func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	return nil, nil
 }
@@ -412,7 +412,7 @@ func decodeGetFormTypeRequest(ctx context.Context, r *http.Request) (interface{}
 func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var request entities.Template
 
@@ -434,7 +434,7 @@ func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{},
 func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	req := &model.ParamRequest{}
@@ -447,7 +447,7 @@ func decodeDeleteTemplateRequest(ctx context.Context, r *http.Request) (interfac
 func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req model.SearchFormsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -459,7 +459,7 @@ func decodeSearchFormsRequest(_ context.Context, r *http.Request) (interface{}, 
 func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
@@ -484,7 +484,7 @@ func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (i
 func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req model.SearchFormsRequest
 
@@ -541,7 +541,7 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// Extract the organization_id from the URL path using http.Request
 	orgid := strings.TrimSpace(r.URL.Query().Get("organization_id"))
@@ -550,7 +550,7 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 	// Convert the string to UUID
 	orgID, err := uuid.FromString(orgid)
 	if err != nil {
-		return nil, fmt.Errorf("invalid organization ID: %v", err)
+		return nil, fmt.Errorf("invalid organization ID")
 	}
 
 	return dto.DeactivateOrganizationRequest{

@@ -111,11 +111,11 @@ func main() {
 	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 
 	httpServer := http.Server{
-		Addr:    ":" + strconv.Itoa(8088),
+		Addr:    ":" + strconv.Itoa(8089),
 		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
-	fmt.Println("Info", "HTTP server started", "port", 8086)
+	fmt.Println("Info", "HTTP server started", "port", 8089)
 	err = httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)

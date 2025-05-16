@@ -52,7 +52,7 @@ func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*
 		template, err := s.templateRepo.GetTemplateById(ctx, id)
 		if err != nil {
 			commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", err.Error(), err, "id", Type)
-			return nil, NewCustomError(errorlib.ErrNotFound, err)
+			return nil, errorlib.ErrRecordNotFounds
 		}
 		return template, nil
 	}
@@ -60,7 +60,7 @@ func (s *service) GetTemplateByType(ctx context.Context, Type int, id string) (*
 		template, errs := s.templateRepo.GetTemplateByType(ctx, Type)
 		if errs != nil {
 			commonlib.LogMessage(s.logger, commonlib.Error, "GetTemplate", errs.Error(), errs, "type", Type)
-			return nil, NewCustomError(errorlib.ErrNotFound, errs)
+			return nil, errorlib.ErrRecordNotFounds
 		}
 
 		return template, nil
@@ -74,7 +74,7 @@ func (s *service) UpdateTemplate(ctx context.Context, id string, template entity
 	if err != nil {
 		if errors.Is(err, errors.New(errorlib.ErrRecordNotFound)) {
 			commonlib.LogMessage(s.logger, commonlib.Error, "Tempalteget", err.Error(), nil, "Template", id)
-			return nil, NewCustomError(errorlib.ErrNotFound, err)
+			return nil, errorlib.ErrUnabletoUpdate
 		}
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (s *service) DeleteTemplate(ctx context.Context, id string) (*model.Respons
 	err := s.templateRepo.DeleteTemplate(ctx, id)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "DeleteTemplate", err.Error(), err, "id", id)
-		return nil, NewCustomError(errorlib.ErrNotFound, err)
+		return nil, errorlib.ErrUnabletoDelete
 	}
 	return &model.Response{Message: "Successfully Template deleted"}, nil
 }
@@ -119,7 +119,7 @@ func (s *service) GetFilterFieldsByType(ctx context.Context, filterType int) (*e
 	filterFields, err := s.filterfieldRepo.GetFilterFieldsByType(ctx, filterType)
 	if err != nil {
 		// If there's an error, return it
-		return nil, err
+		return nil, errorlib.ErrRecordNotFounds
 	}
 
 	// Return the result

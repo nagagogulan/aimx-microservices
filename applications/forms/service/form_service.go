@@ -58,9 +58,9 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 					orgDomainInForm := domainParts[1]
 					if orgDomain == orgDomainInForm && form.Status != 2 {
 						if form.Status == 10 {
-							return nil, fmt.Errorf("Your account is deactivated. Please contact the admin")
+							return nil, errcom.ErrOrganizationDeactivated
 						}
-						return nil, fmt.Errorf("Domain Already Exists")
+						return nil, errcom.ErrDomainExist
 					}
 				}
 			}
@@ -77,7 +77,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			createdForm, err := s.formRepo.CreateForm(ctx, form)
 			if err != nil {
 				commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdForm)
-				return nil, err
+				return nil, errcom.ErrUnableToCreate
 			}
 			return createdForm, err
 		}
@@ -86,8 +86,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
-		commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdForm)
-		return nil, err
+		return nil, errcom.ErrUnableToCreate
 	}
 	return createdForm, err
 }
@@ -163,12 +162,12 @@ func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit, stat
 func (s *service) CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error) {
 	existing, err := s.formTypeRepo.GetFormTypeByName(ctx, formtype.Name)
 	if err == nil && existing != nil {
-		return nil, errors.New("Form Type Already Exists")
+		return nil, errcom.ErrFormTypeExist
 	}
 	createdFormType, err := s.formTypeRepo.CreateFormType(ctx, &formtype)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "CreateTemplate", err.Error(), err, "CreateBy", createdFormType)
-		return nil, err
+		return nil, errcom.ErrUnableToCreate
 	}
 	return createdFormType, err
 }
@@ -177,12 +176,11 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 	formTypes, err := s.formTypeRepo.GetAllFormTypes(ctx)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "GetAllFormTypes", err.Error(), err)
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+		return nil, errcom.ErrNotFound
 	}
 	if commonlib.IsEmpty(formTypes) {
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+		return nil, errcom.ErrRecordNotFounds
 	}
-	fmt.Println("**************************", formTypes)
 	return formTypes, nil
 }
 
@@ -190,7 +188,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	org, err := s.formRepo.GetFormById(ctx, id)
 	fmt.Println("The organization is givn eas: %v", org)
 	if err != nil {
-		return nil, NewCustomError(errcom.ErrNotFound, err)
+		return nil, errcom.ErrRecordNotFounds
 	}
 
 	orgreq := &dto.CreateOrganizationRequest{}
@@ -210,7 +208,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	if err != nil {
 		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {
 			commonlib.LogMessage(s.logger, commonlib.Error, "FormUpdate", err.Error(), nil, "form", id)
-			return nil, NewCustomError(errcom.ErrNotFound, err)
+			return nil, errcom.ErrRecordNotFounds
 		}
 		return nil, err
 	}
@@ -237,12 +235,11 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 				orgDomainInForm := domainParts[1]
 				orgid, err := s.organizationRepo.DeleteOrganizationByDomain(ctx, orgDomainInForm)
 				if err != nil {
-					return nil, errcom.ErrNotFound
+					return nil, errcom.ErrUnabletoDelete
 				}
-				fmt.Println("****************", orgid)
 				errs := s.orgSettingRepo.DeleteOrganizationSettingByOrgID(ctx, orgid.String())
 				if errs != nil {
-					return nil, errcom.ErrNotFound
+					return nil, errcom.ErrUnabletoDelete
 				}
 
 			}
@@ -251,11 +248,11 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	// to get all the general setting value
 	generalSettings, err := s.globalSettingRepo.GetAllGeneralSetting()
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch general settings: %w", err)
+		return nil, errcom.ErrFailedToFetch
 	}
 
 	if generalSettings == nil {
-		return nil, fmt.Errorf("no general settings found")
+		return nil, errcom.ErrRecordNotFounds
 	}
 
 	// Step 3: Use general settings
@@ -269,13 +266,13 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		}
 		organizationId, err := s.organizationRepo.CreateOrganization(ctx, orgreq)
 		if err != nil {
-			return nil, NewCustomError(errcom.ErrNotFound, err)
+			return nil, errcom.ErrUnableToCreate
 		}
 		fmt.Println("The organization is givn eas:", organizationId)
 
 		errd := s.formRepo.UpdateOrgID(ctx, id, organizationId.OrganizationID.String())
 		if errd != nil {
-			return nil, errd
+			return nil, errcom.ErrUnabletoUpdate
 		}
 
 		// Convert int unit to string
@@ -299,7 +296,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		// Step 6: Save organization setting
 		err = s.orgSettingRepo.CreateOrganizationSetting(ctx, orgSetting)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create organization setting: %w", err)
+			return nil, errcom.ErrUnableToCreate
 		}
 
 		fmt.Println("OrganizationSetting created successfully for organization ID:", organizationId)
@@ -465,10 +462,8 @@ func (s *service) GetFilteredForms(ctx context.Context, formType int, page int, 
 
 func (s *service) SearchForms(ctx context.Context, name string, page int, limit int, searchType int) (*[]model.GetFormResponse, error) {
 	// Fetch forms from the repository
-	fmt.Println("*********************************", name)
 	forms, total, err := s.formRepo.SearchForms(ctx, name, page, limit, searchType)
 	if err != nil {
-		fmt.Println("++++++++++++++++++++++++++++++++++++++++++")
 		// commonlib.LogMessage(s.logger, commonlib.Error, "SearchForms", err.Error(), err, "SearchType", searchType)
 		if errors.Is(err, errcom.ErrNotFound) {
 			// Return response with no forms found
@@ -556,7 +551,6 @@ func (s *service) ListForms(ctx context.Context, formType int, formStatus int, p
 	// } else {
 	// 	forms, total, err = s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
 	// }
-	fmt.Println("******************************", searchParam)
 	forms, total, err = s.formRepo.ListForms(ctx, formType, formStatus, page, limit, searchParam)
 
 	if err != nil {
@@ -641,11 +635,11 @@ func (s *service) ShortListDocket(ctx context.Context, userId string, dto dto.Sh
 	err = s.commEventRepo.CreateShortList(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "ShortListDocket", err.Error(), err, "CommEvents", userId)
-		return false, err
+		return false, errcom.ErrUnableToCreate
 	}
 	_, err = s.UpdateFlagField(ctx, dto.InteractionId, false, 0, true)
 	if err != nil {
-		return false, err
+		return false, errcom.ErrUnabletoUpdate
 	}
 	return true, nil
 }
@@ -660,11 +654,11 @@ func (s *service) RateDocket(ctx context.Context, userId string, dto dto.RatingD
 	err = s.commEventRepo.CreateRating(ctx, userId, &dto)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", userId)
-		return false, err
+		return false, errcom.ErrUnableToCreate
 	}
 	_, err = s.UpdateFlagField(ctx, dto.InteractionId, true, dto.Rating, false)
 	if err != nil {
-		return false, err
+		return false, errcom.ErrUnabletoUpdate
 	}
 	return true, nil
 }
@@ -673,7 +667,7 @@ func (s *service) GetCommentsById(ctx context.Context, interactionId string) ([]
 	res, err := s.commEventRepo.GetCommentsByProjectID(ctx, interactionId)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "RateDocket", err.Error(), err, "CommEvents", interactionId)
-		return nil, err
+		return nil, errcom.ErrRecordNotFounds
 	}
 	return res, nil
 }
@@ -683,12 +677,12 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 	fmt.Println("inside the UpdateFlagField")
 	// Validation: Exactly one of rating or like must be true
 	if (rating && like) || (!rating && !like) {
-		return false, fmt.Errorf("exactly one of 'rating' or 'like' must be true")
+		return false, errcom.ErrRatingAndLikeTrue
 	}
 
 	form, err := s.formRepo.GetFormById(ctx, id)
 	if err != nil {
-		return false, err
+		return false, errcom.ErrRecordNotFounds
 	}
 
 	update := bson.M{}
@@ -697,7 +691,7 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 	if rating {
 		// Validate rating value
 		if ratingValue < 1 || ratingValue > 5 {
-			return false, fmt.Errorf("invalid rating value: %d (must be between 1 and 5)", ratingValue)
+			return false, errcom.ErrInvalidRate
 		}
 
 		// Initialize flags.rating if nil
@@ -745,7 +739,7 @@ func (s *service) UpdateFlagField(ctx context.Context, id string, rating bool, r
 
 	res, err := s.formRepo.UpdateFormFlags(ctx, id, update)
 	if err != nil {
-		return false, err
+		return false, errcom.ErrUnabletoUpdate
 	}
 
 	return res, nil
@@ -755,11 +749,11 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 	// Call repository method to deactivate organization
 	org, err := s.organizationRepo.DeactivateOrganization(ctx, orgID)
 	if err != nil {
-		return err
+		return errcom.ErrDeactivateOrganizationFailed
 	}
 	formList, err := s.formRepo.GetFormAll(ctx, 1)
 	if err != nil {
-		return err
+		return errcom.ErrFailedToFetch
 	}
 	for _, form := range formList {
 		for _, field := range form.Fields {
@@ -782,7 +776,7 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 				if org.OrganizationDomain == orgDomainInForm {
 					err := s.formRepo.UpdateDeactivateStatus(ctx, form.ID, status)
 					if err != nil {
-						return err
+						return errcom.ErrUnabletoUpdate
 					}
 					return nil
 				}

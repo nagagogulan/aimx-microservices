@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	middleware "github.com/PecozQ/aimx-library/middleware"
@@ -18,6 +19,7 @@ import (
 )
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}
 	r := gin.New()
 	r.Use(gin.Recovery())
 
@@ -34,36 +36,42 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			endpoints.CreateRequestEndpoint,
 			decodeCreateRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.PUT("/status", gin.WrapF(httptransport.NewServer(
 			endpoints.UpdateRequestStatusEndpoint,
 			decodeUpdateRequestStatus,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.GET("/org", gin.WrapF(httptransport.NewServer(
 			endpoints.GetRequestsByOrgEndpoint,
 			decodeGetRequestsByOrgRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.GET("/", gin.WrapF(httptransport.NewServer(
 			endpoints.GetAllRequestsEndpoint,
 			decodeGetAllRequestsRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.GET("/:id", gin.WrapF(httptransport.NewServer(
 			endpoints.GetRequestByIDEndpoint,
 			decodeIDFromPath,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 
 		api.GET("/request-types", gin.WrapF(httptransport.NewServer(
 			endpoints.ListRequestTypes,
 			decodeEmptyRequest,
 			encodeResponse,
+			options...,
 		).ServeHTTP))
 	}
 
@@ -73,7 +81,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 func decodeCreateRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	var req dto.CreateRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -85,7 +93,7 @@ func decodeCreateRequest(_ context.Context, r *http.Request) (interface{}, error
 func decodeUpdateRequestStatus(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	fmt.Println("called transport")
 	idStr := r.URL.Query().Get("id")
@@ -113,7 +121,7 @@ func decodeUpdateRequestStatus(_ context.Context, r *http.Request) (interface{},
 func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	return nil, nil
 }
@@ -126,7 +134,7 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 func decodeIDFromPath(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 	return uuid.FromString(idStr)
@@ -135,7 +143,7 @@ func decodeIDFromPath(_ context.Context, r *http.Request) (interface{}, error) {
 func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// Parse the query parameters from the request URL
 	orgIDStr := r.URL.Query().Get("org_id")
@@ -197,7 +205,7 @@ func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interfac
 func decodeGetAllRequestsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, err // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// Parse the query parameters from the request URL
 	pageStr := r.URL.Query().Get("page")

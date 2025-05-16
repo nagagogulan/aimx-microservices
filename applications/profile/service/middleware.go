@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
-	"fmt"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -15,7 +16,7 @@ func ErrorHandlingMiddleware(next endpoint.Endpoint) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		response, err := next(ctx, request)
 		if err != nil {
-			appErr := FromError(err)
+			appErr := errcom.FromError(err)
 			return nil, appErr
 		}
 		return response, nil

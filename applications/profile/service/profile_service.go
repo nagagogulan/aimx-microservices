@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	common "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
@@ -21,7 +22,7 @@ type Service interface {
 	UpdateOrganizationSettingByOrgID(ctx context.Context, setting *dto.OrganizationSettingRequest) error
 	GetOrganizationSettingByOrgID(ctx context.Context, organizationID uuid.UUID) (*dto.OrganizationSettingResponse, error)
 	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
-	GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID *uuid.UUID) (interface{}, error)
+	GenerateOverview(ctx context.Context, userID uuid.UUID, orgID *uuid.UUID) (interface{}, error)
 }
 
 type service struct {
@@ -29,8 +30,7 @@ type service struct {
 	generalSettingRepo repository.GeneralSettingRepository
 	orgRepo            repository.OrganizationRepositoryService
 	orgSettingRepo     repository.OrganizationSettingRepository
-	formRepo          repository.FormRepositoryService
-
+	formRepo           repository.FormRepositoryService
 }
 
 func NewService(
@@ -45,7 +45,7 @@ func NewService(
 		generalSettingRepo: generalSettingRepo,
 		orgRepo:            orgRepo,
 		orgSettingRepo:     orgSettingRepo,
-		formRepo: formRepo,
+		formRepo:           formRepo,
 	}
 }
 
@@ -60,14 +60,13 @@ func (s *service) GetUserProfile(ctx context.Context, id uuid.UUID) (*dto.UserRe
 func (s *service) CreateGeneralSetting(ctx context.Context, setting *dto.GeneralSettingRequest) error {
 	existingSetting, err := s.generalSettingRepo.GetAllGeneralSetting() // Method to get the existing record
 	if err != nil {
-		return fmt.Errorf("failed to check existing general setting: %w", err)
+		return errcom.ErrRecordNotFounds
 	}
 
 	if existingSetting != nil {
 		// If a record already exists, update it instead of creating a new one
-		return fmt.Errorf("general setting already exists")
+		return errcom.ErrGeneralSettingAlreadyExists
 	}
-	fmt.Printf("calledddddd")
 	// Map string to int
 	fmt.Println(common.ENUM_TO_HASH, setting.MaxProjectDocketSizeUnit)
 	unitMap := common.ENUM_TO_HASH["MaxProjectDocketSizeUnit"]
@@ -75,7 +74,7 @@ func (s *service) CreateGeneralSetting(ctx context.Context, setting *dto.General
 	unitInt, ok := unitMap[setting.MaxProjectDocketSizeUnit]
 	fmt.Println(unitInt, ok)
 	if !ok {
-		return fmt.Errorf("invalid MaxProjectDocketSizeUnit: %s", setting.MaxProjectDocketSizeUnit)
+		return errcom.ErrInvalidMaxProjectDocketSizeUnit
 	}
 
 	entity := &entities.GeneralSetting{
@@ -94,7 +93,7 @@ func (s *service) UpdateGeneralSetting(ctx context.Context, setting *dto.General
 	unitMap := common.ENUM_TO_HASH["MaxProjectDocketSizeUnit"]
 	unitInt, ok := unitMap[setting.MaxProjectDocketSizeUnit]
 	if !ok {
-		return nil, fmt.Errorf("invalid MaxProjectDocketSizeUnit: %s", setting.MaxProjectDocketSizeUnit)
+		return nil, errcom.ErrInvalidMaxProjectDocketSizeUnit
 	}
 
 	// Important: pass ID also
@@ -111,7 +110,7 @@ func (s *service) UpdateGeneralSetting(ctx context.Context, setting *dto.General
 
 	updatedEntity, err := s.generalSettingRepo.UpdateGeneralSetting(entity)
 	if err != nil {
-		return nil, err
+		return nil, errcom.ErrUnabletoUpdate
 	}
 
 	unitEnum := common.HASH_TO_ENUM["MaxProjectDocketSizeUnit"][updatedEntity.MaxProjectDocketSizeUnit]
@@ -142,7 +141,7 @@ func (s *service) GetAllGeneralSettings(ctx context.Context) (*dto.GeneralSettin
 		return nil, err
 	}
 	if setting == nil {
-		return nil, fmt.Errorf("general setting not found") // Handle case when no setting is found
+		return nil, errcom.ErrRecordNotFounds // Handle case when no setting is found
 	}
 
 	// Map the integer value to a string unit using the enum
@@ -189,7 +188,7 @@ func (s *service) CreateOrganizationSetting(ctx context.Context, setting *entiti
 	// Check if the organization setting already exists
 	existingSetting, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, setting.OrgID.String()) // Convert OrgID to string
 	if err == nil && existingSetting != nil {
-		return fmt.Errorf("organization setting already exists") // Using fmt.Errorf instead of errors.New
+		return errcom.ErrOrganizationSettingExists // Using fmt.Errorf instead of errors.New
 	}
 	return s.orgSettingRepo.CreateOrganizationSetting(ctx, setting)
 }
@@ -230,10 +229,10 @@ func (s *service) GetOrganizationSettingByOrgID(ctx context.Context, orgID uuid.
 	}, nil
 }
 
-func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID *uuid.UUID) (interface{}, error) {
+func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID, orgID *uuid.UUID) (interface{}, error) {
 	userDetails, err := s.repo.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch user: %w", err)
+		return nil, errcom.ErrRecordNotFounds
 	}
 	fmt.Printf("userDetails", userDetails)
 
@@ -245,15 +244,15 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID
 	case "SuperAdmin":
 		orgs, total, lastMonth, thisYear, err := s.orgRepo.GetAllNonSingHealthOrganizationsWithCounts()
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
-		totalCount, lastMonthCount, thisYearCount, _ , err := s.repo.GetActiveUserCounts(ctx, nil)
+		totalCount, lastMonthCount, thisYearCount, _, err := s.repo.GetActiveUserCounts(ctx, nil)
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
-		total, lastMonth, thisYear,	_, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, nil)
+		total, lastMonth, thisYear, _, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
 
 		return map[string]interface{}{
@@ -282,13 +281,13 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID
 			"role":      role,
 		}, nil
 	case "Admin":
-		totalCount, lastMonthCount, thisYearCount,userList, err := s.repo.GetActiveUserCounts(ctx, uuidToStringPtr(orgID))
+		totalCount, lastMonthCount, thisYearCount, userList, err := s.repo.GetActiveUserCounts(ctx, uuidToStringPtr(orgID))
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
-		total, lastMonth, thisYear,	_, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
+		total, lastMonth, thisYear, _, _, _, _, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
 
 		return map[string]interface{}{
@@ -306,16 +305,16 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID,  orgID
 			},
 		}, nil
 	case "User":
-		_, _, _,	active, archived, pending, rejected, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
+		_, _, _, active, archived, pending, rejected, latestForms, err := s.formRepo.GetProjectStatsByType(ctx, 3, uuidToStringPtr(orgID))
 		if err != nil {
-			return nil, err
+			return nil, errcom.ErrRecordNotFounds
 		}
 		return map[string]interface{}{
 			"Project": map[string]interface{}{
-				"items":       latestForms,
-				"active_count": active,
+				"items":          latestForms,
+				"active_count":   active,
 				"archive_count":  archived,
-				"pending_count":   pending,
+				"pending_count":  pending,
 				"rejected_count": rejected,
 			},
 		}, nil
