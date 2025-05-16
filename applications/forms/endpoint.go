@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
@@ -100,7 +101,7 @@ func makeRatingDocketEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		claims, err := middleware.DecodeHeaderGetClaims(httpReq)
 		if err != nil {
-			return nil, err
+			return nil, errorlib.ErrInvalidOrMissingJWT
 		}
 		form, err := s.RateDocket(ctx, claims.UserID, req)
 		if err != nil {
@@ -116,7 +117,7 @@ func makeGetCommentsByIdEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(dto.ShortListDTO)
 		form, err := s.GetCommentsById(ctx, req.InteractionId)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
 		}
 		return form, nil
 	}
@@ -159,7 +160,7 @@ func makeGetTemplateByTypeEndpoint(s service.Service) endpoint.Endpoint {
 			// If ID is not present, use Type
 			template, err := s.GetTemplateByType(ctx, req.Type, "")
 			if err != nil {
-				return nil, errors.New("Template Not found") // or wrap as needed
+				return nil, errorlib.ErrRecordNotFounds // or wrap as needed
 			}
 			return template, nil
 		}
@@ -220,7 +221,7 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 
 		form, err := s.UpdateForm(ctx, strtype, req.Status)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)
+			return nil, err
 		}
 		return form, nil
 	}
@@ -237,7 +238,7 @@ func makeGetFormByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		formList, err := s.GetFormByType(ctx, req.Type, req.Page, req.PageSize, req.Status)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
+			return nil, err // or wrap as needed
 		}
 		return formList, nil
 	}
@@ -247,7 +248,7 @@ func makeCreateFormTypeEndpoint(s service.Service) endpoint.Endpoint {
 		req := request.(*dto.FormType)
 		formtype, err := s.CreateFormType(ctx, *req)
 		if err != nil {
-			return model.FormTypeResponse{Error: err.Error()}, nil
+			return nil, err
 		}
 		return &model.FormType{ID: formtype.ID, Name: formtype.Name}, nil
 		// return model.CreateUserResponse{Message: commonRepo.Create_Message, User: model.UserResponse{ID: user.ID, FirstName: user.FirstName, LastName: user.LastName, Email: user.Email, IsLocked: user.IsLocked, ProfileImage: user.ProfileImage, IsFirstLogin: user.IsFirstLogin, Role: model.UserRole{ID: role.ID, Name: role.Name}, RolePermission: user.RolePermissions}}, nil
@@ -258,7 +259,7 @@ func makeGetFormTypeEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		formList, err := s.GetAllFormTypes(ctx)
 		if err != nil {
-			return nil, service.NewCustomError(errcom.ErrNotFound, err) // or wrap as needed
+			return nil, err // or wrap as needed
 		}
 		return formList, nil
 	}
@@ -269,7 +270,7 @@ func makeFilterFormsEndpoint(s service.Service) endpoint.Endpoint {
 
 		formList, err := s.GetFilteredForms(ctx, req.Type, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
+			return nil, err // or wrap as needed
 		}
 		return formList, nil
 	}
@@ -281,7 +282,7 @@ func makeListFormsEndpoint(s service.Service) endpoint.Endpoint {
 
 		formList, err := s.ListForms(ctx, req.Type, req.Status, req.SearchParam.Page, req.SearchParam.PageSize, req.SearchParam)
 		if err != nil {
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil) // or wrap as needed
+			return nil, err // or wrap as needed
 		}
 		return formList, nil
 	}
@@ -312,7 +313,7 @@ func makeGetFilterFieldsByTypeEndpoint(s service.Service) endpoint.Endpoint {
 		filterFields, err := s.GetFilterFieldsByType(ctx, req.Type)
 		if err != nil {
 			// Return an error if something goes wrong
-			return nil, service.NewAppError(err, http.StatusBadRequest, errcom.ErrNotFound.Error(), nil)
+			return nil, err
 		}
 
 		// Return the result as a response
@@ -327,7 +328,7 @@ func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 		// Call the service to deactivate the organization
 		err := s.DeactivateOrganization(ctx, req.OrganizationID, req.Status)
 		if err != nil {
-			return nil, fmt.Errorf("failed to deactivate organization: %v", err)
+			return nil, err
 		}
 
 		return map[string]interface{}{
