@@ -80,7 +80,7 @@ func wrapEndpoint(ep endpoint.Endpoint, decoder httptransport.DecodeRequestFunc,
 
 // --- Decoders --- //
 
-func decodeEmpty(_ context.Context, _ *http.Request) (interface{}, error) {
+func decodeEmpty(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
 		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
