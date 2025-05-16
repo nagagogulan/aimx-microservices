@@ -142,6 +142,7 @@ func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interfac
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 	search := r.URL.Query().Get("search")
+	reqType := r.URL.Query().Get("type")
 
 	// Convert orgID to uuid
 	orgID, err := uuid.FromString(orgIDStr)
@@ -189,6 +190,7 @@ func decodeGetRequestsByOrgRequest(_ context.Context, r *http.Request) (interfac
 		"limit":   limit,
 		"search":  search,
 		"filters": filters,
+		"reqType": reqType,
 	}, nil
 }
 

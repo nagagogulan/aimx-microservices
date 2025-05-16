@@ -16,9 +16,8 @@ type Endpoints struct {
 	UpdateRequestStatusEndpoint endpoint.Endpoint
 	GetRequestsByOrgEndpoint    endpoint.Endpoint
 	GetAllRequestsEndpoint      endpoint.Endpoint
-	GetRequestByIDEndpoint endpoint.Endpoint
-	ListRequestTypes endpoint.Endpoint
-
+	GetRequestByIDEndpoint      endpoint.Endpoint
+	ListRequestTypes            endpoint.Endpoint
 }
 
 func NewEndpoint(s service.RequestService) Endpoints {
@@ -27,8 +26,8 @@ func NewEndpoint(s service.RequestService) Endpoints {
 		UpdateRequestStatusEndpoint: MakeUpdateRequestStatusEndpoint(s),
 		GetRequestsByOrgEndpoint:    MakeGetRequestsByOrgEndpoint(s),
 		GetAllRequestsEndpoint:      MakeGetAllRequestsEndpoint(s),
-		GetRequestByIDEndpoint: MakeGetRequestByIDEndpoint(s),
-		ListRequestTypes: makeListRequestTypesEndpoint(s),
+		GetRequestByIDEndpoint:      MakeGetRequestByIDEndpoint(s),
+		ListRequestTypes:            makeListRequestTypesEndpoint(s),
 	}
 }
 
@@ -57,8 +56,9 @@ func MakeGetRequestsByOrgEndpoint(s service.RequestService) endpoint.Endpoint {
 		limit := req["limit"].(int)
 		search := req["search"].(string)
 		filters := req["filters"].(map[string]interface{})
+		reqType := req["reqType"].(string)
 
-		return s.GetRequestsByOrg(ctx, orgID, page, limit, search, filters)
+		return s.GetRequestsByOrg(ctx, orgID, page, limit, search, filters, reqType)
 	}
 }
 

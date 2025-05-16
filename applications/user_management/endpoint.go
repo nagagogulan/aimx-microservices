@@ -58,7 +58,10 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		page := req["page"].(int)
 		limit := req["limit"].(int)
 		search := req["search"].(string)
-
+		rawType, ok := req["type"].(string)
+		if !ok {
+			return nil, fmt.Errorf("reqType is missing or not a string")
+		}
 		// Capture filters from request
 		filters := make(map[string]interface{})
 		if filterParams, exists := req["filters"]; exists {
@@ -69,7 +72,7 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 		}
 		fmt.Printf("filters", filters)
 
-		return s.ListUsers(ctx, orgID, userID, page, limit, search, filters)
+		return s.ListUsers(ctx, orgID, userID, page, limit, search, filters, rawType)
 	}
 }
 

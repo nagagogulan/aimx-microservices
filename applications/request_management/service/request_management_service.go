@@ -15,7 +15,7 @@ import (
 type RequestService interface {
     CreateRequest(ctx context.Context, req *dto.CreateRequestDTO) error
     UpdateRequestStatus(ctx context.Context, id uuid.UUID, statusDTO *dto.UpdateRequestStatusDTO) error
-    GetRequestsByOrg(ctx context.Context, orgID uuid.UUID, page, limit int, search string, filters map[string]interface{}) (dto.PaginatedRequestsResponse, error)
+    GetRequestsByOrg(ctx context.Context, orgID uuid.UUID, page, limit int, search string, filters map[string]interface{}, reqType string) (dto.UpdatedRequestPaginationResponse, error)
 	GetAllRequests(ctx context.Context, page, limit int, search string, filters map[string]interface{}) (dto.PaginatedRequestsResponse, error)
 	GetRequestByID(ctx context.Context, id uuid.UUID) (*dto.RequestResponseDTO, error)
     ListRequestTypes(ctx context.Context) ([]dto.RequestTypeResponse, error)
@@ -101,8 +101,13 @@ func (s *requestService) UpdateRequestStatus(ctx context.Context, id uuid.UUID, 
 }
 
 // Update GetRequestsByOrg to include pagination, search, and filters
-func (s *requestService) GetRequestsByOrg(ctx context.Context, orgID uuid.UUID, page, limit int, search string, filters map[string]interface{}) (dto.PaginatedRequestsResponse, error) {
-	return s.requestRepo.GetRequestsByOrg(orgID, page, limit, search, filters)
+func (s *requestService) GetRequestsByOrg(ctx context.Context, orgID uuid.UUID, page, limit int, search string, filters map[string]interface{}, reqType string) (dto.UpdatedRequestPaginationResponse, error) {
+    if  reqType == "AllOrganization" {
+    return s.requestRepo.GetRequests(nil, page, limit, search, filters)
+    }else {
+    return s.requestRepo.GetRequests(&orgID, page, limit, search, filters)
+    }
+
 }
 
 // Update GetAllRequests to include pagination, search, and filters
