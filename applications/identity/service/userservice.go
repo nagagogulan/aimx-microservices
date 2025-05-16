@@ -11,7 +11,6 @@ import (
 	"math/big"
 	"net/smtp"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,7 +20,6 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gofrs/uuid"
-	"github.com/joho/godotenv"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
@@ -39,23 +37,23 @@ type SMTPConfig struct {
 	SMTPPort  string
 }
 
-func init() {
-	// Get the current working directory (from where the command is run)
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal("Error getting current working directory:", err)
-	}
-	fmt.Println("Current Working Directory:", dir)
+// func init() {
+// 	// Get the current working directory (from where the command is run)
+// 	dir, err := os.Getwd()
+// 	if err != nil {
+// 		log.Fatal("Error getting current working directory:", err)
+// 	}
+// 	fmt.Println("Current Working Directory:", dir)
 
-	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "../.env")
+// 	// Construct the path to the .env file in the root directory
+// 	envPath := filepath.Join(dir, "../.env")
 
-	// Load the .env file from the correct path
-	err = godotenv.Load(envPath)
-	if err != nil {
-		log.Fatal("Error loading .env file", err)
-	}
-}
+// 	// Load the .env file from the correct path
+// 	err = godotenv.Load(envPath)
+// 	if err != nil {
+// 		log.Fatal("Error loading .env file", err)
+// 	}
+// }
 
 func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error) {
 
@@ -607,7 +605,7 @@ func (s *service) UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDet
 
 	claims, err := middleware.ValidateJWT(req.RefreshToken, refreshSecret)
 	if err != nil {
-		return nil, fmt.Errorf("invalid tokennbnbnbnbn: %v", err)
+		return nil, fmt.Errorf("Refresh token is invalid")
 	}
 
 	res, err := middleware.GenerateAccessToken(claims, []byte(accessSecret))
