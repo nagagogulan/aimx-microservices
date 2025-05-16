@@ -543,7 +543,7 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 		Email:          userData.Email,
 		UserID:         userData.ID,
 		OrganizationID: org.OrganizationID,
-		AtExpires:      time.Now().Add(2 * 24 * time.Minute).Unix(),
+		AtExpires:      time.Now().Add(3 * time.Minute).Unix(),
 		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 
@@ -572,7 +572,7 @@ func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.U
 		Email:          newUser.Email,
 		UserID:         newUser.ID,
 		OrganizationID: org.OrganizationID,
-		AtExpires:      time.Now().Add(2 * 24 * time.Minute).Unix(),
+		AtExpires:      time.Now().Add(3 * time.Minute).Unix(),
 		RtExpires:      time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 
