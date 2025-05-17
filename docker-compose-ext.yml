@@ -59,32 +59,32 @@ services:
   #   networks:
   #     - aimx-network
 
-  # ext-roles:
-  #   build:
-  #     context: ./applications/roles
-  #     dockerfile: Dockerfile
-  #   container_name: roles-container
-  #   ports:
-  #     - "8083:8083"
-  #   environment:
-  #     - DBHOST=${EXT_DBHOST}
-  #     - DBPORT=${EXT_DBPORT}
-  #     - DBUSER=${EXT_DBUSER}
-  #     - DBPASSWORD=${EXT_DBPASSWORD}
-  #     - DBNAME=${EXT_DBNAME}
-  #     - MONGO_URI=${EXT_MONGO_URI}
-  #     - MONGO_DBNAME=${EXT_MONGO_DBNAME}
-  #     - KAFKA_URL=${EXT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}
-  #     - SMTP_PAS=${SMTP_PAS}
-  #     - ACCESS_SECRET=${ACCESS_SECRET}
-  #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - aimx-network
+  ext-roles:
+    build:
+      context: ./applications/roles
+      dockerfile: Dockerfile
+    container_name: roles-container
+    ports:
+      - "8083:8083"
+    environment:
+      - DBHOST=${EXT_DBHOST}
+      - DBPORT=${EXT_DBPORT}
+      - DBUSER=${EXT_DBUSER}
+      - DBPASSWORD=${EXT_DBPASSWORD}
+      - DBNAME=${EXT_DBNAME}
+      - MONGO_URI=${EXT_MONGO_URI}
+      - MONGO_DBNAME=${EXT_MONGO_DBNAME}
+      - KAFKA_URL=${EXT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network
 
   # ext-dataset:
   #   build:

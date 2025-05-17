@@ -91,6 +91,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 }
 
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	Org_Upload := r.FormValue("org_upload")
+	if Org_Upload != "" && Org_Upload == "organization" {
+		_, err := middleware.DecodeHeaderGetClaims(r)
+		if err != nil {
+			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+		}
+	}
 	// Create a new context with organization ID
 	file, header, err := r.FormFile("file")
 	if err != nil {
