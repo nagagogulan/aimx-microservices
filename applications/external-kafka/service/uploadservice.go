@@ -12,7 +12,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/google/uuid"
 
-	"whatsdare.com/fullstack/aimx/backend/kafka"
+	"github.com/PecozQ/aimx-library/kafka"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
