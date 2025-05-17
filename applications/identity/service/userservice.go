@@ -601,11 +601,7 @@ func (s *service) UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDet
 
 	claims, err := middleware.ValidateJWT(req.RefreshToken, refreshSecret)
 	if err != nil {
-<<<<<<< HEAD
-		return nil, fmt.Errorf("Refresh token is invalid")
-=======
-		return nil, fmt.Errorf("Invalid token")
->>>>>>> 9edea65115123e497a1321b3acbb78cf785d8f0f
+		return nil, errcom.ErrInvalidRefereshToken
 	}
 
 	res, err := middleware.GenerateAccessToken(claims, []byte(accessSecret))
