@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -13,33 +12,32 @@ import (
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/firebase"
-	"github.com/joho/godotenv"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
-func init() {
-	// Get the current working directory (from where the command is run)
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error getting current working directory: %v", err)
-		return
-	}
-	fmt.Println("Current Working Directory:", dir)
+// func init() {
+// 	// Get the current working directory (from where the command is run)
+// 	dir, err := os.Getwd()
+// 	if err != nil {
+// 		log.Fatalf("Error getting current working directory: %v", err)
+// 		return
+// 	}
+// 	fmt.Println("Current Working Directory:", dir)
 
-	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "../.env")
+// 	// Construct the path to the .env file in the root directory
+// 	envPath := filepath.Join(dir, "../.env")
 
-	// Load the .env file from the correct path
-	err = godotenv.Load(envPath)
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-		return
-	}
+// 	// Load the .env file from the correct path
+// 	err = godotenv.Load(envPath)
+// 	if err != nil {
+// 		log.Fatalf("Error loading .env file: %v", err)
+// 		return
+// 	}
 
-	// Optionally, you can print a confirmation that the .env file was loaded
-	fmt.Println("Loaded .env file from:", envPath)
-}
+// 	// Optionally, you can print a confirmation that the .env file was loaded
+// 	fmt.Println("Loaded .env file from:", envPath)
+// }
 
 func main() {
 

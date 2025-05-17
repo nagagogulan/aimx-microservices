@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -15,26 +13,25 @@ import (
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/joho/godotenv"
 )
 
-func init() {
-	// Get the current working directory (from where the command is run)
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Errorf("Error getting current working directory:", err)
-	}
-	fmt.Println("Current Working Directory:", dir)
+// func init() {
+// 	// Get the current working directory (from where the command is run)
+// 	dir, err := os.Getwd()
+// 	if err != nil {
+// 		fmt.Errorf("Error getting current working directory:", err)
+// 	}
+// 	fmt.Println("Current Working Directory:", dir)
 
-	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "../.env")
+// 	// Construct the path to the .env file in the root directory
+// 	envPath := filepath.Join(dir, "../.env")
 
-	// Load the .env file from the correct path
-	err = godotenv.Load(envPath)
-	if err != nil {
-		fmt.Errorf("Error loading .env file")
-	}
-}
+// 	// Load the .env file from the correct path
+// 	err = godotenv.Load(envPath)
+// 	if err != nil {
+// 		fmt.Errorf("Error loading .env file")
+// 	}
+// }
 
 func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(errcom.EncodeError)}

@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	middleware "github.com/PecozQ/aimx-library/middleware"
-	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
@@ -23,23 +21,23 @@ import (
 	//"github.com/gorilla/mux"
 )
 
-func init() {
-	// Get the current working directory (from where the command is run)
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Errorf("Error getting current working directory:", err)
-	}
-	fmt.Println("Current Working Directory:", dir)
+// func init() {
+// 	// Get the current working directory (from where the command is run)
+// 	dir, err := os.Getwd()
+// 	if err != nil {
+// 		fmt.Errorf("Error getting current working directory:", err)
+// 	}
+// 	fmt.Println("Current Working Directory:", dir)
 
-	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "../.env")
+// 	// Construct the path to the .env file in the root directory
+// 	envPath := filepath.Join(dir, "../.env")
 
-	// Load the .env file from the correct path
-	err = godotenv.Load(envPath)
-	if err != nil {
-		fmt.Errorf("Error loading .env file")
-	}
-}
+//		// Load the .env file from the correct path
+//		err = godotenv.Load(envPath)
+//		if err != nil {
+//			fmt.Errorf("Error loading .env file")
+//		}
+//	}
 func MakeHttpHandler(s service.Service) http.Handler {
 	options := []httptransport.ServerOption{httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
 		return context.WithValue(ctx, "HTTPRequest", r)
@@ -70,6 +68,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+
 	router.GET("/file/get", gin.WrapF(httptransport.NewServer(
 		endpoints.GetDataSetfile,
 		decodeGetFileRequest,
@@ -90,6 +89,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 	return r
 }
+
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	Org_Upload := r.FormValue("org_upload")
 	if Org_Upload != "" && Org_Upload == "organization" {
@@ -133,6 +133,7 @@ func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, err
 	// Return the request object with file_path
 	return req, nil
 }
+
 func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -20,28 +18,27 @@ import (
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gofrs/uuid"
-	"github.com/joho/godotenv"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
-func init() {
-	// Get the current working directory (from where the command is run)
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Errorf("Error getting current working directory:", err)
-	}
-	fmt.Println("Current Working Directory:", dir)
+// func init() {
+// 	// Get the current working directory (from where the command is run)
+// 	dir, err := os.Getwd()
+// 	if err != nil {
+// 		fmt.Errorf("Error getting current working directory:", err)
+// 	}
+// 	fmt.Println("Current Working Directory:", dir)
 
-	// Construct the path to the .env file in the root directory
-	envPath := filepath.Join(dir, "./.env")
+// 	// Construct the path to the .env file in the root directory
+// 	envPath := filepath.Join(dir, "./.env")
 
-	// Load the .env file from the correct path
-	err = godotenv.Load(envPath)
-	if err != nil {
-		fmt.Errorf("Error loading .env file")
-	}
-}
+// 	// Load the .env file from the correct path
+// 	err = godotenv.Load(envPath)
+// 	if err != nil {
+// 		fmt.Errorf("Error loading .env file")
+// 	}
+// }
 
 func MakeHttpHandler(s service.Service) http.Handler {
 	options := []httptransport.ServerOption{
@@ -231,7 +228,12 @@ func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 
 // Decode register api request...
 func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	var request dto.TemplateDTO
+	var request struct {
+		dto.TemplateDTO
+		SampleDataset   interface{} `json:"sampleDataset,omitempty"`
+		OriginalDataset interface{} `json:"originalDataset,omitempty"`
+		MetaData        interface{} `json:"metaData,omitempty"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
@@ -246,8 +248,32 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	// if err != nil {
 	// 	return nil, err
 	// }
-	return &dto.FormDTO{Type: request.Type, Sections: request.Sections, Fields: request.Fields}, nil
+	// return &dto.FormDTO{Type: request.Type, Sections: request.Sections, Fields: request.Fields}, nil
+
+	// Create a map to hold all the fields
+	formData := map[string]interface{}{
+		"type":            request.Type,
+		"sections":        request.Sections,
+		"fields":          request.Fields,
+		"sampleDataset":   request.SampleDataset,
+		"originalDataset": request.OriginalDataset,
+		"metaData":        request.MetaData,
+	}
+
+	// Convert to JSON and back to FormDTO to ensure all fields are properly set
+	jsonData, err := json.Marshal(formData)
+	if err != nil {
+		return nil, err
+	}
+
+	var formDTO dto.FormDTO
+	if err := json.Unmarshal(jsonData, &formDTO); err != nil {
+		return nil, err
+	}
+
+	return &formDTO, nil
 }
+
 func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
