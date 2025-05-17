@@ -76,7 +76,7 @@ func (s *uploadService) UploadFile(ctx context.Context, fileHeader *multipart.Fi
 
 	s.logger.Log("method", "UploadFile", "status", "file uploaded successfully", "path", dstPath, "written_bytes", written)
 
-	kafka.ProduceFilePath(dstPath, "docket-chunks", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	kafka.ProduceDocketFilePath(dstPath, "docket-file-paths", "docket-chunks", os.Getenv("KAFKA_BROKER_ADDRESS"))
 
 	return model.FileUploadResponse{
 		Message:  "File uploaded successfully.",

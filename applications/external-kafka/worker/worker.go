@@ -19,7 +19,7 @@ type FilePathMsg struct {
 }
 
 func StartFileChunkWorker() {
-	reader := kafkas.GetKafkaReader("file-paths", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	reader := kafkas.GetKafkaReader("docket-file-paths", "docket-file-path-group", os.Getenv("KAFKA_BROKER_ADDRESS"))
 	for {
 		m, err := reader.ReadMessage(context.Background())
 		if err != nil {
