@@ -8,14 +8,14 @@
     
     COPY . .
     
-    RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o subscriber ./cmd/main.go
+    RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o external-kafka ./cmd/main.go
     
     # ---------- Stage 2: Final ----------
     FROM alpine:latest
     
     WORKDIR /app
-    COPY --from=builder /app/subscriber .
+    COPY --from=builder /app/external-kafka .
     
     EXPOSE 8088
-    CMD ["./subscriber"]
+    CMD ["./external-kafka"]
     

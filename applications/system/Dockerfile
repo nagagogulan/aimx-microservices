@@ -18,8 +18,7 @@ WORKDIR /app
 COPY --from=builder /app/system .
 
 
-
-EXPOSE 8086
+EXPOSE 8089
 
 WORKDIR /app
 
