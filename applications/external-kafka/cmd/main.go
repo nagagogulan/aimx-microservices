@@ -29,7 +29,11 @@ const (
 func main() {
 	flag.Parse()
 
+	// Start the file chunk worker
 	go worker.StartFileChunkWorker()
+
+	// Start the dataset chunk subscriber (receives and assembles chunks)
+	go worker.GetDatasetChunkSubscriber()
 
 	var logger log.Logger
 	{
