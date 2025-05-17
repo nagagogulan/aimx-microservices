@@ -2,7 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"time"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	common "github.com/PecozQ/aimx-library/common"
@@ -10,6 +16,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/gofrs/uuid"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Service interface {
@@ -23,6 +30,7 @@ type Service interface {
 	GetOrganizationSettingByOrgID(ctx context.Context, organizationID uuid.UUID) (*dto.OrganizationSettingResponse, error)
 	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
 	GenerateOverview(ctx context.Context, userID uuid.UUID, orgID *uuid.UUID) (interface{}, error)
+	UploadProfileImage(ctx context.Context, userID uuid.UUID, fileHeader *multipart.FileHeader) (*model.UploadProfileImageResponse, error)
 }
 
 type service struct {
@@ -54,7 +62,44 @@ func (s *service) UpdateUserProfile(ctx context.Context, user *entities.User) er
 }
 
 func (s *service) GetUserProfile(ctx context.Context, id uuid.UUID) (*dto.UserResponseWithDetails, error) {
-	return s.repo.GetUserByID(ctx, id)
+	fmt.Println("get user profile")
+	res, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("get user profile", res.UserProfilePath)
+	if res.UserProfilePath != "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("error getting current working directory: %w", err)
+		}
+		fmt.Println("Current Working Directory:", dir, res.UserProfilePath)
+
+		// Normalize and construct full local file path
+		localFilePath := filepath.Join(dir, filepath.FromSlash(res.UserProfilePath))
+
+		// Check if file exists
+		if _, err := os.Stat(localFilePath); err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("file does not exist: %s", localFilePath)
+			}
+			return nil, fmt.Errorf("error checking file existence: %w", err)
+		}
+
+		fmt.Println("Resolved file path:", localFilePath)
+
+		// Read file data
+		imageData, err := os.ReadFile(localFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("error reading image file: %w", err)
+		}
+
+		// Encode to base64
+		encodedImage := base64.StdEncoding.EncodeToString(imageData)
+		res.UserProfilePath = encodedImage
+	}
+
+	return res, nil
 }
 
 func (s *service) CreateGeneralSetting(ctx context.Context, setting *dto.GeneralSettingRequest) error {
@@ -333,4 +378,52 @@ func uuidToStringPtr(id *uuid.UUID) *string {
 	}
 	s := id.String()
 	return &s
+}
+func (s *service) UploadProfileImage(ctx context.Context, userID uuid.UUID, fileHeader *multipart.FileHeader) (*model.UploadProfileImageResponse, error) {
+	ext := filepath.Ext(fileHeader.Filename)
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+		return nil, fmt.Errorf("unsupported file type")
+	}
+	timestamp := time.Now().Format("20060102150405") // YYYYMMDDHHMMSS
+	filePath := fmt.Sprintf("profile/%s/", userID.String())
+	newFileName := fmt.Sprintf("%s_%s%s", timestamp, userID.String(), fileHeader.Filename)
+	fullPath := filepath.Join(filePath, newFileName)
+
+	// Ensure the folder exists
+	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	if err := saveUploadedFile(fileHeader, fullPath); err != nil {
+		return nil, err
+	}
+
+	// Save image path to user table
+	// This should be the relative/public path used by frontend
+	imagePath := "/" + fullPath
+
+	if err := s.repo.UpdateUserProfilePath(ctx, userID, imagePath); err != nil {
+		return nil, fmt.Errorf("failed to update user profile image path: %w", err)
+	}
+
+	return &model.UploadProfileImageResponse{
+		Message:   "Profile image uploaded and saved successfully",
+		ImagePath: imagePath,
+	}, nil
+}
+func saveUploadedFile(fileHeader *multipart.FileHeader, dest string) error {
+	srcFile, err := fileHeader.Open()
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
 }

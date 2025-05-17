@@ -8,12 +8,14 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gofrs/uuid"
+	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
 type Endpoints struct {
-	GetUserProfileEndpoint    endpoint.Endpoint
-	UpdateUserProfileEndpoint endpoint.Endpoint
+	GetUserProfileEndpoint     endpoint.Endpoint
+	UpdateUserProfileEndpoint  endpoint.Endpoint
+	UpdateProfileImageEndpoint endpoint.Endpoint
 
 	CreateGeneralSettingEndpoint             endpoint.Endpoint
 	UpdateGeneralSettingEndpoint             endpoint.Endpoint
@@ -29,6 +31,7 @@ func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
 		GetUserProfileEndpoint:                   makeGetUserProfileEndpoint(s),
 		UpdateUserProfileEndpoint:                makeUpdateUserProfileEndpoint(s),
+		UpdateProfileImageEndpoint:               makeUploadProfileImageEndpoint(s),
 		CreateGeneralSettingEndpoint:             makeCreateGeneralSettingEndpoint(s),
 		UpdateGeneralSettingEndpoint:             makeUpdateGeneralSettingEndpoint(s),
 		GetAllGeneralSettingEndpoint:             makeGetAllGeneralSettingEndpoint(s),
@@ -169,5 +172,21 @@ func makeOverviewEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return s.GenerateOverview(ctx, userID, orgID)
+	}
+}
+func makeUploadProfileImageEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*model.UploadProfileImageRequest)
+
+		res, err := s.UploadProfileImage(ctx, req.UserID, req.FileHeader)
+		if err != nil {
+			return nil, err
+		}
+
+		// Wrap and return the final JSON response
+		return &model.UploadProfileImageResponse{
+			Message:   res.Message,
+			ImagePath: res.ImagePath,
+		}, nil
 	}
 }
