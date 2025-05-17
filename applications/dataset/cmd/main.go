@@ -13,11 +13,15 @@ import (
 	"github.com/joho/godotenv"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
+	"whatsdare.com/fullstack/aimx/backend/worker"
 )
 
 func main() {
 	// Create empty service (if dependencies are needed later, inject here)
 	s := service.NewService()
+
+	// Start the dataset path worker (processes file paths and sends chunks)
+	go worker.StartDatasetPathWorker()
 
 	// Get the current working directory (from where the command is run)
 	dir, err := os.Getwd()
