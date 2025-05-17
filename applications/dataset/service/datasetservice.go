@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
@@ -20,6 +22,7 @@ type Service interface {
 	//UploadFile(ctx context.Context, filePath string) (string, error)
 	UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error)
 	GetFile(ctx context.Context, filePath string) ([]byte, string, error)
+	UploadDataset(ctx context.Context, fileHeader *multipart.FileHeader) (dto.DatasetUploadResponse, error)
 	//GetFileList(ctx context.Context) ([]string, error)
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
 	OpenFile(ctx context.Context, filePath string) (*os.File, error)
@@ -29,6 +32,59 @@ type fileService struct{}
 
 func NewService() Service {
 	return &fileService{}
+}
+
+// UploadDataset handles saving the uploaded dataset file using streaming.
+func (s *fileService) UploadDataset(ctx context.Context, fileHeader *multipart.FileHeader) (dto.DatasetUploadResponse, error) {
+	// Open the uploaded file
+	src, err := fileHeader.Open()
+	if err != nil {
+		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to open uploaded file: %w", err)
+	}
+	defer src.Close()
+
+	// Generate a 16-digit UUID
+	id, err := uuid.NewV4()
+	if err != nil {
+		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to generate UUID: %w", err)
+	}
+
+	uuidStr := id.String()
+
+	// Create the directory structure: /dataset/{{uuid}}/sample/
+	dirPath := filepath.Join("datasets", uuidStr, "sample")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to create directory structure: %w", err)
+	}
+
+	// Use the original filename from the upload
+	fileName := fileHeader.Filename
+
+	// Full path to save the file
+	fullPath := filepath.Join(dirPath, fileName)
+
+	// Create the destination file
+	dst, err := os.Create(fullPath)
+	if err != nil {
+		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer dst.Close()
+
+	// Stream the file content to the destination
+	written, err := io.Copy(dst, src)
+	if err != nil {
+		// Attempt to remove partially written file
+		os.Remove(fullPath)
+		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to save file: %w", err)
+	}
+
+	// Return the response with the stored path
+	return dto.DatasetUploadResponse{
+		Message:  "Dataset uploaded successfully",
+		FileName: fileName,
+		FilePath: fullPath,
+		FileSize: written,
+	}, nil
 }
 
 func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (*model.UploadResponse, error) {

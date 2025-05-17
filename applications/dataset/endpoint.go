@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -15,24 +16,39 @@ import (
 )
 
 type Endpoints struct {
-	UploadDataSet      endpoint.Endpoint
-	GetDataSetfile     endpoint.Endpoint
-	DeleteDataSetfile  endpoint.Endpoint
-	PreviewDataSetfile endpoint.Endpoint
+	UploadDataSet       endpoint.Endpoint
+	UploadSampleDataset endpoint.Endpoint // New endpoint for multipart upload
+	GetDataSetfile      endpoint.Endpoint
+	DeleteDataSetfile   endpoint.Endpoint
+	PreviewDataSetfile  endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
-		UploadDataSet:      Middleware(makeUploadDataSet(s), commonlib.TimeoutMs),
-		GetDataSetfile:     Middleware(makeGetDataSetfile(s), commonlib.TimeoutMs),
-		DeleteDataSetfile:  Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
-		PreviewDataSetfile: Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
+		UploadDataSet:       Middleware(makeUploadDataSet(s), commonlib.TimeoutMs),
+		UploadSampleDataset: Middleware(makeUploadSampleDatasetEndpoint(s), commonlib.TimeoutMs),
+		GetDataSetfile:      Middleware(makeGetDataSetfile(s), commonlib.TimeoutMs),
+		DeleteDataSetfile:   Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
+		PreviewDataSetfile:  Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
 // Middlewares applies both error handling and timeout middleware to an endpoint...
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
 	return service.ErrorHandlingMiddleware(service.TimeoutMiddleware(5 * timeout)(endpoint))
+}
+
+// makeUploadSampleDatasetEndpoint creates an endpoint for the UploadDataset method
+func makeUploadSampleDatasetEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// The request is expected to be *multipart.FileHeader directly from the transport layer
+		fileHeader, ok := request.(*multipart.FileHeader)
+		if !ok {
+			return nil, fmt.Errorf("invalid request type: expected *multipart.FileHeader")
+		}
+
+		return s.UploadDataset(ctx, fileHeader)
+	}
 }
 
 func makeUploadDataSet(s service.Service) endpoint.Endpoint {

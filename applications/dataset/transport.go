@@ -87,7 +87,44 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+
+	// New endpoint for dataset upload with multipart streaming
+	router.POST("/uploadsampledataset", gin.WrapF(httptransport.NewServer(
+		endpoints.UploadSampleDataset,
+		decodeUploadSampleDatasetRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
+}
+
+// decodeUploadSampleDatasetRequest handles the multipart form data for dataset uploads
+// It passes the file header directly to the service for streaming
+func decodeUploadSampleDatasetRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	// Verify authentication
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, err // Unauthorized or invalid token
+	}
+
+	// Parse multipart form with a reasonable max memory
+	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max memory
+		return nil, fmt.Errorf("failed to parse multipart form: %w", err)
+	}
+
+	// Get the file header from the form
+	// r.FormFile returns 3 values: file, header, error
+	file, fileHeader, err := r.FormFile("fileName")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file from form: %w", err)
+	}
+	// Close the file when we're done
+	defer file.Close()
+
+	// Return the file header directly to be processed by the service
+	// This allows streaming the file without loading it entirely into memory
+	return fileHeader, nil
 }
 
 func decodeUploadRequest(ctx context.Context, r *http.Request) (interface{}, error) {
