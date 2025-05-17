@@ -269,7 +269,7 @@ func decodeGetTemplateByTypeRequest(ctx context.Context, r *http.Request) (inter
 	id := strings.TrimSpace(r.URL.Query().Get("id")) // remove quotes if passed in URL
 	typeStr := r.URL.Query().Get("type")
 
-	if typeStr == "1" {
+	if typeStr != "1" {
 		_, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
 			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
