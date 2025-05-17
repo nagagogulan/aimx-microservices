@@ -10,6 +10,7 @@ import (
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/go-kit/kit/endpoint"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -21,6 +22,7 @@ type Endpoints struct {
 	GetDataSetfile      endpoint.Endpoint
 	DeleteDataSetfile   endpoint.Endpoint
 	PreviewDataSetfile  endpoint.Endpoint
+	ChunkFileToKafka    endpoint.Endpoint // New endpoint for chunking files to Kafka
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -30,6 +32,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetDataSetfile:      Middleware(makeGetDataSetfile(s), commonlib.TimeoutMs),
 		DeleteDataSetfile:   Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
 		PreviewDataSetfile:  Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
+		ChunkFileToKafka:    Middleware(makeChunkFileToKafkaEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -129,5 +132,17 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 			FilePath:    file.Name(),
 			FilePreview: strings.Join(lines, "\n"),
 		}, nil
+	}
+}
+
+// makeChunkFileToKafkaEndpoint creates an endpoint for the ChunkFileToKafka method
+func makeChunkFileToKafkaEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(dto.ChunkFileRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid request type: expected model.ChunkFileRequest")
+		}
+
+		return s.ChunkFileToKafka(ctx, req)
 	}
 }

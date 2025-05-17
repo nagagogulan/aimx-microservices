@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -14,7 +16,9 @@ import (
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	kafkas "github.com/PecozQ/aimx-library/kafka"
 	"github.com/gofrs/uuid"
+	"github.com/segmentio/kafka-go"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -26,6 +30,7 @@ type Service interface {
 	//GetFileList(ctx context.Context) ([]string, error)
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
 	OpenFile(ctx context.Context, filePath string) (*os.File, error)
+	ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error)
 }
 
 type fileService struct{}
@@ -223,4 +228,92 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 	// defer file.Close()
 
 	return file, nil
+}
+
+// ChunkFileToKafka reads a file and sends it in chunks to a Kafka topic
+func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error) {
+	// Validate request parameters
+	if req.Name == "" {
+		return nil, fmt.Errorf("name cannot be empty")
+	}
+	if req.UUID == "" {
+		return nil, fmt.Errorf("uuid cannot be empty")
+	}
+	if req.FilePath == "" {
+		return nil, fmt.Errorf("file path cannot be empty")
+	}
+
+	// Open the file
+	file, err := os.Open(req.FilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// Get file size to determine when we're at the end
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file stats: %w", err)
+	}
+	fileSize := fileInfo.Size()
+
+	// Initialize Kafka writer for the sample-dataset-chunk topic
+	writer := kafkas.GetKafkaWriter("sample-dataset-chunk", os.Getenv("KAFKA_BROKER_ADDRESS"))
+
+	// Set up buffered reader and chunk processing
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 1024*512) // 500kb chunks
+	chunkIndex := 0
+	bytesRead := int64(0)
+
+	for {
+		n, err := reader.Read(buffer)
+		if err != nil && err != io.EOF {
+			return nil, fmt.Errorf("read error: %w", err)
+		}
+
+		if n > 0 {
+			bytesRead += int64(n)
+			isLastChunk := bytesRead >= fileSize || err == io.EOF
+
+			// Create message according to the required format
+			chunkMsg := map[string]interface{}{
+				"name":          req.Name,
+				"uuid":          req.UUID,
+				"is_last_chunk": isLastChunk,
+				"filepath":      req.FilePath,
+				"chunkData":     buffer[:n],
+				"chunkIndex":    chunkIndex,
+			}
+
+			// Marshal the message to JSON
+			chunkData, err := json.Marshal(chunkMsg)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal chunk data: %w", err)
+			}
+
+			// Send the message to Kafka
+			err = writer.WriteMessages(ctx, kafka.Message{
+				Key:   []byte(req.UUID),
+				Value: chunkData,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("kafka chunk send error: %w", err)
+			}
+
+			chunkIndex++
+		}
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	// Return success response
+	return &dto.ChunkFileResponse{
+		Message:  "File successfully chunked and sent to Kafka",
+		Name:     req.Name,
+		UUID:     req.UUID,
+		FilePath: req.FilePath,
+	}, nil
 }
