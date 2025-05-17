@@ -596,7 +596,7 @@ func (s *service) UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDet
 	}
 
 	if userDetail.RefreshToken != req.RefreshToken {
-		return nil, errcom.ErrInvalidRefereshToken
+		return nil, errcom.ErrRefreshTokenInvalid
 	}
 
 	claims, err := middleware.ValidateJWT(req.RefreshToken, refreshSecret)
