@@ -14,6 +14,8 @@ import (
 	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gofrs/uuid"
+	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
@@ -70,6 +72,13 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		api.PUT("/", gin.WrapF(httptransport.NewServer(
 			endpoints.UpdateUserProfileEndpoint,
 			decodeUpdateUserRequest, // Decode body to user
+			encodeResponse,
+			options...,
+		).ServeHTTP))
+
+		api.POST("/image", gin.WrapF(httptransport.NewServer(
+			endpoints.UpdateProfileImageEndpoint,
+			decodeUploadProfileImageRequest, // This will now extract 'id' from the URL path
 			encodeResponse,
 			options...,
 		).ServeHTTP))
@@ -148,6 +157,7 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 }
 
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
+
 	// This assumes path ends with /:id
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) == 0 {
@@ -257,5 +267,32 @@ func decodeOverviewRequest(ctx context.Context, r *http.Request) (interface{}, e
 	return &dto.OverviewRequest{
 		UserID: userIDStr,
 		OrgID:  orgIDStr,
+	}, nil
+}
+func decodeUploadProfileImageRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	// Extract claims from JWT in request headers (authorization)
+	claims, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // unauthorized or invalid token
+	}
+
+	// Parse userID from claims (assuming claims.UserID is string)
+	userID, err := uuid.FromString(claims.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID in claims: %w", err)
+	}
+
+	// Read file from multipart form
+	_, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		return nil, err
+	}
+	fileName := fileHeader.Filename
+	fmt.Println("Uploaded file name:", fileName)
+
+	// Return typed request struct
+	return &model.UploadProfileImageRequest{
+		UserID:     userID,
+		FileHeader: fileHeader,
 	}, nil
 }
