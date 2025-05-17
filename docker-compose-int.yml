@@ -32,32 +32,32 @@ services:
     networks:
       - aimx-network
 
-  # int-forms:
-  #   build:
-  #     context: ./applications/forms
-  #     dockerfile: Dockerfile
-  #   container_name: forms-container
-  #   ports:
-  #     - "8082:8082"
-  #   environment:
-  #     - DBHOST=${INT_DBHOST}
-  #     - DBPORT=${INT_DBPORT}
-  #     - DBUSER=${INT_DBUSER}
-  #     - DBPASSWORD=${INT_DBPASSWORD}
-  #     - DBNAME=${INT_DBNAME}
-  #     - MONGO_URI=${INT_MONGO_URI}
-  #     - MONGO_DBNAME=${INT_MONGO_DBNAME}
-  #     - KAFKA_URL=${INT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}
-  #     - SMTP_PAS=${SMTP_PAS}
-  #     - ACCESS_SECRET=${ACCESS_SECRET}
-  #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - aimx-network
+  int-forms:
+    build:
+      context: ./applications/forms
+      dockerfile: Dockerfile
+    container_name: forms-container
+    ports:
+      - "8082:8082"
+    environment:
+      - DBHOST=${INT_DBHOST}
+      - DBPORT=${INT_DBPORT}
+      - DBUSER=${INT_DBUSER}
+      - DBPASSWORD=${INT_DBPASSWORD}
+      - DBNAME=${INT_DBNAME}
+      - MONGO_URI=${INT_MONGO_URI}
+      - MONGO_DBNAME=${INT_MONGO_DBNAME}
+      - KAFKA_URL=${INT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network
 
   int-roles:
     build:
@@ -86,56 +86,84 @@ services:
     networks:
       - aimx-network
 
-  # int-dataset:
-  #   build:
-  #     context: ./applications/dataset
-  #     dockerfile: Dockerfile
-  #   container_name: dataset-container
-  #   ports:
-  #     - "8084:8084"
-  #   environment:
-  #     - DBHOST=${INT_DBHOST}
-  #     - DBPORT=${INT_DBPORT}
-  #     - DBUSER=${INT_DBUSER}
-  #     - DBPASSWORD=${INT_DBPASSWORD}
-  #     - DBNAME=${INT_DBNAME}
-  #     - MONGO_URI=${INT_MONGO_URI}
-  #     - MONGO_DBNAME=${INT_MONGO_DBNAME}
-  #     - KAFKA_URL=${INT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}
-  #     - SMTP_PAS=${SMTP_PAS}
-  #     - ACCESS_SECRET=${ACCESS_SECRET}
-  #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - aimx-network
+  int-dataset:
+    build:
+      context: ./applications/dataset
+      dockerfile: Dockerfile
+    container_name: dataset-container
+    ports:
+      - "8084:8084"
+    environment:
+      - DBHOST=${INT_DBHOST}
+      - DBPORT=${INT_DBPORT}
+      - DBUSER=${INT_DBUSER}
+      - DBPASSWORD=${INT_DBPASSWORD}
+      - DBNAME=${INT_DBNAME}
+      - MONGO_URI=${INT_MONGO_URI}
+      - MONGO_DBNAME=${INT_MONGO_DBNAME}
+      - KAFKA_URL=${INT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network
 
-  # int-user_management:
-  #   build:
-  #     context: ./applications/user_management
-  #     dockerfile: Dockerfile
-  #   container_name: user-management-container
-  #   ports:
-  #     - "8086:8086"
-  #   environment:
-  #     - DBHOST=${INT_DBHOST}
-  #     - DBPORT=${INT_DBPORT}
-  #     - DBUSER=${INT_DBUSER}
-  #     - DBPASSWORD=${INT_DBPASSWORD}
-  #     - DBNAME=${INT_DBNAME}
-  #     - MONGO_URI=${INT_MONGO_URI}
-  #     - MONGO_DBNAME=${INT_MONGO_DBNAME}
-  #     - KAFKA_URL=${INT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}
-  #     - SMTP_PAS=${SMTP_PAS}
-  #     - ACCESS_SECRET=${ACCESS_SECRET}
-  #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - aimx-network
+  int-user_management:
+    build:
+      context: ./applications/user_management
+      dockerfile: Dockerfile
+    container_name: user-management-container
+    ports:
+      - "8086:8086"
+    environment:
+      - DBHOST=${INT_DBHOST}
+      - DBPORT=${INT_DBPORT}
+      - DBUSER=${INT_DBUSER}
+      - DBPASSWORD=${INT_DBPASSWORD}
+      - DBNAME=${INT_DBNAME}
+      - MONGO_URI=${INT_MONGO_URI}
+      - MONGO_DBNAME=${INT_MONGO_DBNAME}
+      - KAFKA_URL=${INT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network
+
+
+  int-request_management:
+    build:
+      context: ./applications/request_management
+      dockerfile: Dockerfile
+    container_name: request-management-container
+    ports:
+      - "8087:8087"
+    environment:
+      - DBHOST=${INT_DBHOST}
+      - DBPORT=${INT_DBPORT}
+      - DBUSER=${INT_DBUSER}
+      - DBPASSWORD=${INT_DBPASSWORD}
+      - DBNAME=${INT_DBNAME}
+      - MONGO_URI=${INT_MONGO_URI}
+      - MONGO_DBNAME=${INT_MONGO_DBNAME}
+      - KAFKA_URL=${INT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network

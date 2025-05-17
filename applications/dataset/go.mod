@@ -10,7 +10,6 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/joho/godotenv v1.5.1
 )
 
 require (

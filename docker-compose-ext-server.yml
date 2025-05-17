@@ -6,52 +6,52 @@ networks:
     driver: bridge
 
 services:
-  ex-identity:
-    image: nagagogulan/aimx-identity:latest
-    container_name: identity-container
-    ports:
-      - "8081:8081"
-    environment:
-      - DBHOST=13.229.196.7
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_URL=13.229.196.7:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # ext-identity:
+  #   image: nagagogulan/aimx-ext-identity:latest
+  #   container_name: identity-container
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_URL=13.229.196.7:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
-  forms:
-    image: nagagogulan/aimx-forms:latest
-    container_name: forms-container
-    ports:
-      - "8082:8082"
-    environment:
-      - DBHOST=13.229.196.7
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_URL=13.229.196.7:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # ext-forms:
+  #   image: nagagogulan/aimx-ext-forms:latest
+  #   container_name: forms-container
+  #   ports:
+  #     - "8082:8082"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_URL=13.229.196.7:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
-  roles:
-    image: nagagogulan/aimx-roles:latest
+  ext-roles:
+    image: nagagogulan/aimx-ext-roles:latest
     container_name: roles-container
     ports:
       - "8083:8083"
@@ -72,30 +72,30 @@ services:
     networks:
       - aimx-network
 
-  dataset:
-    image: nagagogulan/aimx-dataset:latest
-    container_name: dataset-container
-    ports:
-      - "8084:8084"
-    environment:
-      - DBHOST=13.229.196.7
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_URL=13.229.196.7:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # ext-dataset:
+  #   image: nagagogulan/aimx-ext-dataset:latest
+  #   container_name: dataset-container
+  #   ports:
+  #     - "8084:8084"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_URL=13.229.196.7:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
-  profile:
-    image: nagagogulan/aimx-profile:latest
+  ext-profile:
+    image: nagagogulan/aimx-ext-profile:latest
     container_name: profile-container
     ports:
       - "8085:8085"
@@ -116,11 +116,57 @@ services:
     networks:
       - aimx-network
 
-  user_management:
-    image: nagagogulan/aimx-user-management:latest
-    container_name: user-management-container
+  ext-user_management:
+    image: nagagogulan/aimx-ext-user_management:latest
+    container_name: user-management_container
     ports:
       - "8086:8086"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_URL=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
+  
+
+  ext-request_management:
+    image: nagagogulan/aimx-ext-request_management:latest
+    container_name: request_management_container
+    ports:
+      - "8087:8087"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_URL=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
+
+
+  ext-system:
+    image: nagagogulan/aimx-ext-system:latest
+    container_name: system_container
+    ports:
+      - "8089:8089"
     environment:
       - DBHOST=13.229.196.7
       - DBPORT=5432

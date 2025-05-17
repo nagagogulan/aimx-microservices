@@ -7,7 +7,7 @@ RUN go mod tidy && go mod vendor
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o user_management ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o system ./cmd/main.go
 
 # ---------- Stage 2: Final ----------
 FROM alpine:latest
@@ -15,13 +15,12 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy built binary
-COPY --from=builder /app/user_management .
+COPY --from=builder /app/system .
 
-# Copy the .env file to the root directory
-COPY .env /.
+
 
 EXPOSE 8086
 
 WORKDIR /app
 
-CMD ["./user_management"]
+CMD ["./system"]
