@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	kafkas "github.com/PecozQ/aimx-library/kafka"
 	"github.com/segmentio/kafka-go"
-	kafkas "whatsdare.com/fullstack/aimx/backend/kafka"
 )
 
 type FilePathMsg struct {
