@@ -46,37 +46,53 @@ func streamFileChunks(filePath, topic string) {
 	}
 	defer file.Close()
 
+	// Get file size to determine when we're at the end
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Println("Cannot get file stats:", err)
+		return
+	}
+	fileSize := fileInfo.Size()
+
 	writer := kafkas.GetKafkaWriter(topic, os.Getenv("KAFKA_BROKER_ADDRESS"))
 	reader := bufio.NewReader(file)
 	buffer := make([]byte, 1024*512) // 500kb chunks
 	chunkIndex := 0
+	bytesRead := int64(0)
 
 	for {
 		n, err := reader.Read(buffer)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
+		if err != nil && err != io.EOF {
 			log.Println("Read error:", err)
 			break
 		}
 
-		chunkMsg := map[string]interface{}{
-			"file_name":   filepath.Base(filePath),
-			"chunk_index": chunkIndex,
-			"data":        buffer[:n],
-		}
-		chunkData, _ := json.Marshal(chunkMsg)
-		err = writer.WriteMessages(context.Background(), kafka.Message{
-			Key:   []byte(filepath.Base(filePath)),
-			Value: chunkData,
-		})
-		if err != nil {
-			log.Println("Kafka chunk send error:", err)
-			break
+		if n > 0 {
+			bytesRead += int64(n)
+			isLastChunk := bytesRead >= fileSize || err == io.EOF
+
+			chunkMsg := map[string]interface{}{
+				"file_name":     filepath.Base(filePath),
+				"chunk_index":   chunkIndex,
+				"data":          buffer[:n],
+				"is_last_chunk": isLastChunk,
+			}
+			chunkData, _ := json.Marshal(chunkMsg)
+			err = writer.WriteMessages(context.Background(), kafka.Message{
+				Key:   []byte(filepath.Base(filePath)),
+				Value: chunkData,
+			})
+			if err != nil {
+				log.Println("Kafka chunk send error:", err)
+				break
+			}
+
+			chunkIndex++
 		}
 
-		chunkIndex++
+		if err == io.EOF {
+			break
+		}
 	}
 
 	log.Printf("Finished sending chunks for: %s\n", filePath)

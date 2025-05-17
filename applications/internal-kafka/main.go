@@ -11,58 +11,77 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	"github.com/PecozQ/aimx-library/kafka"
 )
 
 // Message represents the structure of a message received from the topic,
 // matching the publisher's format.
 type Message struct {
-	FileName   string `json:"file_name"` // Changed from Filename, tag to file_name
-	Data       []byte `json:"data"`
-	ChunkIndex int    `json:"chunk_index"` // Changed from ChunkID, tag to chunk_index
-	// IsLastChunk bool `json:"is_last_chunk"` // Removed as per publisher code
+	FileName    string `json:"file_name"` // Changed from Filename, tag to file_name
+	Data        []byte `json:"data"`
+	ChunkIndex  int    `json:"chunk_index"`   // Changed from ChunkID, tag to chunk_index
+	IsLastChunk bool   `json:"is_last_chunk"` // Flag indicating if this is the last chunk of the file
 }
 
 // FIXME: Need to check and store in the same file path as the external
 
-func messageHandler(msg Message) {
-	filePath := "./" + msg.FileName // Use FileName
+func messageHandler(msg Message) bool {
+	// Ensure the dockets directory exists
+	if err := os.MkdirAll("./dockets", 0755); err != nil {
+		log.Printf("Error creating dockets directory: %v", err)
+		return false
+	}
+
+	filePath := "./dockets/" + msg.FileName
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("Error opening file %s: %v", filePath, err)
-		return
+		return false
 	}
 	defer f.Close()
 
 	if _, err := f.Write(msg.Data); err != nil {
-		log.Printf("Error writing chunk %d to file %s: %v", msg.ChunkIndex, filePath, err) // Use ChunkIndex
-		return
+		log.Printf("Error writing chunk %d to file %s: %v", msg.ChunkIndex, filePath, err)
+		return false
 	}
 
-	log.Printf("Chunk %d for file %s saved.", msg.ChunkIndex, msg.FileName) // Use ChunkIndex and FileName
+	// Check if this is the last chunk and log accordingly
+	if msg.IsLastChunk {
 
-	// Since IsLastChunk is removed, we can't definitively log "completely saved" here.
-	// The subscriber will continue to append chunks as they arrive.
-	// A timeout mechanism or a separate "end-of-file" message from the publisher
-	// would be needed to determine when a file is fully received.
+		// Get file size for logging
+		fileInfo, err := os.Stat(filePath)
+		var fileSize int64
+		if err != nil {
+			log.Printf("Error getting file stats: %v", err)
+			fileSize = -1
+		} else {
+			fileSize = fileInfo.Size()
+		}
+
+		log.Printf("FILE COMPLETE: %s has been completely saved at %s",
+			msg.FileName)
+		log.Printf("File details: Size: %d bytes",
+			fileSize)
+
+		// Here you could add additional processing for completed files
+		// For example, move the file to a different location, trigger a notification, etc.
+
+		// Return true to acknowledge this message
+		return true
+	}
+
+	// For non-last chunks, we can still acknowledge the message
+	return true
 }
 
 func main() {
 	log.Println("Starting Kafka video chunk subscriber...")
 
-	kafkaBrokerAddress := []string{os.Getenv("KAFKA_BROKER_ADDRESS")}
 	topic := "docket-chunks"
 	groupID := "docket-chunk-consumer-group"
 
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:        kafkaBrokerAddress,
-		GroupID:        groupID,
-		Topic:          topic,
-		MinBytes:       10e3,
-		MaxBytes:       10e6,
-		CommitInterval: time.Second,
-	})
+	r := kafka.GetKafkaReader(topic, groupID, os.Getenv("KAFKA_BROKER_ADDRESS"))
 	defer r.Close()
 
 	log.Printf("Subscribed to Kafka topic '%s' with group ID '%s'", topic, groupID)
