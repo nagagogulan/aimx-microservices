@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,8 @@ import (
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/firebase"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
@@ -82,6 +85,30 @@ func main() {
 		log.Fatalf("Could not migrate database: %v", err)
 	}
 	defer sqlDB.Close()
+	uri := os.Getenv("MONGO_URI") // replace with your MongoDB URI
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Connect to MongoDB
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		log.Fatalf("Error connecting to MongoDB: %v", err)
+	}
+
+	// Ping the database
+	if err := client.Ping(ctx, nil); err != nil {
+		log.Fatalf("Could not ping to MongoDB: %v", err)
+	}
+
+	fmt.Println("Successfully connected to MongoDB!")
+
+	// Get a handle to a collection
+	db := client.Database(os.Getenv("MONGO_DBNAME"))
+	//collection := db.Collection("templates")
+
+	auditRepo := repository.NewAuditLogsRepositoryService(db)
 
 	firebaseCredentials := map[string]string{
 		"FIREBASE_TYPE":                        os.Getenv("FIREBASE_TYPE"),
@@ -106,7 +133,7 @@ func main() {
 	notificationRepo := repository.NewNotificationRepo(DB)
 	userRepo := repository.NewUserCRUDRepository(DB)
 
-	s := service.NewService(notificationRepo, userRepo)
+	s := service.NewService(notificationRepo, userRepo, auditRepo)
 	endpoints := base.NewEndpoint(s)                // 💡 create Endpoints
 	httpHandlers := base.MakeHTTPHandler(endpoints) // ✅ pass Endpoints to HTTP handler
 

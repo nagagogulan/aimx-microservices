@@ -1,30 +1,39 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"time"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/firebase"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 type Service interface {
 	SendNotification(userID, message string) error
 	UpdateFirebaseToken(userID, token string) error
+	AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error
+	GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error)
 }
 
 type service struct {
-	repo     repository.NotificationRepo
-	userRepo repository.UserCRUDService
+	repo      repository.NotificationRepo
+	userRepo  repository.UserCRUDService
+	auditRepo repository.AuditLogsRepositoryService
 }
 
 func NewService(repo repository.NotificationRepo, userRepo repository.UserCRUDService,
+	auditRepo repository.AuditLogsRepositoryService,
 ) Service {
 	return &service{
-		repo:     repo,
-		userRepo: userRepo,
+		repo:      repo,
+		userRepo:  userRepo,
+		auditRepo: auditRepo,
 	}
 }
 
@@ -61,4 +70,32 @@ func (s *service) SendNotification(userID, message string) error {
 
 func (s *service) UpdateFirebaseToken(userID, token string) error {
 	return s.userRepo.UpdateFirebaseTokenByUserID(userID, token)
+}
+
+func (s *service) AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error {
+	return s.auditRepo.InsertAuditLog(ctx, auditLog)
+}
+
+func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error) {
+	// Call the repository method with pagination
+	auditLogs, total, err := s.auditRepo.FilterAuditLogsByRole(ctx, role, orgID, page, limit)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+
+	// Optional: transform to flattenedData if needed, otherwise just use auditLogs
+	// replace this if transformation is required
+
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+	// Return custom shape
+	return map[string]interface{}{
+		"data": auditLogs,
+		"paging_info": model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
+	}, nil
 }

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
+	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -39,6 +41,22 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			options...,
 		).ServeHTTP))
 
+	}
+	auditLogAPI := router.Group("/audit-logs")
+	{
+		auditLogAPI.POST("/create", gin.WrapF(httptransport.NewServer(
+			endpoints.AuditLogsEndpoint,
+			decodeAuditLogsRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
+
+		auditLogAPI.GET("/get", gin.WrapF(httptransport.NewServer(
+			endpoints.GetAuditLogEndpoint,
+			decodeGetAuditLogRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
 	}
 
 	return r
@@ -88,5 +106,40 @@ func decodeUpdateFirebaseTokenRequest(_ context.Context, r *http.Request) (inter
 	return map[string]interface{}{
 		"user_id":        req.UserID,
 		"firebase_token": req.FirebaseToken,
+	}, nil
+}
+
+func decodeAuditLogsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// _, errs := middleware.DecodeHeaderGetClaims(r)
+	// if errs != nil {
+	// 	return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	// }
+	var req dto.AuditLogs
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode request: %v", err)
+	}
+	return map[string]interface{}{
+		"audit_log": &req,
+	}, nil
+}
+
+func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, errs := middleware.DecodeHeaderGetClaims(r)
+	if errs != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+	role := r.URL.Query().Get("role")
+	orgID := r.URL.Query().Get("org_id")
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if role == "" {
+		return nil, fmt.Errorf("role is required")
+	}
+	return map[string]interface{}{
+		"role":   role,
+		"org_id": orgID,
+		"page":   page,
+		"limit":  limit,
 	}, nil
 }
