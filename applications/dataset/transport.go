@@ -97,7 +97,15 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	// New endpoint for chunking files to Kafka
+	// // New endpoint for chunking files to Kafka
+	// router.POST("/chunkfile", gin.WrapF(httptransport.NewServer(
+	// 	endpoints.ChunkFileToKafka,
+	// 	decodeChunkFileRequest,
+	// 	encodeResponse,
+	// 	options...,
+	// ).ServeHTTP))
+
+	// New endpoint for chunking files with form data to Kafka
 	router.POST("/chunkfile", gin.WrapF(httptransport.NewServer(
 		endpoints.ChunkFileToKafka,
 		decodeChunkFileRequest,
@@ -223,7 +231,35 @@ func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, 
 	return request, nil
 }
 
-// decodeChunkFileRequest decodes the request for the chunk file API
+// // decodeChunkFileRequest decodes the request for the chunk file API
+// func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+// 	// Verify authentication
+// 	_, err := middleware.DecodeHeaderGetClaims(r)
+// 	if err != nil {
+// 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+// 	}
+
+// 	// Parse the request body
+// 	var req dto.ChunkFileRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		return nil, fmt.Errorf("failed to decode request body: %w", err)
+// 	}
+
+// 	// Validate required fields
+// 	if req.Name == "" {
+// 		return nil, fmt.Errorf("name is required")
+// 	}
+// 	if req.UUID == "" {
+// 		return nil, fmt.Errorf("uuid is required")
+// 	}
+// 	if req.FilePath == "" {
+// 		return nil, fmt.Errorf("filepath is required")
+// 	}
+
+// 	return req, nil
+// }
+
+// decodeExtendedChunkFileRequest decodes the request for the extended chunk file API
 func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	// Verify authentication
 	_, err := middleware.DecodeHeaderGetClaims(r)
@@ -246,6 +282,9 @@ func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, er
 	}
 	if req.FilePath == "" {
 		return nil, fmt.Errorf("filepath is required")
+	}
+	if req.FormData.Type == 0 {
+		return nil, fmt.Errorf("formData is required")
 	}
 
 	return req, nil

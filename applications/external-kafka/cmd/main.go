@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -10,8 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	// Gin is now used in the subscriber package (transport.go)
 	// "github.com/gin-gonic/gin"
@@ -29,11 +33,49 @@ const (
 func main() {
 	flag.Parse()
 
-	// Start the file chunk worker
-	go worker.StartFileChunkWorker()
+	// // Get the current working directory (from where the command is run)
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	fmt.Errorf("Error getting current working directory:", err)
+	// }
+	// fmt.Println("Current Working Directory:", dir)
 
-	// Start the dataset chunk subscriber (receives and assembles chunks)
-	go worker.GetDatasetChunkSubscriber()
+	// // Construct the path to the .env file in the root directory
+	// envPath := filepath.Join(dir, "./.env")
+
+	// // Load the .env file from the correct path
+	// err = godotenv.Load(envPath)
+	// if err != nil {
+	// 	fmt.Errorf("Error loading .env file")
+	// }
+
+	uri := os.Getenv("MONGO_URI") // replace with your MongoDB URI
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Connect to MongoDB
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		fmt.Printf("Error connecting to MongoDB: %v", err)
+	}
+
+	// Ping the database
+	if err := client.Ping(ctx, nil); err != nil {
+		fmt.Printf("Could not ping to MongoDB: %v", err)
+	}
+
+	fmt.Println("Successfully connected to MongoDB!")
+
+	// Get a handle to a collection
+	db := client.Database(os.Getenv("MONGO_DBNAME"))
+
+	// Initialize form repository
+	formRepo := repository.NewFormRepository(db)
+
+	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
+	go worker.StartDatasetChunkSubscriber(formRepo)
 
 	var logger log.Logger
 	{
@@ -78,7 +120,7 @@ func main() {
 	}
 
 	fmt.Println("Info", "Role service HTTP server started", "port", 8088)
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil {
 		// log.Fatalf("HTTP server failed: %v", err)
 	}

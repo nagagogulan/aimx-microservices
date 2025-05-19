@@ -22,7 +22,7 @@ type Endpoints struct {
 	GetDataSetfile      endpoint.Endpoint
 	DeleteDataSetfile   endpoint.Endpoint
 	PreviewDataSetfile  endpoint.Endpoint
-	ChunkFileToKafka    endpoint.Endpoint // New endpoint for chunking files to Kafka
+	ChunkFileToKafka    endpoint.Endpoint // New endpoint for chunking files with form data
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -135,12 +135,24 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-// makeChunkFileToKafkaEndpoint creates an endpoint for the ChunkFileToKafka method
+// // makeChunkFileToKafkaEndpoint creates an endpoint for the ChunkFileToKafka method
+// func makeChunkFileToKafkaEndpoint(s service.Service) endpoint.Endpoint {
+// 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+// 		req, ok := request.(dto.ChunkFileRequest)
+// 		if !ok {
+// 			return nil, fmt.Errorf("invalid request type: expected dto.ChunkFileRequest")
+// 		}
+
+// 		return s.ChunkFileToKafka(ctx, req)
+// 	}
+// }
+
+// makeExtendedChunkFileToKafkaEndpoint creates an endpoint for the ExtendedChunkFileToKafka method
 func makeChunkFileToKafkaEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(dto.ChunkFileRequest)
 		if !ok {
-			return nil, fmt.Errorf("invalid request type: expected model.ChunkFileRequest")
+			return nil, fmt.Errorf("invalid request type: expected dto.ChunkFileRequest")
 		}
 
 		return s.ChunkFileToKafka(ctx, req)

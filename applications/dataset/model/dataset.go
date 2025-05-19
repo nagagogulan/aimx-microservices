@@ -51,3 +51,5 @@ type OpenFileResponse struct {
 	FilePreview string `json:"filePreview"` // Add this field
 	Err         string `json:"err,omitempty"`
 }
+
+// ExtendedChunkFileRequest represents the extended request for the chunk file API with form data
