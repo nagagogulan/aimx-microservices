@@ -7,13 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
 const (
 	maxUploadSizeGin = 20 * 1024 * 1024 * 1024 // 20 GB, adjust as needed
-	fileFormFieldGin = "uploadFile"           // The form field name for the file
+	fileFormFieldGin = "uploadFile"            // The form field name for the file
 )
 
 var (

@@ -230,6 +230,68 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 }
 
 // ChunkFileToKafka sends a file path to the sample-dataset-paths Kafka topic
+// func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error) {
+// 	// Validate request parameters
+// 	if req.Name == "" {
+// 		return nil, fmt.Errorf("name cannot be empty")
+// 	}
+// 	if req.UUID == "" {
+// 		return nil, fmt.Errorf("uuid cannot be empty")
+// 	}
+// 	if req.FilePath == "" {
+// 		return nil, fmt.Errorf("file path cannot be empty")
+// 	}
+
+// 	// Verify that the file exists
+// 	fileInfo, err := os.Stat(req.FilePath)
+// 	if err != nil {
+// 		if os.IsNotExist(err) {
+// 			return nil, fmt.Errorf("file does not exist: %s", req.FilePath)
+// 		}
+// 		return nil, fmt.Errorf("failed to get file stats: %w", err)
+// 	}
+
+// 	// Check if it's a regular file
+// 	if !fileInfo.Mode().IsRegular() {
+// 		return nil, fmt.Errorf("not a regular file: %s", req.FilePath)
+// 	}
+
+// 	// Create a message with the file path and metadata
+// 	pathMsg := map[string]interface{}{
+// 		"name":     req.Name,
+// 		"uuid":     req.UUID,
+// 		"filepath": req.FilePath,
+// 		"filesize": fileInfo.Size(),
+// 	}
+
+// 	// Marshal the message to JSON
+// 	msgData, err := json.Marshal(pathMsg)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to marshal message data: %w", err)
+// 	}
+
+// 	// Initialize Kafka writer for the sample-dataset-paths topic
+// 	writer := kafkas.GetKafkaWriter("sample-dataset-paths", os.Getenv("KAFKA_BROKER_ADDRESS"))
+
+// 	// Send the message to Kafka
+// 	err = writer.WriteMessages(ctx, kafka.Message{
+// 		Key:   []byte(req.UUID),
+// 		Value: msgData,
+// 	})
+// 	if err != nil {
+// 		return nil, fmt.Errorf("kafka send error: %w", err)
+// 	}
+
+// 	// Return success response with the available fields
+// 	return &dto.ChunkFileResponse{
+// 		Message:  fmt.Sprintf("File path successfully sent to Kafka topic 'sample-dataset-paths' for chunking. File size: %d bytes", fileInfo.Size()),
+// 		Name:     req.Name,
+// 		UUID:     req.UUID,
+// 		FilePath: req.FilePath,
+// 	}, nil
+// }
+
+// ExtendedChunkFileToKafka sends a file path and form data to the sample-dataset-paths Kafka topic
 func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error) {
 	// Validate request parameters
 	if req.Name == "" {
@@ -240,6 +302,9 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 	}
 	if req.FilePath == "" {
 		return nil, fmt.Errorf("file path cannot be empty")
+	}
+	if req.FormData.Type == 0 {
+		return nil, fmt.Errorf("formData cannot be nil")
 	}
 
 	// Verify that the file exists
@@ -256,16 +321,9 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 		return nil, fmt.Errorf("not a regular file: %s", req.FilePath)
 	}
 
-	// Create a message with the file path and metadata
-	pathMsg := map[string]interface{}{
-		"name":     req.Name,
-		"uuid":     req.UUID,
-		"filepath": req.FilePath,
-		"filesize": fileInfo.Size(),
-	}
-
+	// Use the entire request as the message
 	// Marshal the message to JSON
-	msgData, err := json.Marshal(pathMsg)
+	msgData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message data: %w", err)
 	}
@@ -282,9 +340,9 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 		return nil, fmt.Errorf("kafka send error: %w", err)
 	}
 
-	// Return success response with the available fields
+	// Return success response
 	return &dto.ChunkFileResponse{
-		Message:  fmt.Sprintf("File path successfully sent to Kafka topic 'sample-dataset-paths' for chunking. File size: %d bytes", fileInfo.Size()),
+		Message:  fmt.Sprintf("File path and form data successfully sent to Kafka topic 'sample-dataset-paths' for processing. File size: %d bytes", fileInfo.Size()),
 		Name:     req.Name,
 		UUID:     req.UUID,
 		FilePath: req.FilePath,

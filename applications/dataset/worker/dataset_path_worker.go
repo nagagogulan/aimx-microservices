@@ -11,16 +11,18 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/PecozQ/aimx-library/domain/dto"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
 	"github.com/segmentio/kafka-go"
 )
 
 // DatasetPathMsg represents the structure of a message received from the sample-dataset-paths topic
 type DatasetPathMsg struct {
-	Name     string `json:"name"`
-	UUID     string `json:"uuid"`
-	FilePath string `json:"filepath"`
-	FileSize int64  `json:"filesize"`
+	Name     string      `json:"name"`
+	UUID     string      `json:"uuid"`
+	FilePath string      `json:"filepath"`
+	FileSize int64       `json:"filesize"`
+	FormData dto.FormDTO `json:"formData"` // FormData is used by the dataset_subscriber
 }
 
 // StartDatasetPathWorker initializes a Kafka consumer for the sample-dataset-paths topic
@@ -120,6 +122,7 @@ func processFilePath(ctx context.Context, msg DatasetPathMsg) error {
 			isLastChunk := bytesRead >= fileSize || err == io.EOF
 
 			// Create message according to the required format
+			// Include the formData in each chunk message
 			chunkMsg := map[string]interface{}{
 				"name":          msg.Name,
 				"uuid":          msg.UUID,
@@ -127,7 +130,9 @@ func processFilePath(ctx context.Context, msg DatasetPathMsg) error {
 				"filepath":      msg.FilePath,
 				"chunkData":     buffer[:n],
 				"chunkIndex":    chunkIndex,
+				"formData":      msg.FormData, // Include the form data
 			}
+			fmt.Println("the chunk msg is given as: ", chunkMsg)
 
 			// Marshal the message to JSON
 			chunkData, err := json.Marshal(chunkMsg)

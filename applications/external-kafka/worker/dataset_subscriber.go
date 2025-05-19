@@ -10,17 +10,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
 )
 
 // DatasetChunkMsg represents the structure of a message received from the sample-dataset-chunk topic
 type DatasetChunkMsg struct {
-	Name        string `json:"name"`
-	UUID        string `json:"uuid"`
-	IsLastChunk bool   `json:"is_last_chunk"`
-	FilePath    string `json:"filepath"`
-	ChunkData   []byte `json:"chunkData"`
-	ChunkIndex  int    `json:"chunkIndex"`
+	Name        string      `json:"name"`
+	UUID        string      `json:"uuid"`
+	IsLastChunk bool        `json:"is_last_chunk"`
+	FilePath    string      `json:"filepath"`
+	ChunkData   []byte      `json:"chunkData"`
+	ChunkIndex  int         `json:"chunkIndex"`
+	FormData    dto.FormDTO `json:"formData"`
 }
 
 // FileAssembler keeps track of chunks for a specific file
@@ -38,8 +41,14 @@ type FileAssembler struct {
 var fileAssemblers = make(map[string]*FileAssembler)
 var assemblersMutex sync.Mutex
 
+// FormRepo holds the form repository service
+var FormRepo repository.FormRepositoryService
+
 // StartDatasetChunkSubscriber initializes a Kafka consumer for the sample-dataset-chunk topic
-func GetDatasetChunkSubscriber() {
+func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService) {
+	// Set the form repository
+	FormRepo = formRepo
+
 	log.Println("Starting dataset chunk subscriber...")
 
 	// Create a Kafka reader for the sample-dataset-chunk topic
@@ -62,10 +71,11 @@ func GetDatasetChunkSubscriber() {
 	// Start a goroutine to clean up stale file assemblers
 	go cleanupStaleAssemblers(ctx)
 
-	// Create output directory if it doesn't exist
-	outputDir := "./dataset_chunks"
+	// Create default output directory if it doesn't exist
+	// This will only be used if the FilePath in the message is empty
+	outputDir := "./datasets"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		log.Printf("Error creating output directory: %v", err)
+		log.Printf("Error creating default output directory: %v", err)
 		return
 	}
 
@@ -108,8 +118,16 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 	assemblersMutex.Lock()
 	assembler, exists := fileAssemblers[msg.UUID]
 	if !exists {
-		// Create a new assembler for this file
-		outputPath := filepath.Join(outputDir, fmt.Sprintf("%s_%s", msg.Name, msg.UUID))
+		// Use the FilePath from the message exactly as is, including file name and extension
+		outputPath := msg.FilePath
+		if outputPath == "" {
+			// If no FilePath is provided, use the default naming convention in the default directory
+			outputPath = filepath.Join(outputDir, fmt.Sprintf("%s_%s", msg.Name, msg.UUID))
+			log.Printf("No FilePath provided in message, using default path: %s", outputPath)
+		} else {
+			log.Printf("Using exact FilePath from message: %s", outputPath)
+		}
+
 		assembler = &FileAssembler{
 			Name:       msg.Name,
 			UUID:       msg.UUID,
@@ -128,11 +146,14 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 	// Update the last update time
 	assembler.LastUpdate = time.Now()
 
-	// Create the output directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(assembler.OutputPath), 0755); err != nil {
-		log.Printf("Error creating directory for %s: %v", assembler.OutputPath, err)
+	// Ensure the directory structure exists
+	// Extract the directory part from the file path
+	dirPath := filepath.Dir(assembler.OutputPath)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		log.Printf("Error creating directory structure for %s: %v", dirPath, err)
 		return
 	}
+	log.Printf("Directory structure created/verified for path: %s", dirPath)
 
 	// Open the output file in append mode
 	file, err := os.OpenFile(assembler.OutputPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -153,16 +174,65 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 
 	log.Printf("Processed chunk %d for file %s (UUID: %s)", msg.ChunkIndex, msg.Name, msg.UUID)
 
-	// If this is the last chunk, mark the file as complete
+	// If this is the last chunk, mark the file as complete and create the form directly
 	if msg.IsLastChunk {
 		assembler.Complete = true
 		log.Printf("✅ File assembly complete: %s (UUID: %s), Total chunks: %d",
 			msg.Name, msg.UUID, assembler.ChunkCount)
+		log.Printf("File saved at: %s", assembler.OutputPath)
 
 		// Get file size for logging
 		fileInfo, err := os.Stat(assembler.OutputPath)
 		if err == nil {
 			log.Printf("File size: %d bytes", fileInfo.Size())
+		}
+
+		// If formData is present and FormRepo is set, create the form directly
+		if len(msg.FormData.Fields) > 0 && FormRepo != nil {
+			// Update form data with file path
+			// First, check if we need to create new fields or update existing ones
+			// hasFilePathField := false
+
+			// // Check existing fields
+			// for i, field := range msg.FormData.Fields {
+			// 	if field.Label == "Dataset File Path" {
+			// 		msg.FormData.Fields[i].Value = assembler.OutputPath
+			// 		hasFilePathField = true
+			// 		break
+			// 	}
+			// }
+
+			// // Add file path field if it doesn't exist
+			// if !hasFilePathField {
+			// 	msg.FormData.Fields = append(msg.FormData.Fields, dto.FieldDTO{
+			// 		ID:    getNextFieldID(msg.FormData.Fields),
+			// 		Label: "Dataset File Path",
+			// 		Value: assembler.OutputPath,
+			// 	})
+			// }
+
+			// // Set form type if not already set
+			// if msg.FormData.Type == 0 {
+			// 	msg.FormData.Type = 2 // Assuming 2 is the type for dataset forms
+			// }
+
+			// Create the form
+			log.Printf("Creating form for dataset: %s (UUID: %s)", msg.Name, msg.UUID)
+			createdForm, err := FormRepo.CreateForm(context.Background(), msg.FormData)
+			if err != nil {
+				log.Printf("Error creating form: %v", err)
+			} else {
+				log.Printf("Successfully created form for dataset: %s (UUID: %s, Form ID: %s)",
+					msg.Name, msg.UUID, createdForm.ID.Hex())
+			}
+		} else {
+			if msg.FormData.Type == 0 && len(msg.FormData.Fields) == 0 {
+				log.Printf("No form data found for %s (UUID: %s), skipping form creation",
+					msg.Name, msg.UUID)
+			} else if FormRepo == nil {
+				log.Printf("Form repository not initialized for %s (UUID: %s), skipping form creation",
+					msg.Name, msg.UUID)
+			}
 		}
 
 		// Optionally, remove the assembler from the map
