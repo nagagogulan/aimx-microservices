@@ -98,6 +98,9 @@ func (s *service) GetUserProfile(ctx context.Context, id uuid.UUID) (*dto.UserRe
 		encodedImage := base64.StdEncoding.EncodeToString(imageData)
 		res.UserProfilePath = encodedImage
 	}
+	if res.UserProfilePath == "" {
+		res.UserProfilePath = ""
+	}
 
 	return res, nil
 }
