@@ -319,10 +319,11 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	}
 
 	// Optional: Run async
-	if org.Status == 0 {
+	if org.Status == 0 && updatedForm.Status == 2 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
 
+	// This is for handling already approved organization and then if we are rejecting the organization
 	if updatedForm.Status == 2 {
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Admin Email Address" {
