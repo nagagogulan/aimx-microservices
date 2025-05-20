@@ -5,6 +5,7 @@ import (
 
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/go-kit/kit/endpoint"
+	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
 
@@ -14,6 +15,7 @@ type Endpoints struct {
 	UpdateFirebaseTokenEndpoint endpoint.Endpoint
 	AuditLogsEndpoint           endpoint.Endpoint
 	GetAuditLogEndpoint         endpoint.Endpoint
+	FindAuditLogByUserEndpoint  endpoint.Endpoint
 }
 
 // NewEndpoint initializes and returns an instance of Endpoints.
@@ -23,6 +25,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		UpdateFirebaseTokenEndpoint: makeUpdateFirebaseTokenEndpoint(s),
 		AuditLogsEndpoint:           makeAuditLogsEndpoint(s),
 		GetAuditLogEndpoint:         makeGetAuditLogEndpoint(s),
+		FindAuditLogByUserEndpoint:  makeFindAuditLogByUserEndpoint(s),
 	}
 }
 
@@ -104,5 +107,12 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return response, nil
+	}
+}
+
+func makeFindAuditLogByUserEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*model.FindAuditByUserRequest)
+		return s.FindAuditLogByUser(ctx, req.UserID, req.Page, req.Limit)
 	}
 }

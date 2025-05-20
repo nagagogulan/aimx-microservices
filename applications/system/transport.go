@@ -13,6 +13,7 @@ import (
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 // MakeHTTPHandler configures HTTP handlers for the endpoints.
@@ -54,6 +55,12 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 		auditLogAPI.GET("/get", gin.WrapF(httptransport.NewServer(
 			endpoints.GetAuditLogEndpoint,
 			decodeGetAuditLogRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
+		auditLogAPI.GET("/findlogs", gin.WrapF(httptransport.NewServer(
+			endpoints.FindAuditLogByUserEndpoint,
+			decodeFindAuditLogByUserRequest,
 			encodeResponse,
 			options...,
 		).ServeHTTP))
@@ -141,5 +148,23 @@ func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, 
 		"org_id": orgID,
 		"page":   page,
 		"limit":  limit,
+	}, nil
+}
+
+func decodeFindAuditLogByUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	q := r.URL.Query()
+	page, err := strconv.Atoi(q.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(q.Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	return &model.FindAuditByUserRequest{
+		UserID: q.Get("user_id"),
+		Page:   page,
+		Limit:  limit,
 	}, nil
 }

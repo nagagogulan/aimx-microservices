@@ -19,6 +19,7 @@ type Service interface {
 	UpdateFirebaseToken(userID, token string) error
 	AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error
 	GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error)
+	FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error)
 }
 
 type service struct {
@@ -91,6 +92,22 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 	// Return custom shape
 	return map[string]interface{}{
 		"data": auditLogs,
+		"paging_info": model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
+	}, nil
+}
+func (s *service) FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error) {
+	logs, total, err := s.auditRepo.FindAuditlogsByUserID(ctx, userID, page, limit)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	return map[string]interface{}{
+		"data": logs,
 		"paging_info": model.PagingInfo{
 			TotalItems:  total,
 			CurrentPage: page,
