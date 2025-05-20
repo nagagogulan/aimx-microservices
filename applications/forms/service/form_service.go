@@ -127,7 +127,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 					projectdocketName = val
 					break
 				}
-				if field.Label == "Dataset Name" {
+				if field.Label == "Tagging to sample datasets" {
 					if val, ok := field.Value.(string); ok {
 						datasetName = val
 						break
@@ -306,8 +306,8 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			Timestamp:      time.Now().UTC(),
 			UserID:         userID,
 			UserName:       email,
-			UserRole:       "User",
-			Activity:       "Updated Project Docket",
+			UserRole:       "Admin",
+			Activity:       "Changed Status to " + status,
 			ProjectDocket:  projectdocketName,
 			Dataset:        datasetname,
 			Details: map[string]string{
