@@ -110,6 +110,7 @@ func main() {
 	//collection := db.Collection("templates")
 
 	auditRepo := repository.NewAuditLogsRepositoryService(db)
+	go worker.StartAuditLogSubscriber(auditRepo)
 
 	firebaseCredentials := map[string]string{
 		"FIREBASE_TYPE":                        os.Getenv("FIREBASE_TYPE"),
@@ -149,5 +150,4 @@ func main() {
 		log.Fatalf("HTTP server failed: %v", err)
 	}
 	// Add Kafka consumer for audit logs
-	go worker.StartAuditLogSubscriber(auditRepo)
 }
