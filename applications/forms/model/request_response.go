@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"time"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
@@ -104,4 +105,8 @@ type SearchParam struct {
 type Filterfields struct {
 	Fields string `json:"fields"` // e.g. "Organization Name"
 	Value  string `json:"value"`  // e.g. "ORG"
+}
+type CreateFormRequestWithCtx struct {
+	Ctx  context.Context
+	Form *dto.FormDTO
 }
