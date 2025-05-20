@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
-	"fmt"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/go-kit/kit/endpoint"
@@ -55,8 +55,8 @@ func CORS(next http.Handler) http.Handler {
 
 		// Allowlisted origins
 		allowedOrigins := map[string]bool{
-			"http://localhost:3000":      true,
-			"http://54.251.209.147:3000": true,
+			"http://localhost:3000":     true,
+			"http://54.251.96.179:3000": true,
 		}
 
 		// Log incoming origin
@@ -78,7 +78,6 @@ func CORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
 
 type RequestWithContext struct {
 	Ctx     context.Context
