@@ -238,10 +238,14 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	if request.Type != 1 {
-		_, err := middleware.DecodeHeaderGetClaims(r)
+		claims, err := middleware.DecodeHeaderGetClaims(r)
 		if err != nil {
 			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 		}
+
+		ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+		ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
 	}
 	// Extract Gin context
 	// newCtx, err := commonlib.ExtractGinContext(ctx)
@@ -271,7 +275,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 
-	return &formDTO, nil
+	return &model.CreateFormRequestWithCtx{Ctx: ctx, Form: &formDTO}, nil
 }
 
 func decodeCreateFormTypeRequest(ctx context.Context, r *http.Request) (interface{}, error) {

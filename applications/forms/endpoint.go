@@ -201,8 +201,8 @@ func makeDeleteTemplateEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeCreateFormEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*dto.FormDTO)
-		form, err := s.CreateForm(ctx, *req)
+		req := request.(*model.CreateFormRequestWithCtx)
+		form, err := s.CreateForm(req.Ctx, *req.Form)
 		if err != nil {
 			fmt.Println("the err is given as")
 			return nil, service.NewAppError(err, http.StatusBadRequest, err.Error(), nil)

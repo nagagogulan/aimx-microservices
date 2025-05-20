@@ -92,9 +92,9 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 
 	userDetails, err := s.UserRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		fmt.Errorf("failed to check user: %w", err)
+		fmt.Errorf("failed to check user")
 	}
-	if userDetails.Status == entities.Deactivated {
+	if userDetails != nil && userDetails.Status == entities.Deactivated {
 		return &model.Response{Message: "Your account is currently deactivated. Please contact the administrator for assistance.", IS_MFA_Enabled: userDetails.IsMFAEnabled}, nil
 	}
 	if userDetails != nil {

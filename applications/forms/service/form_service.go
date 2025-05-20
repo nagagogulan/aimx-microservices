@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"math"
 	"net/smtp"
+	"os"
 	"strings"
+	"time"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
+	kafka "github.com/PecozQ/aimx-library/kafka"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
+
 	if form.Type == 1 {
 		orgreq := &dto.CreateOrganizationRequest{}
 		for _, val := range form.Fields {
@@ -81,13 +86,70 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			}
 			return createdForm, err
 		}
-
 	}
 
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
 		return nil, errcom.ErrUnableToCreate
 	}
+	var audit dto.AuditLogs
+	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
+	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+	if createdForm.Type == 2 {
+		var datasetName string
+		for _, field := range createdForm.Fields {
+			if field.Label == "Dataset Name" {
+				if val, ok := field.Value.(string); ok {
+					datasetName = val
+					break
+				}
+			}
+		}
+		audit = dto.AuditLogs{
+			OrganizationID: orgID,
+			Timestamp:      time.Now().UTC(),
+			UserID:         userID,
+			UserName:       email,
+			UserRole:       "Collaborator",
+			Activity:       "Created Dataset",
+			Dataset:        datasetName,
+			Details: map[string]string{
+				"form_id":   createdForm.ID.String(),
+				"form_type": fmt.Sprintf("%d", createdForm.Type),
+				"message":   "Form created successfully",
+			},
+		}
+	} else if createdForm.Type == 3 {
+		var projectdocketName string
+		for _, field := range createdForm.Fields {
+			if field.Label == "Project Name" {
+				if val, ok := field.Value.(string); ok {
+					projectdocketName = val
+					break
+				}
+			}
+		}
+		audit = dto.AuditLogs{
+			OrganizationID: orgID,
+			Timestamp:      time.Now().UTC(),
+			UserID:         userID,
+			UserName:       email,
+			UserRole:       "User",
+			Activity:       "Form Created",
+			ProjectDocket:  projectdocketName,
+			Dataset:        "Created Project Docket",
+			Details: map[string]string{
+				"form_id":   createdForm.ID.String(),
+				"form_type": fmt.Sprintf("%d", createdForm.Type),
+				"message":   "Form created successfully",
+			},
+		}
+
+	}
+
+	// Optional: Run async
+	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return createdForm, err
 }
 
@@ -185,6 +247,7 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 }
 
 func (s *service) UpdateForm(ctx context.Context, id string, status string) (*model.Response, error) {
+	var audit dto.AuditLogs
 	org, err := s.formRepo.GetFormById(ctx, id)
 	fmt.Println("The organization is givn eas: %v", org)
 	if err != nil {
@@ -213,6 +276,54 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		return nil, err
 	}
 
+	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
+	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+	if updatedForm.Type == 2 {
+		var datasetName string
+		for _, field := range updatedForm.Fields {
+			if field.Label == "Dataset Name" {
+				if val, ok := field.Value.(string); ok {
+					datasetName = val
+					break
+				}
+			}
+		}
+		audit = dto.AuditLogs{
+			OrganizationID: orgID,
+			Timestamp:      time.Now().UTC(),
+			UserID:         userID,
+			UserName:       email,
+			UserRole:       "Collaborator",
+			Activity:       "Updated Dataset",
+			Dataset:        datasetName,
+			Details:        map[string]string{},
+		}
+	} else if updatedForm.Type == 3 {
+		var projectdocketName string
+		for _, field := range updatedForm.Fields {
+			if field.Label == "Project Name" {
+				if val, ok := field.Value.(string); ok {
+					projectdocketName = val
+					break
+				}
+			}
+		}
+		audit = dto.AuditLogs{
+			OrganizationID: orgID,
+			Timestamp:      time.Now().UTC(),
+			UserID:         userID,
+			UserName:       email,
+			UserRole:       "User",
+			Activity:       "Form Created",
+			ProjectDocket:  projectdocketName,
+			Dataset:        "Updated Project Docket",
+			Details:        map[string]string{},
+		}
+
+	}
+
+	// Optional: Run async
 	if org.Status == 0 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
@@ -308,6 +419,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	if status == "APPROVED" && updatedForm != nil {
 		return &model.Response{Message: "Form successfully approved"}, nil
 	}
+	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return &model.Response{Message: "Form rejected"}, nil
 }
 
