@@ -554,6 +554,13 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 		User_Id: userData.ID, Refresh_Token: jwtToken.RefreshToken, Role_Id: userData.RoleID}, nil
 }
 
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
+	return &model.Response{
+		Message: "kong is up and running successfully",
+	}, nil
+}
+
 // Helper function to generate JWT for a new user
 func (s *service) generateJWTForNewUser(ctx context.Context, newUser *entities.User, org *entities.Organization) (*model.Response, error) {
 	accessSecret, refreshSecret, err := generateJWTSecrets()

@@ -34,7 +34,7 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "identity"))
 
 	//Register and Login Endpoints...
 	router.POST("/login", gin.WrapF(httptransport.NewServer(
@@ -61,6 +61,15 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	)))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -103,4 +112,9 @@ func decodeRefreshTokenRequest(_ context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	return &req, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

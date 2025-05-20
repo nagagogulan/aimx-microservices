@@ -14,8 +14,8 @@ type Service interface {
 	LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*model.Response, error)
 	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
 	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
-	UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDetail) (*model.RefreshTokenResponse  ,error)
-
+	UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDetail) (*model.RefreshTokenResponse, error)
+	TestKong(ctx context.Context) (*model.Response, error)
 }
 
 type service struct {
@@ -26,13 +26,13 @@ type service struct {
 	logger       kitlog.Logger
 }
 
-func NewService(tempUserRepo repository.UserRepositoryService, orgRepo repository.OrganizationRepositoryService, 
+func NewService(tempUserRepo repository.UserRepositoryService, orgRepo repository.OrganizationRepositoryService,
 	userRepo repository.UserCRUDService, roleRepo repository.RoleRepositoryService) Service {
 	fmt.Println("db interface connected")
 	return &service{
 		TempUserRepo: tempUserRepo,
 		OrgRepo:      orgRepo,
 		UserRepo:     userRepo,
-		RoleRepo:  	roleRepo,
+		RoleRepo:     roleRepo,
 	}
 }
