@@ -87,7 +87,7 @@ func main() {
 
 	httpServer := http.Server{
 		Addr:    ":" + strconv.Itoa(8087),
-		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
+		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
 	fmt.Println("HTTP server started on port", 8087)
