@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+
 	"fmt"
 	"log"
 	"net/http"
@@ -12,14 +12,13 @@ import (
 
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/database/pgsql"
-	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/firebase"
-	Kafka "github.com/PecozQ/aimx-library/kafka"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
+	worker "whatsdare.com/fullstack/aimx/backend/worker"
 )
 
 // func init() {
@@ -149,49 +148,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
 	}
-
 	// Add Kafka consumer for audit logs
-	go func() {
-		log.Println("Starting audit logs subscriber...")
-
-		// Create a Kafka reader for the audit-logs topic
-		reader := Kafka.GetKafkaReader("audit-logs", "audit-logs-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS"))
-		defer reader.Close()
-
-		// Create a context that can be cancelled
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		log.Println("Subscribed to Kafka topic 'audit-logs'")
-
-		for {
-			// Read message with timeout
-			readCtx, readCancel := context.WithTimeout(ctx, 5*time.Second)
-			m, err := reader.ReadMessage(readCtx)
-			readCancel()
-
-			if err != nil {
-				if err == context.DeadlineExceeded || err == context.Canceled {
-					continue
-				}
-				log.Printf("Error reading audit log message: %v", err)
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			// Process the audit log message
-			var auditLog dto.AuditLogs
-			if err := json.Unmarshal(m.Value, &auditLog); err != nil {
-				log.Printf("Error unmarshalling audit log: %v", err)
-				continue
-			}
-
-			// Store the audit log in the database
-			err = auditRepo.InsertAuditLog(context.Background(), &auditLog)
-			if err != nil {
-				log.Printf("Error storing audit log: %v", err)
-				continue
-			}
-		}
-	}()
+	go worker.StartAuditLogSubscriber(auditRepo)
 }

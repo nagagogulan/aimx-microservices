@@ -219,7 +219,7 @@ func makeUpdateFormEndpoint(s service.Service) endpoint.Endpoint {
 		fmt.Println("Form Status:", req.Status)
 		strtype := req.ID
 
-		form, err := s.UpdateForm(ctx, strtype, req.Status)
+		form, err := s.UpdateForm(req.Ctx, strtype, req.Status)
 		if err != nil {
 			return nil, err
 		}

@@ -93,11 +93,11 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		return nil, errcom.ErrUnableToCreate
 	}
 	var audit dto.AuditLogs
+	var datasetName string
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
 	if createdForm.Type == 2 {
-		var datasetName string
 		for _, field := range createdForm.Fields {
 			if field.Label == "Dataset Name" {
 				if val, ok := field.Value.(string); ok {
@@ -117,7 +117,6 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			Details: map[string]string{
 				"form_id":   createdForm.ID.String(),
 				"form_type": fmt.Sprintf("%d", createdForm.Type),
-				"message":   "Form created successfully",
 			},
 		}
 	} else if createdForm.Type == 3 {
@@ -128,29 +127,35 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 					projectdocketName = val
 					break
 				}
+				if field.Label == "Dataset Name" {
+					if val, ok := field.Value.(string); ok {
+						datasetName = val
+						break
+					}
+				}
 			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "User",
-			Activity:       "Form Created",
-			ProjectDocket:  projectdocketName,
-			Dataset:        "Created Project Docket",
-			Details: map[string]string{
-				"form_id":   createdForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", createdForm.Type),
-				"message":   "Form created successfully",
-			},
-		}
+			audit = dto.AuditLogs{
+				OrganizationID: orgID,
+				Timestamp:      time.Now().UTC(),
+				UserID:         userID,
+				UserName:       email,
+				UserRole:       "User",
+				Activity:       "Created Project Docket",
+				ProjectDocket:  projectdocketName,
+				Dataset:        datasetName,
+				Details: map[string]string{
+					"form_id":   createdForm.ID.String(),
+					"form_type": fmt.Sprintf("%d", createdForm.Type),
+				},
+			}
 
+		}
 	}
 
 	// Optional: Run async
 	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return createdForm, err
+
 }
 
 func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit, status int) (*model.GetFormResponse, error) {
@@ -279,32 +284,19 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
-	if updatedForm.Type == 2 {
-		var datasetName string
-		for _, field := range updatedForm.Fields {
-			if field.Label == "Dataset Name" {
-				if val, ok := field.Value.(string); ok {
-					datasetName = val
-					break
-				}
-			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "Collaborator",
-			Activity:       "Updated Dataset",
-			Dataset:        datasetName,
-			Details:        map[string]string{},
-		}
-	} else if updatedForm.Type == 3 {
+	if updatedForm.Type == 3 {
 		var projectdocketName string
+		var datasetname string
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Project Name" {
 				if val, ok := field.Value.(string); ok {
 					projectdocketName = val
+					break
+				}
+			}
+			if field.Label == "Dataset Name" {
+				if val, ok := field.Value.(string); ok {
+					datasetname = val
 					break
 				}
 			}
@@ -315,10 +307,13 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 			UserID:         userID,
 			UserName:       email,
 			UserRole:       "User",
-			Activity:       "Form Created",
+			Activity:       "Updated Project Docket",
 			ProjectDocket:  projectdocketName,
-			Dataset:        "Updated Project Docket",
-			Details:        map[string]string{},
+			Dataset:        datasetname,
+			Details: map[string]string{
+				"form_id":   updatedForm.ID.String(),
+				"form_type": fmt.Sprintf("%d", updatedForm.Type),
+			},
 		}
 
 	}

@@ -427,7 +427,15 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 }
 
 func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
 	var request dto.UpdateFormRequest
+	request.Ctx = ctx
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err

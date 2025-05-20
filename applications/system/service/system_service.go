@@ -80,7 +80,7 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 	// Call the repository method with pagination
 	auditLogs, total, err := s.auditRepo.FilterAuditLogsByRole(ctx, role, orgID, page, limit)
 	if err != nil {
-		return nil, errcom.ErrRecordNotFounds
+		return map[string]interface{}{"data": []interface{}{}, "paging_info": model.PagingInfo{}}, errcom.ErrRecordNotFounds
 	}
 
 	// Optional: transform to flattenedData if needed, otherwise just use auditLogs
