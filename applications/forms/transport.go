@@ -590,7 +590,7 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 	// Convert the string to UUID
 	orgID, err := uuid.FromString(orgid)
 	if err != nil {
-		return nil, fmt.Errorf("invalid organization ID")
+		return nil, fmt.Errorf("organization_id missing or invalid")
 	}
 
 	return dto.DeactivateOrganizationRequest{
