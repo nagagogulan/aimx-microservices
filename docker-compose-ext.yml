@@ -218,9 +218,9 @@ services:
   #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
   #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
   #     - FIREBASE_TYPE=${FIREBASE_TYPE}
-  #     - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-  #     - FIREBASE_PRIVATE_KEY_ID=${FIREBASE_PRIVATE_KEY_ID}
-  #     - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+  #     - "8083:8083"
+  #   environment:
+  #     - DBHOST=${EXT_DBHOST}
   #     - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
   #     - FIREBASE_CLIENT_ID=${FIREBASE_CLIENT_ID}  
   #     - FIREBASE_AUTH_URI=${FIREBASE_AUTH_URI}
@@ -234,13 +234,43 @@ services:
   #     - aimx-network    
 
 
-  ext-external-kafka:
+  # ext-external-kafka:
+  # #     - "8083:8083"
+  # #   environment:
+  # #     - DBHOST=${EXT_DBHOST}
+  #   container_name: external-kafka-container
+  #   ports:
+  #     - "8088:8088"
+  #   environment:
+  #     - DBHOST=${EXT_DBHOST}
+  #     - DBPORT=${EXT_DBPORT}
+  #     - DBUSER=${EXT_DBUSER}
+  #     - DBPASSWORD=${EXT_DBPASSWORD}
+  #     - DBNAME=${EXT_DBNAME}
+  #     - MONGO_URI=${EXT_MONGO_URI}
+  #     - MONGO_DBNAME=${EXT_MONGO_DBNAME}
+  #     - KAFKA_BROKER_ADDRESS=${EXT_KAFKA_URL}
+  #     - SMTP_EMAIL=${SMTP_EMAIL}
+  #     - SMTP_PAS=${SMTP_PAS}
+  #     - ACCESS_SECRET=${ACCESS_SECRET}
+  #     - REFRESH_SECRET=${REFRESH_SECRET}
+  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - aimx-network
+
+
+
+
+  ext-identity-test:
     build:
-      context: ./applications/external-kafka
+      context: ./applications/identity-test
       dockerfile: Dockerfile
-    container_name: external-kafka-container
+    container_name: identity-container-test
     ports:
-      - "8088:8088"
+      - "8081:8081"
     environment:
       - DBHOST=${EXT_DBHOST}
       - DBPORT=${EXT_DBPORT}
@@ -249,7 +279,34 @@ services:
       - DBNAME=${EXT_DBNAME}
       - MONGO_URI=${EXT_MONGO_URI}
       - MONGO_DBNAME=${EXT_MONGO_DBNAME}
-      - KAFKA_BROKER_ADDRESS=${EXT_KAFKA_URL}
+      - KAFKA_URL=${EXT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}7c43a08e94cc
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+    env_file:
+      - .env
+    networks:
+      - aimx-network
+
+  ext-forms-test:
+    build:
+      context: ./applications/forms-test
+      dockerfile: Dockerfile
+    container_name: forms-container-test
+    ports:
+      - "8082:8082"
+    environment:
+      - DBHOST=${EXT_DBHOST}
+      - DBPORT=${EXT_DBPORT}
+      - DBUSER=${EXT_DBUSER}
+      - DBPASSWORD=${EXT_DBPASSWORD}
+      - DBNAME=${EXT_DBNAME}
+      - MONGO_URI=${EXT_MONGO_URI}
+      - MONGO_DBNAME=${EXT_MONGO_DBNAME}
+      - KAFKA_URL=${EXT_KAFKA_URL}
       - SMTP_EMAIL=${SMTP_EMAIL}
       - SMTP_PAS=${SMTP_PAS}
       - ACCESS_SECRET=${ACCESS_SECRET}
