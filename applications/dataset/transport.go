@@ -60,7 +60,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", commonlib.BasePath, commonlib.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", commonlib.BasePath, commonlib.Version, "dataset"))
 
 	//Register and Login Endpoints...
 	router.POST("/fileupload", gin.WrapF(httptransport.NewServer(
@@ -109,6 +109,14 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	router.POST("/chunkfile", gin.WrapF(httptransport.NewServer(
 		endpoints.ChunkFileToKafka,
 		decodeChunkFileRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -293,4 +301,10 @@ func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, er
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+// decodeTestKongRequest is a simple decoder for the test endpoint
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

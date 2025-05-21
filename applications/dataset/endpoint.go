@@ -23,6 +23,7 @@ type Endpoints struct {
 	DeleteDataSetfile   endpoint.Endpoint
 	PreviewDataSetfile  endpoint.Endpoint
 	ChunkFileToKafka    endpoint.Endpoint // New endpoint for chunking files with form data
+	TestKongEndpoint    endpoint.Endpoint // Test endpoint for Kong
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -33,6 +34,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		DeleteDataSetfile:   Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
 		PreviewDataSetfile:  Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
 		ChunkFileToKafka:    Middleware(makeChunkFileToKafkaEndpoint(s), commonlib.TimeoutMs),
+		TestKongEndpoint:    Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -156,5 +158,13 @@ func makeChunkFileToKafkaEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return s.ChunkFileToKafka(ctx, req)
+	}
+}
+
+// makeTestKongEndpoint creates an endpoint for the TestKong method
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// No request processing needed for this endpoint
+		return s.TestKong(ctx)
 	}
 }

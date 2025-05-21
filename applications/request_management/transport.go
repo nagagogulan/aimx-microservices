@@ -72,6 +72,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			encodeResponse,
 			options...,
 		).ServeHTTP))
+
+		// Test endpoint for Kong
+		api.GET("/test", gin.WrapF(httptransport.NewServer(
+			endpoints.TestKongEndpoint,
+			decodeEmptyRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
 	}
 
 	return r

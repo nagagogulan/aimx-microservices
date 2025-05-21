@@ -30,16 +30,17 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 	// }))
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "role"))
 
 	// Role
 	// Role
-	role := router.Group("/roles")
-	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options))
-	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options))
-	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options))
-	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options))
-	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options))
+	// role := router.Group("/roles")
+	router.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options))
+	router.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options))
+	router.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options))
+	router.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options))
+	router.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options))
+	router.GET("/test", wrapEndpoint(endpoints.TestKong, decodeEmpty, encode, options))
 
 	// Module
 	module := router.Group("/modules")

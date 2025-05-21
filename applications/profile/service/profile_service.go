@@ -31,6 +31,7 @@ type Service interface {
 	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
 	GenerateOverview(ctx context.Context, userID uuid.UUID, orgID *uuid.UUID) (interface{}, error)
 	UploadProfileImage(ctx context.Context, userID uuid.UUID, fileHeader *multipart.FileHeader) (*model.UploadProfileImageResponse, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type service struct {
@@ -429,4 +430,11 @@ func saveUploadedFile(fileHeader *multipart.FileHeader, dest string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "profile kong api up and running",
+	}, nil
 }

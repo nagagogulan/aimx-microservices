@@ -62,7 +62,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", commonlib.BasePath, commonlib.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", commonlib.BasePath, commonlib.Version, "form"))
 
 	//Register and Login Endpoints...
 	router.POST("/template/create", gin.WrapF(httptransport.NewServer(
@@ -95,7 +95,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.POST("/form/create", gin.WrapF(httptransport.NewServer(
+	router.POST("/create", gin.WrapF(httptransport.NewServer(
 		endpoints.CreateFormEndpoint,
 		decodeCreateFormRequest,
 		encodeResponse,
@@ -103,7 +103,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	// Get Template by ID
-	router.GET("/form", gin.WrapF(httptransport.NewServer(
+	router.GET("/", gin.WrapF(httptransport.NewServer(
 		endpoints.GetFormByTypeEndpoint, // ✅ changed from GetTemplateByTypeEndpoint
 		decodeGetFormByTypeRequest,      // ✅ updated to match GetTemplateByID
 		encodeResponse,
@@ -125,20 +125,20 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	// Update Template
-	router.PUT("/form/update", gin.WrapF(httptransport.NewServer(
+	router.PUT("/update", gin.WrapF(httptransport.NewServer(
 		endpoints.UpdateFormEndpoint,
 		decodeUpdateFormRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
 
-	router.GET("/form/search", gin.WrapF(httptransport.NewServer(
+	router.GET("/search", gin.WrapF(httptransport.NewServer(
 		endpoints.FilterFormsEndpoint,
 		decodeSearchFormsRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
-	router.GET("/form/searchbyorg", gin.WrapF(httptransport.NewServer(
+	router.GET("/searchbyorg", gin.WrapF(httptransport.NewServer(
 		endpoints.SearchFormsEndpoint,
 		decodeSearchFormsByOrgNameRequest,
 		encodeResponse,
@@ -172,15 +172,23 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.PUT("organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
+	router.PUT("/organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
 		endpoints.DeactivateOrganizationEndpoint,
 		decodeDeactivateOrganizationRequest, // This uses gin.Context, not http.Request
 		encodeResponse,
 		options...,
 	).ServeHTTP))
-	router.GET("/form/listform", gin.WrapF(httptransport.NewServer(
+	router.GET("/listform", gin.WrapF(httptransport.NewServer(
 		endpoints.ListFormsEndpoint,
 		decodeListFormsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -589,6 +597,11 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 		OrganizationID: orgID,
 		Status:         status,
 	}, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {

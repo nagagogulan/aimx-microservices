@@ -14,6 +14,7 @@ type RoleService interface {
 	UpdateRole(ctx context.Context, req *dto.UpdateRoleRequest) (*dto.RoleResponse, error)
 	DeleteRole(ctx context.Context, id uuid.UUID) error
 	ListRoles(ctx context.Context) ([]dto.RoleResponse, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type roleService struct {
@@ -42,4 +43,11 @@ func (s *roleService) DeleteRole(ctx context.Context, id uuid.UUID) error {
 
 func (s *roleService) ListRoles(ctx context.Context) ([]dto.RoleResponse, error) {
 	return s.repo.GetAllRoles(ctx)
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *roleService) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "role kong api up and running",
+	}, nil
 }

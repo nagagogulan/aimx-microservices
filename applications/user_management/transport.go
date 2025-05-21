@@ -46,7 +46,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	// }))
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "user"))
 
 	// Role
 	api := router.Group("/user-profile")
@@ -72,6 +72,15 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			options...,
 		).ServeHTTP))
 	}
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeEmptyRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -133,4 +142,9 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 		"filters":         filters, // Include filters in the request
 		"type":            reqType,
 	}, nil
+}
+
+func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

@@ -14,6 +14,7 @@ type Endpoints struct {
 	ListUsersEndpoint      endpoint.Endpoint
 	DeleteUserEndpoint     endpoint.Endpoint
 	DeactivateUserEndpoint endpoint.Endpoint
+	TestKongEndpoint       endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -21,6 +22,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		ListUsersEndpoint:      makeListUsersEndpoint(s),
 		DeleteUserEndpoint:     makeDeleteUserEndpoint(s.DeleteUser),
 		DeactivateUserEndpoint: makeDeactivateUserEndpoint(s.DeactivateUser),
+		TestKongEndpoint:       makeTestKongEndpoint(s),
 	}
 }
 
@@ -104,5 +106,12 @@ func makeDeactivateUserEndpoint(handler func(context.Context, uuid.UUID) error) 
 			"status":  "success",
 			"message": fmt.Sprintf("User has been successfully deactivated"),
 		}, nil
+	}
+}
+
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// No request processing needed for this endpoint
+		return s.TestKong(ctx)
 	}
 }

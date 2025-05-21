@@ -893,3 +893,10 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 	}
 	return nil
 }
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
+	return &model.Response{
+		Message: "forms kong api up and running",
+	}, nil
+}

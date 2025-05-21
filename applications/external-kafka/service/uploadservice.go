@@ -19,6 +19,7 @@ import (
 // UploadService defines the interface for file upload operations.
 type UploadService interface {
 	UploadFile(ctx context.Context, fileHeader *multipart.FileHeader) (model.FileUploadResponse, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 // NewUploadService creates a new instance of UploadService.
@@ -83,5 +84,13 @@ func (s *uploadService) UploadFile(ctx context.Context, fileHeader *multipart.Fi
 		FileName: uniqueFileName,
 		FileSize: written,
 		FilePath: dstPath,
+	}, nil
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *uploadService) TestKong(ctx context.Context) (map[string]string, error) {
+	s.logger.Log("method", "TestKong", "status", "Kong test endpoint called")
+	return map[string]string{
+		"message": "extkafka kong api up and running",
 	}, nil
 }

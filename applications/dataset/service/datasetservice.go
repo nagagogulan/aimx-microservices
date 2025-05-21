@@ -30,6 +30,7 @@ type Service interface {
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
 	OpenFile(ctx context.Context, filePath string) (*os.File, error)
 	ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type fileService struct{}
@@ -290,6 +291,13 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 // 		FilePath: req.FilePath,
 // 	}, nil
 // }
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *fileService) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "dataset kong api up and running",
+	}, nil
+}
 
 // ExtendedChunkFileToKafka sends a file path and form data to the sample-dataset-paths Kafka topic
 func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error) {

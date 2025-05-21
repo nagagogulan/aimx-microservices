@@ -52,37 +52,37 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 	// }))
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "profile"))
 
 	// Role
-	api := router.Group("/profile")
+	// api := router.Group("/profile")
 	// r := gin.Default()
 	// endpoints := NewEndpoint(s)
 
 	// api := r.Group("/api/v1/profile")
-	{
-		api.GET("/:id", gin.WrapF(httptransport.NewServer(
-			endpoints.GetUserProfileEndpoint,
-			decodeUUIDParam, // This will now extract 'id' from the URL path
-			encodeResponse,
-			options...,
-		).ServeHTTP))
+	// {
+	router.GET("/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetUserProfileEndpoint,
+		decodeUUIDParam, // This will now extract 'id' from the URL path
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
-		// PUT: /profile
-		api.PUT("/", gin.WrapF(httptransport.NewServer(
-			endpoints.UpdateUserProfileEndpoint,
-			decodeUpdateUserRequest, // Decode body to user
-			encodeResponse,
-			options...,
-		).ServeHTTP))
+	// PUT: /profile
+	router.PUT("/", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateUserProfileEndpoint,
+		decodeUpdateUserRequest, // Decode body to user
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
-		api.POST("/image", gin.WrapF(httptransport.NewServer(
-			endpoints.UpdateProfileImageEndpoint,
-			decodeUploadProfileImageRequest, // This will now extract 'id' from the URL path
-			encodeResponse,
-			options...,
-		).ServeHTTP))
-	}
+	router.POST("/image", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateProfileImageEndpoint,
+		decodeUploadProfileImageRequest, // This will now extract 'id' from the URL path
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	// }
 
 	// General Setting APIs
 	general := router.Group("/general-setting")
@@ -152,6 +152,14 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 			options...,
 		).ServeHTTP))
 	}
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeEmptyRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }

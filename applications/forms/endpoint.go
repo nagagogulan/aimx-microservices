@@ -42,6 +42,8 @@ type Endpoints struct {
 	GetCommentsByIdEndpoint endpoint.Endpoint
 
 	DeactivateOrganizationEndpoint endpoint.Endpoint
+
+	TestKongEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -67,6 +69,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetCommentsByIdEndpoint: Middleware(makeGetCommentsByIdEndpoint(s), commonlib.TimeoutMs),
 
 		DeactivateOrganizationEndpoint: Middleware(makeDeactivateOrganizationEndpoint(s), commonlib.TimeoutMs),
+
+		TestKongEndpoint: Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -334,5 +338,15 @@ func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 		return map[string]interface{}{
 			"message": "Organization deactivated successfully",
 		}, nil
+	}
+}
+
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		res, err := s.TestKong(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
 	}
 }

@@ -23,7 +23,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r.Use(gin.Logger())
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "system"))
 
 	// Notification endpoint
 	notificationAPI := router.Group("/notifications")

@@ -25,6 +25,8 @@ type Endpoints struct {
 	GetOrganizationSettingByOrgIDEndpoint    endpoint.Endpoint
 	CreateOrganizationSettingEndpoint        endpoint.Endpoint
 	OverviewEndpoint                         endpoint.Endpoint
+
+	TestKongEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -40,6 +42,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetOrganizationSettingByOrgIDEndpoint:    MakeGetOrganizationSettingByOrgIDEndpoint(s),
 		CreateOrganizationSettingEndpoint:        makeCreateOrganizationSettingEndpoint(s),
 		OverviewEndpoint:                         makeOverviewEndpoint(s),
+		TestKongEndpoint:                         makeTestKongEndpoint(s),
 	}
 }
 
@@ -188,5 +191,12 @@ func makeUploadProfileImageEndpoint(s service.Service) endpoint.Endpoint {
 			Message:   res.Message,
 			ImagePath: res.ImagePath,
 		}, nil
+	}
+}
+
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// No request processing needed for this endpoint
+		return s.TestKong(ctx)
 	}
 }
