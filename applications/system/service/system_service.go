@@ -88,7 +88,17 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 	// replace this if transformation is required
 
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
-
+	if len(auditLogs) == 0 {
+		return map[string]interface{}{
+			"data": []interface{}{},
+			"paging_info": model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
+			},
+		}, nil
+	}
 	// Return custom shape
 	return map[string]interface{}{
 		"data": auditLogs,
@@ -106,6 +116,17 @@ func (s *service) FindAuditLogByUser(ctx context.Context, userID string, page, l
 		return nil, errcom.ErrRecordNotFounds
 	}
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	if len(logs) == 0 {
+		return map[string]interface{}{
+			"data": []interface{}{},
+			"paging_info": model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
+			},
+		}, nil
+	}
 	return map[string]interface{}{
 		"data": logs,
 		"paging_info": model.PagingInfo{
