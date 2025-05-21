@@ -66,6 +66,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 		).ServeHTTP))
 	}
 
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -167,4 +175,9 @@ func decodeFindAuditLogByUserRequest(_ context.Context, r *http.Request) (interf
 		Page:   page,
 		Limit:  limit,
 	}, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

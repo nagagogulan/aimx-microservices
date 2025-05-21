@@ -16,6 +16,7 @@ type Endpoints struct {
 	AuditLogsEndpoint           endpoint.Endpoint
 	GetAuditLogEndpoint         endpoint.Endpoint
 	FindAuditLogByUserEndpoint  endpoint.Endpoint
+	TestKongEndpoint            endpoint.Endpoint
 }
 
 // NewEndpoint initializes and returns an instance of Endpoints.
@@ -26,6 +27,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		AuditLogsEndpoint:           makeAuditLogsEndpoint(s),
 		GetAuditLogEndpoint:         makeGetAuditLogEndpoint(s),
 		FindAuditLogByUserEndpoint:  makeFindAuditLogByUserEndpoint(s),
+		TestKongEndpoint:            makeTestKongEndpoint(s),
 	}
 }
 
@@ -114,5 +116,12 @@ func makeFindAuditLogByUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*model.FindAuditByUserRequest)
 		return s.FindAuditLogByUser(ctx, req.UserID, req.Page, req.Limit)
+	}
+}
+
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// No request processing needed for this endpoint
+		return s.TestKong(ctx)
 	}
 }

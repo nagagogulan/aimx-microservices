@@ -20,6 +20,7 @@ type Service interface {
 	AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error
 	GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error)
 	FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type service struct {
@@ -135,5 +136,12 @@ func (s *service) FindAuditLogByUser(ctx context.Context, userID string, page, l
 			TotalPage:   totalPages,
 			ItemPerPage: limit,
 		},
+	}, nil
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "system kong up and running",
 	}, nil
 }
