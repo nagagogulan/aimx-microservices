@@ -161,7 +161,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 
 	router.GET("/docket/comments", gin.WrapF(httptransport.NewServer(
 		endpoints.GetCommentsByIdEndpoint,
-		decodeShortlistDocketRequest,
+		decodeGetCommentsByIdRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -198,6 +198,26 @@ func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interfa
 		fmt.Println("the error is givne as:", err)
 		return nil, err
 	}
+	return request, nil
+}
+
+func decodeGetCommentsByIdRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+
+	// Get the InteractionId from URL query parameters
+	interactionId := r.URL.Query().Get("interactionId")
+	if interactionId == "" {
+		return nil, fmt.Errorf("interactionId parameter is required")
+	}
+
+	// Create a ShortListDTO with the InteractionId from the URL
+	request := dto.ShortListDTO{
+		InteractionId: interactionId,
+	}
+
 	return request, nil
 }
 
