@@ -63,7 +63,7 @@ func (s *service) SendNotification(userID, message string) error {
 	// Send the push notification using Firebase
 	err = firebase.SendPushNotification(notificationDTO)
 	if err != nil {
-		return fmt.Errorf("error sending push notification: %v", err)
+		return fmt.Errorf("error sending push notification")
 	}
 
 	return nil

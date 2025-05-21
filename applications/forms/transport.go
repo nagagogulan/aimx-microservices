@@ -172,7 +172,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.PUT("/organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
+	router.PUT("/organization/deactivate", gin.WrapF(httptransport.NewServer(
 		endpoints.DeactivateOrganizationEndpoint,
 		decodeDeactivateOrganizationRequest, // This uses gin.Context, not http.Request
 		encodeResponse,
@@ -584,7 +584,7 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// Extract the organization_id from the URL path using http.Request
-	orgid := strings.TrimSpace(r.URL.Query().Get("organization_id"))
+	orgid := strings.TrimSpace(r.URL.Query().Get("organizationId"))
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 
 	// Convert the string to UUID
