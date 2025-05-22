@@ -429,7 +429,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	roles, err := s.RoleRepo.GetAllRoles(ctx)
 	if err != nil {
 		log.Println("Error fetching role details:", err)
-		return nil, fmt.Errorf("no roles found")
+		return nil, errcom.ErrRecordNotFounds
 	}
 
 	// Map roles by their name for easy access (with UUID)

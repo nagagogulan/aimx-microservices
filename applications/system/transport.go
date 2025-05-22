@@ -171,7 +171,7 @@ func decodeFindAuditLogByUserRequest(_ context.Context, r *http.Request) (interf
 	}
 
 	return &model.FindAuditByUserRequest{
-		UserID: q.Get("user_id"),
+		UserName: q.Get("user_name"),
 		Page:   page,
 		Limit:  limit,
 	}, nil

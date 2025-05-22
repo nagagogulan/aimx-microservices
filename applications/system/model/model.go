@@ -16,7 +16,7 @@ type PagingInfo struct {
 }
 
 type FindAuditByUserRequest struct {
-    UserID string `json:"user_id"`
+    UserName string `json:"username"`
     Page   int    `json:"page,omitempty"`
     Limit  int    `json:"limit,omitempty"`
 }
