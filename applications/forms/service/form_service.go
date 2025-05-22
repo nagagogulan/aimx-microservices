@@ -318,7 +318,7 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 
 	}
 
-	// Optional: Run async
+	// When trying to reject a pending organization
 	if org.Status == 0 && updatedForm.Status == 2 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
