@@ -21,7 +21,7 @@ type Service interface {
 	SendNotification(userID, message string) error
 	UpdateFirebaseToken(userID, token string) error
 	AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error
-	GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error)
+	GetAuditLog(ctx context.Context,username string, role string, orgID string, page int, limit int) (map[string]interface{}, error)
 	FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error)
 	TestKong(ctx context.Context) (map[string]string, error)
 }
@@ -165,9 +165,9 @@ func (s *service) AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error 
 	return s.auditRepo.InsertAuditLog(ctx, auditLog)
 }
 
-func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error) {
+func (s *service) GetAuditLog(ctx context.Context,username string, role string, orgID string, page int, limit int) (map[string]interface{}, error) {
 	// Call the repository method with pagination
-	auditLogs, total, err := s.auditRepo.FilterAuditLogsByRole(ctx, role, orgID, page, limit)
+	auditLogs, total, err := s.auditRepo.FilterAuditLogsByRole(ctx,username , role, orgID, page, limit)
 	if err != nil {
 		return map[string]interface{}{"data": []interface{}{}, "paging_info": model.PagingInfo{}}, errcom.ErrRecordNotFounds
 	}

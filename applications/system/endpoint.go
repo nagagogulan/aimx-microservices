@@ -97,13 +97,14 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 		if !ok {
 			limitFloat = 10 // default limit
 		}
+		username := req["username"].(string)
 
 		page := int(pageFloat)
 		limit := int(limitFloat)
 
 		// Call the service
 
-		response, err := s.GetAuditLog(ctx, role, orgID, page, limit)
+		response, err := s.GetAuditLog(ctx,username,role, orgID, page, limit)
 		if err != nil {
 			return nil, err
 		}

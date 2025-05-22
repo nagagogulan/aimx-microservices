@@ -3,9 +3,10 @@ module whatsdare.com/fullstack/aimx/backend
 go 1.23.1
 
 require (
-	github.com/PecozQ/aimx-library v0.0.504
+	github.com/PecozQ/aimx-library v0.0.512
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/gofrs/uuid v4.4.0+incompatible
 )
 
 require (
@@ -42,7 +43,6 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect

@@ -146,16 +146,18 @@ func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, 
 	}
 	role := r.URL.Query().Get("role")
 	orgID := r.URL.Query().Get("org_id")
+	username := r.URL.Query().Get("username")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if role == "" {
 		return nil, fmt.Errorf("role is required")
 	}
 	return map[string]interface{}{
-		"role":   role,
-		"org_id": orgID,
-		"page":   page,
-		"limit":  limit,
+		"role":     role,
+		"org_id":   orgID,
+		"page":     page,
+		"limit":    limit,
+		"username": username,
 	}, nil
 }
 
@@ -171,9 +173,9 @@ func decodeFindAuditLogByUserRequest(_ context.Context, r *http.Request) (interf
 	}
 
 	return &model.FindAuditByUserRequest{
-		UserName: q.Get("user_name"),
-		Page:   page,
-		Limit:  limit,
+		UserName: q.Get("username"),
+		Page:     page,
+		Limit:    limit,
 	}, nil
 }
 
