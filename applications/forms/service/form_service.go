@@ -285,47 +285,14 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
-	if updatedForm.Type == 3 {
-		var projectdocketName string
-		var datasetname string
-		for _, field := range updatedForm.Fields {
-			if field.Label == "Project Name" {
-				if val, ok := field.Value.(string); ok {
-					projectdocketName = val
-					break
-				}
-			}
-			if field.Label == "Dataset Name" {
-				if val, ok := field.Value.(string); ok {
-					datasetname = val
-					break
-				}
-			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "Admin",
-			Activity:       "Changed Status to " + status,
-			ProjectDocket:  projectdocketName,
-			Dataset:        datasetname,
-			Details: map[string]string{
-				"form_id":   updatedForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", updatedForm.Type),
-			},
-		}
-
-	}
 
 	// When trying to reject a pending organization
-	if org.Status == 0 && updatedForm.Status == 2 {
+	if org.Type == 1 && org.Status == 0 && updatedForm.Status == 2 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
 
 	// This is for handling already approved organization and then if we are rejecting the organization
-	if updatedForm.Status == 2 {
+	if org.Type == 1 && updatedForm.Status == 2 {
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Admin Email Address" {
 				fmt.Println("Found Admin Email Address field:")
@@ -410,13 +377,14 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		fmt.Println("OrganizationSetting created successfully for organization ID:", organizationId)
 
 	}
+
+	// If it is an organization approval or reject then send an email
 	sendEmail(orgreq.Email, status)
 
 	// Final response message
 	if status == "APPROVED" && updatedForm != nil {
 		return &model.Response{Message: "Form successfully approved"}, nil
 	}
-	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return &model.Response{Message: "Form rejected"}, nil
 }
 
