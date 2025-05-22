@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net/smtp"
 	"os"
@@ -659,6 +660,19 @@ func (s *service) ListForms(ctx context.Context, formType int, formStatus int, p
 	// } else {
 	// 	forms, total, err = s.formRepo.GetFilteredForms(ctx, formType, page, limit, searchParam)
 	// }
+	userIDStr, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+	userID, err := uuid.FromString(userIDStr)
+	if err != nil {
+		log.Println("Invalid UUID format for userID")
+		return nil, errcom.ErrInvalidOrMissingJWT
+	}
+	userDetail, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, errcom.ErrUserNotFound
+	}
+	ctx = context.WithValue(ctx, "role", userDetail.Role.Name)
+	userrole, _ := ctx.Value("role").(string)
+	fmt.Println("Role", userrole)
 	forms, total, err = s.formRepo.ListForms(ctx, formType, formStatus, page, limit, searchParam)
 
 	if err != nil {

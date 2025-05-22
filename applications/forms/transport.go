@@ -521,11 +521,15 @@ func decodeGetFilterFieldsByTypeRequest(ctx context.Context, r *http.Request) (i
 	}
 	return req, nil
 }
-func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	_, err := middleware.DecodeHeaderGetClaims(r)
+func decodeListFormsRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
+
+	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
 	var req model.SearchFormsRequest
 
 	// Get raw query params
@@ -573,6 +577,7 @@ func decodeListFormsRequest(_ context.Context, r *http.Request) (interface{}, er
 			Filter:   filters,
 			FormName: formName,
 		},
+		Ctx: ctx,
 	}
 
 	return req, nil
@@ -583,7 +588,7 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 	if err != nil {
 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
-	// Extract the organization_id from the URL path using http.Request
+	//Extract the organization_id from the URL path using http.Request
 	orgid := strings.TrimSpace(r.URL.Query().Get("organizationId"))
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 

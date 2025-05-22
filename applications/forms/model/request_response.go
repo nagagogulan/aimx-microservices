@@ -80,6 +80,7 @@ type SearchFormsRequest struct {
 	Type        int             `json:"type"`
 	Status      int             `json:"status"`
 	SearchParam dto.SearchParam `json:"searchparam"`
+	Ctx         context.Context `json:"-"`
 }
 
 type SearchFormsResponse struct {

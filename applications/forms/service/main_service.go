@@ -50,13 +50,14 @@ type service struct {
 	logger            kitlog.Logger
 	orgSettingRepo    repository.OrganizationSettingRepository
 	globalSettingRepo repository.GeneralSettingRepository
+	userRepo repository.UserCRUDService
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
-	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService) Service {
+	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService,userRepo repository.UserCRUDService) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
-		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo}
+		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo,userRepo:userRepo}
 }
