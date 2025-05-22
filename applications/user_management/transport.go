@@ -71,6 +71,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			encodeResponse,
 			options...,
 		).ServeHTTP))
+
+		api.PUT("/activate/:id", gin.WrapF(httptransport.NewServer(
+			endpoints.ActivateUserEndpoint,
+			decodeUUIDParam,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
+
 	}
 
 	// Test endpoint for Kong

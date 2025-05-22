@@ -14,6 +14,7 @@ type Endpoints struct {
 	ListUsersEndpoint      endpoint.Endpoint
 	DeleteUserEndpoint     endpoint.Endpoint
 	DeactivateUserEndpoint endpoint.Endpoint
+	ActivateUserEndpoint   endpoint.Endpoint
 	TestKongEndpoint       endpoint.Endpoint
 }
 
@@ -22,6 +23,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		ListUsersEndpoint:      makeListUsersEndpoint(s),
 		DeleteUserEndpoint:     makeDeleteUserEndpoint(s.DeleteUser),
 		DeactivateUserEndpoint: makeDeactivateUserEndpoint(s.DeactivateUser),
+		ActivateUserEndpoint:   makeActivateUserEndpoint(s.ActivateUser),
 		TestKongEndpoint:       makeTestKongEndpoint(s),
 	}
 }
@@ -73,7 +75,7 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 				filters = filterMap
 			}
 		}
-		fmt.Printf("filters", filters)
+		fmt.Printf("filters: %v\n", filters)
 
 		return s.ListUsers(ctx, orgID, userID, page, limit, search, filters, rawType)
 	}
@@ -104,7 +106,30 @@ func makeDeactivateUserEndpoint(handler func(context.Context, uuid.UUID) error) 
 
 		return map[string]interface{}{
 			"status":  "success",
-			"message": fmt.Sprintf("User has been successfully deactivated"),
+			"message": "User has been successfully deactivated",
+		}, nil
+	}
+}
+
+func makeActivateUserEndpoint(handler func(context.Context, uuid.UUID) error) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userID, ok := request.(string)
+		if !ok {
+			return nil, errcom.ErrExpectedStringID
+		}
+
+		uid, err := uuid.FromString(userID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid UUID")
+		}
+
+		if err := handler(ctx, uid); err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{
+			"status":  "success",
+			"message": "User has been successfully activated",
 		}, nil
 	}
 }

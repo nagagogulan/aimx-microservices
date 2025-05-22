@@ -13,6 +13,7 @@ type Service interface {
 	ListUsers(ctx context.Context, orgID uuid.UUID, userID uuid.UUID, page, limit int, search string, filters map[string]interface{}, reqType string) (dto.UpdatedPaginationResponse, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeactivateUser(ctx context.Context, id uuid.UUID) error
+	ActivateUser(ctx context.Context, id uuid.UUID) error
 	TestKong(ctx context.Context) (map[string]string, error)
 }
 
@@ -40,6 +41,10 @@ func (s *service) DeleteUser(ctx context.Context, id uuid.UUID) error {
 
 func (s *service) DeactivateUser(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeactivateUser(ctx, id)
+}
+
+func (s *service) ActivateUser(ctx context.Context, id uuid.UUID) error {
+	return s.repo.ActivateUser(ctx, id)
 }
 
 // TestKong is a simple endpoint to check if Kong is running
