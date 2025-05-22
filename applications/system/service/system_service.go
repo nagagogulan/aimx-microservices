@@ -111,8 +111,8 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 		},
 	}, nil
 }
-func (s *service) FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error) {
-	logs, total, err := s.auditRepo.FindAuditlogsByUserID(ctx, userID, page, limit)
+func (s *service) FindAuditLogByUser(ctx context.Context, userName string, page, limit int) (map[string]interface{}, error) {
+	logs, total, err := s.auditRepo.FindAuditlogsByUserID(ctx, userName, page, limit)
 	if err != nil {
 		return nil, errcom.ErrRecordNotFounds
 	}

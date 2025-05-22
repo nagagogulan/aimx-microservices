@@ -115,7 +115,7 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 func makeFindAuditLogByUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*model.FindAuditByUserRequest)
-		return s.FindAuditLogByUser(ctx, req.UserID, req.Page, req.Limit)
+		return s.FindAuditLogByUser(ctx, req.UserName, req.Page, req.Limit)
 	}
 }
 
