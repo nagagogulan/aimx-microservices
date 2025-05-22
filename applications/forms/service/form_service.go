@@ -93,11 +93,11 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		return nil, errcom.ErrUnableToCreate
 	}
 	var audit dto.AuditLogs
+	var datasetName string
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
 	if createdForm.Type == 2 {
-		var datasetName string
 		for _, field := range createdForm.Fields {
 			if field.Label == "Dataset Name" {
 				if val, ok := field.Value.(string); ok {
@@ -117,7 +117,6 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			Details: map[string]string{
 				"form_id":   createdForm.ID.String(),
 				"form_type": fmt.Sprintf("%d", createdForm.Type),
-				"message":   "Form created successfully",
 			},
 		}
 	} else if createdForm.Type == 3 {
@@ -128,29 +127,35 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 					projectdocketName = val
 					break
 				}
+				if field.Label == "Tagging to sample datasets" {
+					if val, ok := field.Value.(string); ok {
+						datasetName = val
+						break
+					}
+				}
 			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "User",
-			Activity:       "Form Created",
-			ProjectDocket:  projectdocketName,
-			Dataset:        "Created Project Docket",
-			Details: map[string]string{
-				"form_id":   createdForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", createdForm.Type),
-				"message":   "Form created successfully",
-			},
-		}
+			audit = dto.AuditLogs{
+				OrganizationID: orgID,
+				Timestamp:      time.Now().UTC(),
+				UserID:         userID,
+				UserName:       email,
+				UserRole:       "User",
+				Activity:       "Created Project Docket",
+				ProjectDocket:  projectdocketName,
+				Dataset:        datasetName,
+				Details: map[string]string{
+					"form_id":   createdForm.ID.String(),
+					"form_type": fmt.Sprintf("%d", createdForm.Type),
+				},
+			}
 
+		}
 	}
 
 	// Optional: Run async
 	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return createdForm, err
+
 }
 
 func (s *service) GetFormByType(ctx context.Context, doc_type, page, limit, status int) (*model.GetFormResponse, error) {
@@ -279,28 +284,9 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
-	if updatedForm.Type == 2 {
-		var datasetName string
-		for _, field := range updatedForm.Fields {
-			if field.Label == "Dataset Name" {
-				if val, ok := field.Value.(string); ok {
-					datasetName = val
-					break
-				}
-			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "Collaborator",
-			Activity:       "Updated Dataset",
-			Dataset:        datasetName,
-			Details:        map[string]string{},
-		}
-	} else if updatedForm.Type == 3 {
+	if updatedForm.Type == 3 {
 		var projectdocketName string
+		var datasetname string
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Project Name" {
 				if val, ok := field.Value.(string); ok {
@@ -308,26 +294,36 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 					break
 				}
 			}
+			if field.Label == "Dataset Name" {
+				if val, ok := field.Value.(string); ok {
+					datasetname = val
+					break
+				}
+			}
 		}
 		audit = dto.AuditLogs{
 			OrganizationID: orgID,
 			Timestamp:      time.Now().UTC(),
 			UserID:         userID,
 			UserName:       email,
-			UserRole:       "User",
-			Activity:       "Form Created",
+			UserRole:       "Admin",
+			Activity:       "Changed Status to " + status,
 			ProjectDocket:  projectdocketName,
-			Dataset:        "Updated Project Docket",
-			Details:        map[string]string{},
+			Dataset:        datasetname,
+			Details: map[string]string{
+				"form_id":   updatedForm.ID.String(),
+				"form_type": fmt.Sprintf("%d", updatedForm.Type),
+			},
 		}
 
 	}
 
-	// Optional: Run async
-	if org.Status == 0 {
+	// When trying to reject a pending organization
+	if org.Status == 0 && updatedForm.Status == 2 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
 
+	// This is for handling already approved organization and then if we are rejecting the organization
 	if updatedForm.Status == 2 {
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Admin Email Address" {
@@ -896,4 +892,11 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 		}
 	}
 	return nil
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
+	return &model.Response{
+		Message: "forms kong api up and running",
+	}, nil
 }

@@ -2,8 +2,10 @@ package subscriber
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
+	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -43,9 +45,12 @@ func NewGinServer(uploadSvc service.UploadService, logger log.Logger) *gin.Engin
 
 	// Define the upload route
 	// Group routes if you plan to have more under a common path, e.g., /api/v1
-	uploadGroup := router.Group("/subscriber") // Or just router.POST("/upload", ...)
+	uploadGroup := router.Group(fmt.Sprintf("%s/%s/%s", commonlib.BasePath, commonlib.Version, "extkafka")) // Or just router.POST("/upload", ...)
 	{
 		uploadGroup.POST("/upload", makeUploadFileGinHandler(uploadSvc, logger))
+
+		// Test endpoint for Kong
+		uploadGroup.GET("/test", makeTestKongGinHandler(uploadSvc, logger))
 	}
 
 	// Add other routes and handlers here
@@ -89,6 +94,23 @@ func makeUploadFileGinHandler(svc service.UploadService, logger log.Logger) gin.
 			// Determine appropriate status code based on error type if possible
 			// For now, using InternalServerError for service-level errors
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file: " + err.Error(), "code": http.StatusInternalServerError})
+			return
+		}
+
+		c.JSON(http.StatusOK, resp)
+	}
+}
+
+// makeTestKongGinHandler creates a Gin handler function for the test endpoint
+func makeTestKongGinHandler(svc service.UploadService, logger log.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log := c.MustGet("logger").(log.Logger) // Retrieve logger from context
+
+		// Call the service method
+		resp, err := svc.TestKong(c.Request.Context())
+		if err != nil {
+			level.Error(log).Log("method", "TestKong", "err", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute test endpoint: " + err.Error(), "code": http.StatusInternalServerError})
 			return
 		}
 

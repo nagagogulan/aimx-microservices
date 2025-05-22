@@ -21,6 +21,7 @@ type Endpoints struct {
 	// SendQREndpoint       endpoint.Endpoint
 	SendQRVerifyEndpoint endpoint.Endpoint
 	RefreshTokenEndpoint endpoint.Endpoint
+	TestKongEndpoint     endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -30,6 +31,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		verifyOTPEndpoint:    Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
 		SendQRVerifyEndpoint: Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
 		RefreshTokenEndpoint: Middleware(makeRefreshTokenEndpoint(s), common.TimeoutMs),
+		TestKongEndpoint:     Middleware(makeTestKongEndpoint(s), common.TimeoutMs),
 	}
 }
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
@@ -88,6 +90,18 @@ func makeRefreshTokenEndpoint(s service.Service) endpoint.Endpoint {
 		return model.RefreshTokenResponse{
 			Message:  res.Message,
 			JWTToken: res.JWTToken,
+		}, nil
+	}
+}
+
+func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		res, err := s.TestKong(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return model.Response{
+			Message: res.Message,
 		}, nil
 	}
 }

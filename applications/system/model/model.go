@@ -14,3 +14,9 @@ type PagingInfo struct {
 	TotalPage   int   `json:"total_page"`
 	ItemPerPage int   `json:"item_per_page"`
 }
+
+type FindAuditByUserRequest struct {
+    UserName string `json:"username"`
+    Page   int    `json:"page,omitempty"`
+    Limit  int    `json:"limit,omitempty"`
+}

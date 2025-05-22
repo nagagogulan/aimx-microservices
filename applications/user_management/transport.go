@@ -39,14 +39,14 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r.Use(gin.Logger())
 
 	// r.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+	// 	AllowOrigins:     []string{"http://54.251.96.179:3000", "http://localhost:3000"}, // Replace with your frontend's origin
 	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 	// 	AllowCredentials: true,
 	// }))
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "user"))
 
 	// Role
 	api := router.Group("/user-profile")
@@ -72,6 +72,15 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			options...,
 		).ServeHTTP))
 	}
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeEmptyRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -133,4 +142,9 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 		"filters":         filters, // Include filters in the request
 		"type":            reqType,
 	}, nil
+}
+
+func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

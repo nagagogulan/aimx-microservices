@@ -54,13 +54,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	// })
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
+		AllowOrigins:     []string{"http://54.251.96.179:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", commonlib.BasePath, commonlib.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", commonlib.BasePath, commonlib.Version, "dataset"))
 
 	//Register and Login Endpoints...
 	router.POST("/fileupload", gin.WrapF(httptransport.NewServer(
@@ -109,6 +109,14 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	router.POST("/chunkfile", gin.WrapF(httptransport.NewServer(
 		endpoints.ChunkFileToKafka,
 		decodeChunkFileRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -293,4 +301,10 @@ func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, er
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+// decodeTestKongRequest is a simple decoder for the test endpoint
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

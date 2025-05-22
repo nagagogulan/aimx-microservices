@@ -77,6 +77,8 @@ func main() {
 	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
 	go worker.StartDatasetChunkSubscriber(formRepo)
 
+	go worker.StartFileChunkWorker()
+
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(os.Stderr)

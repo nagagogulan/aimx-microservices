@@ -23,23 +23,24 @@ func MakeRoleHTTPHandler(endpoints RoleEndpoints) http.Handler {
 	r.Use(gin.Logger())
 
 	// r.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000"}, // Replace with your frontend's origin
+	// 	AllowOrigins:     []string{"http://54.251.96.179:3000", "http://localhost:3000"}, // Replace with your frontend's origin
 	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 	// 	AllowCredentials: true,
 	// }))
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "role"))
 
 	// Role
 	// Role
-	role := router.Group("/roles")
-	role.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options))
-	role.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options))
-	role.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options))
-	role.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options))
-	role.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options))
+	// role := router.Group("/roles")
+	router.POST("/", wrapEndpoint(endpoints.CreateRole, decodeCreateRole, encode, options))
+	router.GET("/:id", wrapEndpoint(endpoints.GetRoleByID, decodeUUIDParam, encode, options))
+	router.PUT("/", wrapEndpoint(endpoints.UpdateRole, decodeUpdateRole, encode, options))
+	router.DELETE("/:id", wrapEndpoint(endpoints.DeleteRole, decodeUUIDParam, encode, options))
+	router.GET("/", wrapEndpoint(endpoints.ListRoles, decodeEmpty, encode, options))
+	router.GET("/test", wrapEndpoint(endpoints.TestKong, decodeEmpty, encode, options))
 
 	// Module
 	module := router.Group("/modules")

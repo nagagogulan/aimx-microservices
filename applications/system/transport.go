@@ -13,6 +13,7 @@ import (
 	"github.com/PecozQ/aimx-library/middleware"
 	"github.com/gin-gonic/gin"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
 // MakeHTTPHandler configures HTTP handlers for the endpoints.
@@ -22,7 +23,7 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 	r.Use(gin.Logger())
 
 	// Base router group: /api/v1
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "system"))
 
 	// Notification endpoint
 	notificationAPI := router.Group("/notifications")
@@ -57,7 +58,21 @@ func MakeHTTPHandler(endpoints Endpoints) http.Handler {
 			encodeResponse,
 			options...,
 		).ServeHTTP))
+		auditLogAPI.GET("/findlogs", gin.WrapF(httptransport.NewServer(
+			endpoints.FindAuditLogByUserEndpoint,
+			decodeFindAuditLogByUserRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP))
 	}
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -142,4 +157,27 @@ func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, 
 		"page":   page,
 		"limit":  limit,
 	}, nil
+}
+
+func decodeFindAuditLogByUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	q := r.URL.Query()
+	page, err := strconv.Atoi(q.Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(q.Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	return &model.FindAuditByUserRequest{
+		UserName: q.Get("user_name"),
+		Page:   page,
+		Limit:  limit,
+	}, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

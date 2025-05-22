@@ -19,6 +19,23 @@ import (
 )
 
 func main() {
+
+	// // Get the current working directory (from where the command is run)
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	fmt.Errorf("Error getting current working directory:", err)
+	// }
+	// fmt.Println("Current Working Directory:", dir)
+
+	// // Construct the path to the .env file in the root directory
+	// envPath := filepath.Join(dir, "./.env")
+
+	// // Load the .env file from the correct path
+	// err = godotenv.Load(envPath)
+	// if err != nil {
+	// 	fmt.Errorf("Error loading .env file")
+	// }
+
 	// client, err := mongo.InitDB(&mongo.Config{
 	// 	ConnectionURI:     "mongodb+srv://karthikyoki999:SmartWork123@goperla.qvnqj.mongodb.net",
 	// 	ConnectionOptions: "retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=false",

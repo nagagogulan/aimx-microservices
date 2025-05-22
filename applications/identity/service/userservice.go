@@ -429,7 +429,7 @@ func (s *service) VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*mod
 	roles, err := s.RoleRepo.GetAllRoles(ctx)
 	if err != nil {
 		log.Println("Error fetching role details:", err)
-		return nil, fmt.Errorf("no roles found")
+		return nil, errcom.ErrRecordNotFounds
 	}
 
 	// Map roles by their name for easy access (with UUID)
@@ -552,6 +552,13 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 
 	return &model.Response{Message: "OTP verified successfully", JWTToken: jwtToken.AccessToken, IS_MFA_Enabled: userData.IsMFAEnabled,
 		User_Id: userData.ID, Refresh_Token: jwtToken.RefreshToken, Role_Id: userData.RoleID}, nil
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
+	return &model.Response{
+		Message: "kong is up and running successfully",
+	}, nil
 }
 
 // Helper function to generate JWT for a new user

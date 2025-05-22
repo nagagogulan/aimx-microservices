@@ -31,6 +31,7 @@ type Service interface {
 	CreateOrganizationSetting(ctx context.Context, setting *entities.OrganizationSetting) error
 	GenerateOverview(ctx context.Context, userID uuid.UUID, orgID *uuid.UUID) (interface{}, error)
 	UploadProfileImage(ctx context.Context, userID uuid.UUID, fileHeader *multipart.FileHeader) (*model.UploadProfileImageResponse, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type service struct {
@@ -388,7 +389,7 @@ func (s *service) UploadProfileImage(ctx context.Context, userID uuid.UUID, file
 		return nil, fmt.Errorf("unsupported file type")
 	}
 	timestamp := time.Now().Format("20060102150405") // YYYYMMDDHHMMSS
-	filePath := fmt.Sprintf("profile/%s/", userID.String())
+	filePath := fmt.Sprintf("profileimages/%s/", userID.String())
 	newFileName := fmt.Sprintf("%s_%s%s", timestamp, userID.String(), fileHeader.Filename)
 	fullPath := filepath.Join(filePath, newFileName)
 
@@ -429,4 +430,11 @@ func saveUploadedFile(fileHeader *multipart.FileHeader, dest string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "profile kong api up and running",
+	}, nil
 }

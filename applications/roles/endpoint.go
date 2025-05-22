@@ -16,6 +16,7 @@ type RoleEndpoints struct {
 	UpdateRole  endpoint.Endpoint
 	DeleteRole  endpoint.Endpoint
 	ListRoles   endpoint.Endpoint
+	TestKong    endpoint.Endpoint
 
 	CreateModule  endpoint.Endpoint
 	GetModuleByID endpoint.Endpoint
@@ -52,6 +53,7 @@ func NewRoleEndpoints(
 		UpdateRole:  wrap(serviceWrapperTyped[dto.UpdateRoleRequest, dto.RoleResponse](roleService.UpdateRole)),
 		DeleteRole:  wrapUUIDOnly(roleService.DeleteRole),
 		ListRoles:   wrapListTyped(roleService.ListRoles),
+		TestKong:    wrapTestKong(roleService.TestKong),
 
 		// Modules
 		CreateModule:  wrap(serviceWrapperTyped[dto.CreateModuleRequest, dto.ModuleResponse](moduleService.CreateModule)),
@@ -160,5 +162,11 @@ func wrapListPointerTyped[Req any, Res any](f func(context.Context, *Req) ([]Res
 			result = append(result, item)
 		}
 		return result, nil
+	}
+}
+
+func wrapTestKong(f func(context.Context) (map[string]string, error)) endpoint.Endpoint {
+	return func(ctx context.Context, _ interface{}) (interface{}, error) {
+		return f(ctx)
 	}
 }

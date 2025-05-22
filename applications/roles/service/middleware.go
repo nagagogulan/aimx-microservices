@@ -11,9 +11,9 @@ func CORS(next http.Handler) http.Handler {
 
 		// Allowlisted origins
 		allowedOrigins := map[string]bool{
-			"http://localhost:3000":      true,
-			"http://54.251.209.147:3000": true,
-			"http://13.229.196.7:3000":   true,
+			"http://localhost:3000":     true,
+			"http://54.251.96.179:3000": true,
+			"http://13.229.196.7:3000":  true,
 		}
 
 		// Log incoming origin

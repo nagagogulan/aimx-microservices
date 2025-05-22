@@ -28,13 +28,13 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 	// 	c.Next()
 	// })
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
+		AllowOrigins:     []string{"http://54.251.96.179:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", common.BasePath, common.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", common.BasePath, common.Version, "identity"))
 
 	//Register and Login Endpoints...
 	router.POST("/login", gin.WrapF(httptransport.NewServer(
@@ -61,6 +61,15 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	)))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -103,4 +112,9 @@ func decodeRefreshTokenRequest(_ context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	return &req, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }

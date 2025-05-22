@@ -12,6 +12,7 @@ import (
 // Endpoints holds all Go kit endpoints for the subscriber service.
 type Endpoints struct {
 	UploadFileEndpoint endpoint.Endpoint
+	TestKongEndpoint   endpoint.Endpoint
 	// Add other endpoints here if any
 }
 
@@ -21,6 +22,7 @@ type Endpoints struct {
 func MakeEndpoints(svc service.UploadService) Endpoints {
 	return Endpoints{
 		UploadFileEndpoint: MakeUploadFileEndpoint(svc),
+		TestKongEndpoint:   MakeTestKongEndpoint(svc),
 	}
 }
 
@@ -48,6 +50,14 @@ type InvalidRequestTypeError struct {
 func (e *InvalidRequestTypeError) Error() string {
 	return "invalid request type" // Simplified error message
 	// return fmt.Sprintf("invalid request type: expected %s, got %T", e.Expected, e.Actual)
+}
+
+// MakeTestKongEndpoint creates an endpoint for the TestKong method of the UploadService.
+func MakeTestKongEndpoint(svc service.UploadService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		// No request processing needed for this endpoint
+		return svc.TestKong(ctx)
+	}
 }
 
 // Add other endpoint creators here if you have more services/methods

@@ -19,6 +19,8 @@ type Service interface {
 	UpdateFirebaseToken(userID, token string) error
 	AuditLogs(ctx context.Context, auditLog *dto.AuditLogs) error
 	GetAuditLog(ctx context.Context, role string, orgID string, page int, limit int) (map[string]interface{}, error)
+	FindAuditLogByUser(ctx context.Context, userID string, page, limit int) (map[string]interface{}, error)
+	TestKong(ctx context.Context) (map[string]string, error)
 }
 
 type service struct {
@@ -62,7 +64,7 @@ func (s *service) SendNotification(userID, message string) error {
 	// Send the push notification using Firebase
 	err = firebase.SendPushNotification(notificationDTO)
 	if err != nil {
-		return fmt.Errorf("error sending push notification: %v", err)
+		return fmt.Errorf("error sending push notification")
 	}
 
 	return nil
@@ -80,14 +82,24 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 	// Call the repository method with pagination
 	auditLogs, total, err := s.auditRepo.FilterAuditLogsByRole(ctx, role, orgID, page, limit)
 	if err != nil {
-		return nil, errcom.ErrRecordNotFounds
+		return map[string]interface{}{"data": []interface{}{}, "paging_info": model.PagingInfo{}}, errcom.ErrRecordNotFounds
 	}
 
 	// Optional: transform to flattenedData if needed, otherwise just use auditLogs
 	// replace this if transformation is required
 
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
-
+	if len(auditLogs) == 0 {
+		return map[string]interface{}{
+			"data": []interface{}{},
+			"paging_info": model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
+			},
+		}, nil
+	}
 	// Return custom shape
 	return map[string]interface{}{
 		"data": auditLogs,
@@ -97,5 +109,39 @@ func (s *service) GetAuditLog(ctx context.Context, role string, orgID string, pa
 			TotalPage:   totalPages,
 			ItemPerPage: limit,
 		},
+	}, nil
+}
+func (s *service) FindAuditLogByUser(ctx context.Context, userName string, page, limit int) (map[string]interface{}, error) {
+	logs, total, err := s.auditRepo.FindAuditlogsByUserID(ctx, userName, page, limit)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	if len(logs) == 0 {
+		return map[string]interface{}{
+			"data": []interface{}{},
+			"paging_info": model.PagingInfo{
+				TotalItems:  0,
+				CurrentPage: page,
+				TotalPage:   0,
+				ItemPerPage: limit,
+			},
+		}, nil
+	}
+	return map[string]interface{}{
+		"data": logs,
+		"paging_info": model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
+	}, nil
+}
+
+// TestKong is a simple endpoint to check if Kong is running
+func (s *service) TestKong(ctx context.Context) (map[string]string, error) {
+	return map[string]string{
+		"message": "system kong up and running",
 	}, nil
 }

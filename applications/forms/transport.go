@@ -56,13 +56,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	// })
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://54.251.209.147:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
+		AllowOrigins:     []string{"http://54.251.96.179:3000", "http://localhost:3000", "http://13.229.196.7:3000"}, // Replace with your frontend's origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
 
-	router := r.Group(fmt.Sprintf("%s/%s", commonlib.BasePath, commonlib.Version))
+	router := r.Group(fmt.Sprintf("%s/%s/%s", commonlib.BasePath, commonlib.Version, "form"))
 
 	//Register and Login Endpoints...
 	router.POST("/template/create", gin.WrapF(httptransport.NewServer(
@@ -95,7 +95,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.POST("/form/create", gin.WrapF(httptransport.NewServer(
+	router.POST("/create", gin.WrapF(httptransport.NewServer(
 		endpoints.CreateFormEndpoint,
 		decodeCreateFormRequest,
 		encodeResponse,
@@ -103,7 +103,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	// Get Template by ID
-	router.GET("/form", gin.WrapF(httptransport.NewServer(
+	router.GET("/", gin.WrapF(httptransport.NewServer(
 		endpoints.GetFormByTypeEndpoint, // ✅ changed from GetTemplateByTypeEndpoint
 		decodeGetFormByTypeRequest,      // ✅ updated to match GetTemplateByID
 		encodeResponse,
@@ -125,20 +125,20 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	// Update Template
-	router.PUT("/form/update", gin.WrapF(httptransport.NewServer(
+	router.PUT("/update", gin.WrapF(httptransport.NewServer(
 		endpoints.UpdateFormEndpoint,
 		decodeUpdateFormRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
 
-	router.GET("/form/search", gin.WrapF(httptransport.NewServer(
+	router.GET("/search", gin.WrapF(httptransport.NewServer(
 		endpoints.FilterFormsEndpoint,
 		decodeSearchFormsRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
-	router.GET("/form/searchbyorg", gin.WrapF(httptransport.NewServer(
+	router.GET("/searchbyorg", gin.WrapF(httptransport.NewServer(
 		endpoints.SearchFormsEndpoint,
 		decodeSearchFormsByOrgNameRequest,
 		encodeResponse,
@@ -161,7 +161,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 
 	router.GET("/docket/comments", gin.WrapF(httptransport.NewServer(
 		endpoints.GetCommentsByIdEndpoint,
-		decodeShortlistDocketRequest,
+		decodeGetCommentsByIdRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -172,15 +172,23 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.PUT("organization/deactivate/:organization_id", gin.WrapF(httptransport.NewServer(
+	router.PUT("/organization/deactivate", gin.WrapF(httptransport.NewServer(
 		endpoints.DeactivateOrganizationEndpoint,
 		decodeDeactivateOrganizationRequest, // This uses gin.Context, not http.Request
 		encodeResponse,
 		options...,
 	).ServeHTTP))
-	router.GET("/form/listform", gin.WrapF(httptransport.NewServer(
+	router.GET("/listform", gin.WrapF(httptransport.NewServer(
 		endpoints.ListFormsEndpoint,
 		decodeListFormsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Test endpoint for Kong
+	router.GET("/test", gin.WrapF(httptransport.NewServer(
+		endpoints.TestKongEndpoint,
+		decodeTestKongRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -198,6 +206,26 @@ func decodeShortlistDocketRequest(ctx context.Context, r *http.Request) (interfa
 		fmt.Println("the error is givne as:", err)
 		return nil, err
 	}
+	return request, nil
+}
+
+func decodeGetCommentsByIdRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+
+	// Get the InteractionId from URL query parameters
+	interactionId := r.URL.Query().Get("interactionId")
+	if interactionId == "" {
+		return nil, fmt.Errorf("interactionId parameter is required")
+	}
+
+	// Create a ShortListDTO with the InteractionId from the URL
+	request := dto.ShortListDTO{
+		InteractionId: interactionId,
+	}
+
 	return request, nil
 }
 
@@ -427,7 +455,15 @@ func decodeUpdateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 }
 
 func decodeUpdateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	claims, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
 	var request dto.UpdateFormRequest
+	request.Ctx = ctx
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -548,19 +584,24 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
 	// Extract the organization_id from the URL path using http.Request
-	orgid := strings.TrimSpace(r.URL.Query().Get("organization_id"))
+	orgid := strings.TrimSpace(r.URL.Query().Get("organizationId"))
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 
 	// Convert the string to UUID
 	orgID, err := uuid.FromString(orgid)
 	if err != nil {
-		return nil, fmt.Errorf("invalid organization ID")
+		return nil, fmt.Errorf("organization_id missing or invalid")
 	}
 
 	return dto.DeactivateOrganizationRequest{
 		OrganizationID: orgID,
 		Status:         status,
 	}, nil
+}
+
+func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// No request body needed for this endpoint
+	return nil, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {

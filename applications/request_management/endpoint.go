@@ -18,6 +18,7 @@ type Endpoints struct {
 	GetAllRequestsEndpoint      endpoint.Endpoint
 	GetRequestByIDEndpoint      endpoint.Endpoint
 	ListRequestTypes            endpoint.Endpoint
+	TestKongEndpoint            endpoint.Endpoint
 }
 
 func NewEndpoint(s service.RequestService) Endpoints {
@@ -28,6 +29,7 @@ func NewEndpoint(s service.RequestService) Endpoints {
 		GetAllRequestsEndpoint:      MakeGetAllRequestsEndpoint(s),
 		GetRequestByIDEndpoint:      MakeGetRequestByIDEndpoint(s),
 		ListRequestTypes:            makeListRequestTypesEndpoint(s),
+		TestKongEndpoint:            makeTestKongEndpoint(s),
 	}
 }
 
@@ -81,7 +83,6 @@ func MakeGetRequestByIDEndpoint(s service.RequestService) endpoint.Endpoint {
 	}, common.TimeoutMs)
 }
 
-
 func Middleware(ep endpoint.Endpoint, timeoutMs int) endpoint.Endpoint {
 	return ep // Add timeout middleware if needed
 }
@@ -96,5 +97,12 @@ func makeListRequestTypesEndpoint(s service.RequestService) endpoint.Endpoint {
 		return dto.ListRequestTypesResponse{
 			RequestTypes: requestTypes,
 		}, nil
+	}
+}
+
+func makeTestKongEndpoint(s service.RequestService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Call the service to test Kong
+		return s.TestKong(ctx)
 	}
 }

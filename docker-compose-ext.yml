@@ -21,7 +21,7 @@ services:
   #     - MONGO_URI=${EXT_MONGO_URI}
   #     - MONGO_DBNAME=${EXT_MONGO_DBNAME}
   #     - KAFKA_URL=${EXT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}7c43a08e94cc
+  #     - SMTP_EMAIL=${SMTP_EMAIL}
   #     - SMTP_PAS=${SMTP_PAS}
   #     - ACCESS_SECRET=${ACCESS_SECRET}
   #     - REFRESH_SECRET=${REFRESH_SECRET}
@@ -79,10 +79,7 @@ services:
   #     - SMTP_PAS=${SMTP_PAS}
   #     - ACCESS_SECRET=${ACCESS_SECRET}
   #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
+  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}path=dockets/20250521144105-ff0c76bf-154d-4462-8cc9-3dff783af11d.zip
   #   networks:
   #     - aimx-network
 
@@ -195,13 +192,13 @@ services:
   #     - aimx-network
 
 
-  # ext-system:
+  # ext-external-kafka:
   #   build:
-  #     context: ./applications/system
+  #     context: ./applications/external-kafka
   #     dockerfile: Dockerfile
-  #   container_name: system-container
+  #   container_name: external-kafka-container
   #   ports:
-  #     - "8089:8089"
+  #     - "8088:8088"
   #   environment:
   #     - DBHOST=${EXT_DBHOST}
   #     - DBPORT=${EXT_DBPORT}
@@ -217,30 +214,19 @@ services:
   #     - REFRESH_SECRET=${REFRESH_SECRET}
   #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
   #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #     - FIREBASE_TYPE=${FIREBASE_TYPE}
-  #     - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-  #     - FIREBASE_PRIVATE_KEY_ID=${FIREBASE_PRIVATE_KEY_ID}
-  #     - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
-  #     - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
-  #     - FIREBASE_CLIENT_ID=${FIREBASE_CLIENT_ID}  
-  #     - FIREBASE_AUTH_URI=${FIREBASE_AUTH_URI}
-  #     - FIREBASE_TOKEN_URI=${FIREBASE_TOKEN_URI}
-  #     - FIREBASE_AUTH_PROVIDER_X509_CERT_URL=${FIREBASE_AUTH_PROVIDER_X509_CERT_URL}
-  #     - FIREBASE_CLIENT_X509_CERT_URL=${FIREBASE_CLIENT_X509_CERT_URL}
-  #     - FIREBASE_UNIVERSE_DOMAIN=${FIREBASE_UNIVERSE_DOMAIN}  
   #   env_file:
   #     - .env
   #   networks:
-  #     - aimx-network    
+  #     - aimx-network
 
 
-  ext-external-kafka:
+  ext-system:
     build:
-      context: ./applications/external-kafka
+      context: ./applications/system
       dockerfile: Dockerfile
-    container_name: external-kafka-container
+    container_name: system-container
     ports:
-      - "8088:8088"
+      - "8089:8089"
     environment:
       - DBHOST=${EXT_DBHOST}
       - DBPORT=${EXT_DBPORT}
@@ -259,4 +245,4 @@ services:
     env_file:
       - .env
     networks:
-      - aimx-network
+      - aimx-network      
