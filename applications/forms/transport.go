@@ -185,7 +185,7 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	router.GET("/form/listform", gin.WrapF(httptransport.NewServer(
+	router.GET("/listform", gin.WrapF(httptransport.NewServer(
 		endpoints.ListFormsEndpoint,
 		decodeListFormsRequest,
 		encodeResponse,
