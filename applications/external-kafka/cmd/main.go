@@ -11,14 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	// Gin is now used in the subscriber package (transport.go)
-	// "github.com/gin-gonic/gin"
 
 	subscriber "whatsdare.com/fullstack/aimx/backend" // Alias for the subscriber package
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -94,6 +92,19 @@ func main() {
 	level.Info(logger).Log("msg", "subscriber service with Gin starting")
 	defer level.Info(logger).Log("msg", "subscriber service with Gin ended")
 
+	// Initialize database connection
+	db, err := pgsql.InitDB(&pgsql.Config{
+		DBHost:     os.Getenv("DBHOST"),
+		DBPort:     5432, // You might want to make this configurable
+		DBUser:     os.Getenv("DBUSER"),
+		DBPassword: os.Getenv("DBPASSWORD"),
+		DBName:     os.Getenv("DBNAME"),
+	})
+	if err != nil {
+		level.Error(logger).Log("msg", "Failed to connect to database", "err", err)
+		os.Exit(1)
+	}
+
 	// Create the upload service
 	var uploadSvc service.UploadService
 	{
@@ -101,6 +112,17 @@ func main() {
 		// If you add middleware for the service, wrap it here:
 		// uploadSvc = service.NewLoggingMiddleware(log.With(logger, "component", "LoggingMiddleware"))(uploadSvc)
 	}
+
+	// Initialize repositories
+	docketStatusRepo := repository.NewDocketStatusRepositoryService(db)
+
+	// Initialize services
+	statusSvc := service.NewStatusService(docketStatusRepo, logger)
+
+	// Start the docket status worker in a goroutine
+	go func() {
+		worker.StartDocketStatusWorker(statusSvc)
+	}()
 
 	// Create Gin HTTP server (router)
 	// The NewGinServer function is defined in applications/subscriber/transport.go
@@ -126,18 +148,6 @@ func main() {
 	if err != nil {
 		// log.Fatalf("HTTP server failed: %v", err)
 	}
-
-	// go func() {
-	// 	// level.Info(logger).Log("transport", "HTTP (Gin)", "addr", *httpAddr, "upload_dir", *uploadDir)
-	// 	server := &http.Server{
-	// 		Addr:   ":" + strconv.Itoa(8089),
-	// 		Handler: ginRouter, // Use the Gin router as the handler
-	// 		ReadTimeout:  1 * time.Hour,
-	// 		WriteTimeout: 1 * time.Hour,
-	// 		IdleTimeout:  1 * time.Hour,
-	// 	}
-	// 	errs <- server.ListenAndServe()
-	// }()
 
 	level.Error(logger).Log("exit", <-errs)
 }

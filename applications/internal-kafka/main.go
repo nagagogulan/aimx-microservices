@@ -3,15 +3,22 @@ package main
 import (
 	"context"
 	"encoding/json"
-
-	// "fmt" // Already removed
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"video-subscriber/service" // Use your local service package instead
+	"video-subscriber/worker"
+
+	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/kafka"
+	kafkas "github.com/segmentio/kafka-go"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	temporalclient "go.temporal.io/sdk/client" // Use an alias for the temporal client package
 )
 
 // Message represents the structure of a message received from the topic,
@@ -21,6 +28,13 @@ type Message struct {
 	Data        []byte `json:"data"`
 	ChunkIndex  int    `json:"chunk_index"`   // Changed from ChunkID, tag to chunk_index
 	IsLastChunk bool   `json:"is_last_chunk"` // Flag indicating if this is the last chunk of the file
+}
+
+// DocketEvaluationMessage represents the structure of a message for docket evaluation
+type DocketEvaluationMessage struct {
+	DocketUUID string                 `json:"docket_uuid"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Timestamp  string                 `json:"timestamp"`
 }
 
 // FIXME: Need to check and store in the same file path as the external
@@ -75,18 +89,179 @@ func messageHandler(msg Message) bool {
 	return true
 }
 
+// Function to handle docket evaluation messages
+func handleDocketEvaluation(m kafkas.Message, formsService service.FormsService) {
+	log.Printf("Received docket evaluation message: Key: %s", string(m.Key))
+
+	var evalMsg DocketEvaluationMessage
+	if err := json.Unmarshal(m.Value, &evalMsg); err != nil {
+		log.Printf("Error unmarshalling docket evaluation message: %v", err)
+		return
+	}
+
+	log.Printf("Processing docket evaluation request for UUID: %s", evalMsg.DocketUUID)
+
+	// Log original metadata for debugging
+	metadataBytes, _ := json.MarshalIndent(evalMsg.Metadata, "", "  ")
+	log.Printf("Original docket metadata: %s", string(metadataBytes))
+
+	// Update metadata with form data
+	updatedMetadata, err := formsService.UpdateMetadataWithFormData(evalMsg.Metadata)
+	if err != nil {
+		log.Printf("Error updating metadata with form data: %v", err)
+		// Continue processing with original metadata
+	} else {
+		// Update the metadata in the evaluation message
+		evalMsg.Metadata = updatedMetadata
+
+		// Log the updated metadata
+		updatedMetadataBytes, _ := json.MarshalIndent(evalMsg.Metadata, "", "  ")
+		log.Printf("Updated docket metadata: %s", string(updatedMetadataBytes))
+	}
+
+	// Post the updated metadata to Temporal queue
+	err = postToTemporalQueue(evalMsg.DocketUUID, evalMsg.Metadata)
+	if err != nil {
+		log.Printf("Error posting to Temporal queue: %v", err)
+	} else {
+		log.Printf("Successfully posted metadata to Temporal queue for docket UUID: %s", evalMsg.DocketUUID)
+	}
+
+	log.Printf("Docket evaluation request processed for UUID: %s", evalMsg.DocketUUID)
+}
+
+// postToTemporalQueue sends the updated metadata to a Temporal workflow
+func postToTemporalQueue(docketUUID string, metadata map[string]interface{}) error {
+	// Get Temporal client configuration from environment variables
+	temporalAddress := os.Getenv("TEMPORAL_ADDRESS")
+	if temporalAddress == "" {
+		// Try to use the hardcoded IP address instead of localhost
+		temporalAddress = "54.251.96.179:7233"
+		log.Printf("TEMPORAL_ADDRESS not set, using: %s", temporalAddress)
+	}
+
+	namespace := os.Getenv("TEMPORAL_NAMESPACE")
+	if namespace == "" {
+		namespace = "default" // Default namespace
+		log.Printf("TEMPORAL_NAMESPACE not set, using default: %s", namespace)
+	}
+
+	taskQueue := os.Getenv("TEMPORAL_TASK_QUEUE")
+	if taskQueue == "" {
+		taskQueue = "evaluation" // Default task queue
+		log.Printf("TEMPORAL_TASK_QUEUE not set, using default: %s", taskQueue)
+	}
+
+	// Generate a workflow ID using the docket UUID
+	workflowID := fmt.Sprintf("workflow-%s", docketUUID)
+
+	log.Printf("Connecting to Temporal server at %s", temporalAddress)
+
+	// Create Temporal client
+	c, err := temporalclient.NewClient(temporalclient.Options{
+		HostPort:  temporalAddress,
+		Namespace: namespace,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Temporal client: %w", err)
+	}
+	defer c.Close()
+
+	// Ensure the UUID is in the metadata
+	metadata["uuid"] = docketUUID
+
+	// Log the payload being sent to Temporal
+	payloadBytes, _ := json.MarshalIndent(metadata, "", "  ")
+	log.Printf("Sending payload to Temporal workflow:\n%s", string(payloadBytes))
+
+	// Prepare workflow options
+	options := temporalclient.StartWorkflowOptions{
+		ID:        workflowID,
+		TaskQueue: taskQueue,
+	}
+
+	// Start the workflow
+	we, err := c.ExecuteWorkflow(context.Background(), options, "runEval", metadata)
+	if err != nil {
+		return fmt.Errorf("failed to execute workflow: %w", err)
+	}
+
+	log.Printf("Started workflow execution. WorkflowID: %s, RunID: %s", we.GetID(), we.GetRunID())
+	return nil
+}
+
 func main() {
 	log.Println("Starting Kafka video chunk subscriber...")
+
+	// Initialize MongoDB connection for form repository
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		// Default MongoDB URI if environment variable is not set
+		mongoURI = "mongodb://13.229.196.7:27017"
+		log.Printf("MONGO_URI not set, using default: %s", mongoURI)
+	}
+
+	mongoDBName := os.Getenv("MONGO_DBNAME")
+	if mongoDBName == "" {
+		mongoDBName = "mydb"
+		log.Printf("MONGO_DBNAME not set, using default: %s", mongoDBName)
+	}
+
+	log.Printf("Connecting to MongoDB at %s, database: %s", mongoURI, mongoDBName)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Connect to MongoDB
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		log.Fatalf("Error connecting to MongoDB: %v", err)
+	}
+
+	// Ping the database
+	if err := mongoClient.Ping(ctx, nil); err != nil {
+		log.Fatalf("Could not ping to MongoDB: %v", err)
+	}
+
+	fmt.Println("Successfully connected to MongoDB!")
+
+	// Get a handle to the database
+	db := mongoClient.Database(mongoDBName)
+	formRepo := repository.NewFormRepository(db)
+	defer func() {
+		if err := mongoClient.Disconnect(context.Background()); err != nil {
+			log.Printf("Error disconnecting from MongoDB: %v", err)
+		}
+	}()
+
+	// Initialize the forms service
+	formsService := service.NewFormsService(formRepo)
+
+	// Get Kafka broker address from environment variable
+	kafkaBrokerAddress := os.Getenv("KAFKA_BROKER_ADDRESS")
+	if kafkaBrokerAddress == "" {
+		kafkaBrokerAddress = "13.229.196.7:9092" // Use the same IP as MongoDB
+		log.Printf("KAFKA_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
+	}
 
 	topic := "docket-chunks"
 	groupID := "docket-chunk-consumer-group"
 
-	r := kafka.GetKafkaReader(topic, groupID, os.Getenv("KAFKA_BROKER_ADDRESS"))
+	r := kafka.GetKafkaReader(topic, groupID, kafkaBrokerAddress)
 	defer r.Close()
 
-	log.Printf("Subscribed to Kafka topic '%s' with group ID '%s'", topic, groupID)
+	// Create a reader for the docket evaluation topic
+	evalTopic := "send-docket-for-evaluation"
+	evalGroupID := "docket-evaluation-consumer-group"
 
-	ctx, cancel := context.WithCancel(context.Background())
+	evalReader := kafka.GetKafkaReader(evalTopic, evalGroupID, kafkaBrokerAddress)
+	defer evalReader.Close()
+
+	log.Printf("Subscribed to Kafka topics: '%s' with group ID '%s' and '%s' with group ID '%s' at broker %s",
+		topic, groupID, evalTopic, evalGroupID, kafkaBrokerAddress)
+
+	ctx, cancel = context.WithCancel(context.Background())
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
@@ -96,7 +271,73 @@ func main() {
 		cancel()
 	}()
 
+	// Start a goroutine to handle docket evaluation messages
+	go func() {
+		log.Println("Starting docket evaluation message consumer...")
+		for {
+			select {
+			case <-ctx.Done():
+				log.Println("Context cancelled, exiting docket evaluation consumer.")
+				return
+			default:
+				readCtx, readCancel := context.WithTimeout(ctx, 5*time.Second)
+				m, err := evalReader.ReadMessage(readCtx)
+				readCancel()
+
+				if err != nil {
+					if err == context.DeadlineExceeded {
+						continue
+					}
+					if err == context.Canceled {
+						log.Println("ReadMessage context cancelled for evaluation consumer.")
+						return
+					}
+					log.Printf("Error reading evaluation message from Kafka: %v", err)
+					time.Sleep(1 * time.Second)
+					continue
+				}
+
+				// Handle the docket evaluation message with the forms service
+				handleDocketEvaluation(m, formsService)
+			}
+		}
+	}()
+
 	log.Println("Waiting for messages...")
+
+	// Initialize Temporal client for workflow monitoring
+	temporalAddress := os.Getenv("TEMPORAL_ADDRESS")
+	if temporalAddress == "" {
+		temporalAddress = "54.251.96.179:7233" // Use the IP address instead of localhost
+		log.Printf("TEMPORAL_ADDRESS not set, using: %s", temporalAddress)
+	}
+
+	namespace := os.Getenv("TEMPORAL_NAMESPACE")
+	if namespace == "" {
+		namespace = "default" // Default namespace
+		log.Printf("TEMPORAL_NAMESPACE not set, using default: %s", namespace)
+	}
+
+	log.Printf("Initializing Temporal client at %s", temporalAddress)
+
+	// Create Temporal client
+	temporalClient, err := temporalclient.NewClient(temporalclient.Options{
+		HostPort:  temporalAddress,
+		Namespace: namespace,
+	})
+	if err != nil {
+		log.Printf("Warning: Failed to create Temporal client: %v", err)
+		log.Println("Continuing without Temporal client...")
+	} else {
+		defer temporalClient.Close()
+		log.Println("Successfully connected to Temporal server")
+	}
+
+	// Start the metric worker in a goroutine
+	go func() {
+		log.Println("Starting metric worker...")
+		worker.StartMetricWorker()
+	}()
 
 	for {
 		select {

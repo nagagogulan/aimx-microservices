@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -16,10 +17,13 @@ import (
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
-	kafka "github.com/PecozQ/aimx-library/kafka"
-	middleware "github.com/PecozQ/aimx-library/middleware"
+	kafkas "github.com/PecozQ/aimx-library/kafka"
+
+	// middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gofrs/uuid"
+	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"whatsdare.com/fullstack/aimx/backend/model"
 )
 
@@ -86,6 +90,72 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 				return nil, errcom.ErrUnableToCreate
 			}
 			return createdForm, err
+		}
+
+	} else if form.Type == 3 {
+		// Validate metadata for type=3 (docket form)
+		fmt.Printf("Form: %+v\n", form)
+
+		// Look for metadata in the Fields array
+		var metadataField map[string]interface{}
+
+		// First check if form.MetaData is already set
+		if form.MetaData != nil {
+			metadata, ok := form.MetaData.(map[string]interface{})
+			if ok && metadata != nil {
+				// Use existing metadata
+				metadataField = metadata
+			}
+		}
+
+		// If metadata is not set, try to find it in the Fields
+		if metadataField == nil {
+			for _, field := range form.Fields {
+				if field.Label == "MetaData" {
+					if metaValue, ok := field.Value.(map[string]interface{}); ok && metaValue != nil {
+						// Found metadata in the fields
+						metadataField = metaValue
+
+						// Also set it in the form.MetaData for future use
+						form.MetaData = metadataField
+						break
+					}
+				}
+			}
+		}
+
+		// Check if we found valid metadata
+		if metadataField == nil {
+			return nil, fmt.Errorf("valid metadata is required for type=3 forms")
+		}
+
+		// Continue with validation using metadataField
+		// Check required fields
+		requiredFields := []string{"dataType", "taskType", "modelFramework", "modelArchitecture", "modelDatasetUrl"}
+		for _, field := range requiredFields {
+			if _, exists := metadataField[field]; !exists || metadataField[field] == nil {
+				return nil, fmt.Errorf("missing required metadata field: %s", field)
+			}
+		}
+
+		// Validate modelWeightUrl structure
+		weightUrl, exists := metadataField["modelWeightUrl"]
+		if !exists || weightUrl == nil {
+			return nil, fmt.Errorf("modelWeightUrl is required")
+		}
+
+		weightUrlMap, ok := weightUrl.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("modelWeightUrl must be an object")
+		}
+
+		// Check if it has path OR (link and pat)
+		if path, hasPath := weightUrlMap["path"]; hasPath && path != "" {
+			// Valid path provided
+		} else if link, hasLink := weightUrlMap["link"]; hasLink && link != "" {
+			// Valid link provided, pat is optional
+		} else {
+			return nil, fmt.Errorf("modelWeightUrl must contain either a non-empty path or link")
 		}
 	}
 
@@ -913,4 +983,152 @@ func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
 	return &model.Response{
 		Message: "forms kong api up and running",
 	}, nil
+}
+
+func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*model.Response, error) {
+	// Get the form by ID
+	form, err := s.formRepo.GetFormById(ctx, docketUUID)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", err.Error(), err, "DocketUUID", docketUUID)
+		return nil, errcom.ErrRecordNotFounds
+	}
+
+	// Check if the form type is 3 (docket)
+	if form.Type != 3 {
+		return nil, fmt.Errorf("only docket forms (type 3) can be sent for evaluation")
+	}
+
+	// Debug: Print form details
+	fmt.Printf("Form ID: %s, Type: %d\n", docketUUID, form.Type)
+	fmt.Printf("Form MetaData: %+v\n", form.MetaData)
+	fmt.Printf("Form has %d fields\n", len(form.Fields))
+
+	// Create a map to hold our metadata
+	metadata := make(map[string]interface{})
+
+	// Check if form.MetaData is primitive.D (BSON document)
+	if bsonDoc, ok := form.MetaData.(primitive.D); ok {
+		fmt.Println("Form.MetaData is primitive.D, converting to map")
+		// Convert primitive.D to map
+		for _, elem := range bsonDoc {
+			metadata[elem.Key] = elem.Value
+		}
+	} else if mapData, ok := form.MetaData.(map[string]interface{}); ok && mapData != nil {
+		fmt.Println("Form.MetaData is already a map")
+		metadata = mapData
+	} else {
+		fmt.Println("Form.MetaData is not in a recognized format, looking in fields")
+
+		// Look for metadata in fields
+		for _, field := range form.Fields {
+			if field.Label == "MetaData" {
+				fmt.Printf("Found field with label MetaData: %+v\n", field)
+
+				// Check if field.Value is primitive.D
+				if bsonDoc, ok := field.Value.(primitive.D); ok {
+					fmt.Println("Field.Value is primitive.D, converting to map")
+					// Convert primitive.D to map
+					for _, elem := range bsonDoc {
+						metadata[elem.Key] = elem.Value
+
+						// Special handling for nested BSON documents like modelWeightUrl
+						if elem.Key == "modelWeightUrl" {
+							if nestedDoc, ok := elem.Value.(primitive.D); ok {
+								weightUrlMap := make(map[string]interface{})
+								for _, nestedElem := range nestedDoc {
+									weightUrlMap[nestedElem.Key] = nestedElem.Value
+								}
+								metadata["modelWeightUrl"] = weightUrlMap
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Check if we found valid metadata
+	if len(metadata) == 0 {
+		return nil, fmt.Errorf("docket has invalid or missing metadata")
+	}
+
+	fmt.Printf("Final metadata map: %+v\n", metadata)
+
+	// Validate required metadata fields
+	requiredFields := []string{"dataType", "taskType", "modelFramework", "modelArchitecture", "modelWeightUrl", "modelDatasetUrl"}
+	for _, field := range requiredFields {
+		if _, exists := metadata[field]; !exists {
+			return nil, fmt.Errorf("missing required metadata field: %s", field)
+		}
+	}
+
+	// // Create UUID from string
+	// _, err = uuid.FromString(docketUUID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("invalid docket UUID format: %w", err)
+	// }
+
+	// Create entry in docket_status table with status as PENDING
+	docketStatusReq := &dto.CreateDocketStatusRequest{
+		DocketId: docketUUID,
+		Status:   "PENDING",
+	}
+
+	_, err = s.docketStatusRepo.CreateDocketStatus(ctx, docketStatusReq)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", err.Error(), err, "DocketUUID", docketUUID)
+		return nil, fmt.Errorf("failed to create docket status: %w", err)
+	}
+
+	// Add the docket UUID to the metadata
+	metadata["uuid"] = docketUUID
+
+	// Publish metadata to Kafka
+	err = publishDocketMetadata(metadata, docketUUID)
+	if err != nil {
+		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", "Failed to publish to Kafka", err, "DocketUUID", docketUUID)
+		return nil, fmt.Errorf("failed to publish metadata to Kafka: %w", err)
+	}
+
+	return &model.Response{Message: "Docket sent for evaluation successfully"}, nil
+}
+
+// publishDocketMetadata publishes the docket metadata to Kafka using the external Kafka service
+func publishDocketMetadata(metadata map[string]interface{}, docketUUID string) error {
+	// Get Kafka broker address from environment variable
+	brokerAddress := os.Getenv("KAFKA_BROKER_ADDRESS")
+	if brokerAddress == "" {
+		brokerAddress = "localhost:9092" // Default if not set
+	}
+
+	// Create the topic if it doesn't exist
+	topic := "send-docket-for-evaluation"
+
+	// Create a Kafka writer for the topic
+	writer := kafkas.GetKafkaWriter(topic, brokerAddress)
+	defer writer.Close()
+
+	// Create a message payload
+	message := map[string]interface{}{
+		"docket_uuid": docketUUID,
+		"metadata":    metadata,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Convert the message to JSON
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message to JSON: %w", err)
+	}
+	// Write the message to Kafka
+	err = writer.WriteMessages(context.Background(), kafka.Message{
+		Key:   []byte(docketUUID),
+		Value: messageJSON,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write message to Kafka: %w", err)
+	}
+
+	fmt.Printf("Published docket %s to Kafka topic %s\n", docketUUID, topic)
+	return nil
 }
