@@ -6,22 +6,17 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	// Gin is now used in the subscriber package (transport.go)
-	// "github.com/gin-gonic/gin"
 
 	subscriber "whatsdare.com/fullstack/aimx/backend" // Alias for the subscriber package
 	"whatsdare.com/fullstack/aimx/backend/service"
@@ -146,6 +141,17 @@ func main() {
 		// uploadSvc = service.NewLoggingMiddleware(log.With(logger, "component", "LoggingMiddleware"))(uploadSvc)
 	}
 
+	// Initialize repositories
+	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
+
+	// Initialize services
+	statusSvc := service.NewStatusService(docketStatusRepo, logger)
+
+	// Start the docket status worker in a goroutine
+	go func() {
+		worker.StartDocketStatusWorker(statusSvc)
+	}()
+
 	// Create Gin HTTP server (router)
 	// The NewGinServer function is defined in applications/subscriber/transport.go
 	ginRouter := subscriber.NewGinServer(uploadSvc, logger)
@@ -170,18 +176,6 @@ func main() {
 	if err != nil {
 		// log.Fatalf("HTTP server failed: %v", err)
 	}
-
-	// go func() {
-	// 	// level.Info(logger).Log("transport", "HTTP (Gin)", "addr", *httpAddr, "upload_dir", *uploadDir)
-	// 	server := &http.Server{
-	// 		Addr:   ":" + strconv.Itoa(8089),
-	// 		Handler: ginRouter, // Use the Gin router as the handler
-	// 		ReadTimeout:  1 * time.Hour,
-	// 		WriteTimeout: 1 * time.Hour,
-	// 		IdleTimeout:  1 * time.Hour,
-	// 	}
-	// 	errs <- server.ListenAndServe()
-	// }()
 
 	level.Error(logger).Log("exit", <-errs)
 }

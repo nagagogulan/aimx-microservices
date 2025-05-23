@@ -43,9 +43,9 @@ type Endpoints struct {
 
 	DeactivateOrganizationEndpoint endpoint.Endpoint
 
-	UpdateFormStatusEndpoint endpoint.Endpoint
-
-	TestKongEndpoint endpoint.Endpoint
+	TestKongEndpoint          endpoint.Endpoint
+	SendForEvaluationEndpoint endpoint.Endpoint
+	UpdateFormStatusEndpoint  endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -72,9 +72,9 @@ func NewEndpoint(s service.Service) Endpoints {
 
 		DeactivateOrganizationEndpoint: Middleware(makeDeactivateOrganizationEndpoint(s), commonlib.TimeoutMs),
 
-		UpdateFormStatusEndpoint: Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
-
-		TestKongEndpoint: Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
+		TestKongEndpoint:          Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
+		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -366,5 +366,20 @@ func makeTestKongEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 		return res, nil
+	}
+}
+
+func makeSendForEvaluationEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(struct {
+			DocketUUID string `json:"docket_uuid"`
+		})
+
+		result, err := s.SendForEvaluation(ctx, req.DocketUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
 	}
 }

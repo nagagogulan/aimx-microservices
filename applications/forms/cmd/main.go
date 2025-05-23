@@ -148,9 +148,11 @@ func main() {
 	orgSettingRepo := repository.NewOrganizationSettingRepository(DB)
 	globalSettingRepo := repository.NewGeneralSettingRepository(DB)
 	filterfieldRepo := repository.NewAddSearchfilterService(DB)
-    userRepo := repository.NewUserCRUDRepository(DB)
+	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
+	userRepo := repository.NewUserCRUDRepository(DB)
+
 	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo,
-		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo,userRepo)
+		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo, docketStatusRepo, userRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{

@@ -21,6 +21,7 @@ type Service interface {
 	CreateForm(ctx context.Context, forms dto.FormDTO) (*dto.FormDTO, error)
 	GetFormByType(ctx context.Context, doc_type, page, limit, status int) (*model.GetFormResponse, error)
 	UpdateForm(ctx context.Context, id string, status string) (*model.Response, error)
+	SendForEvaluation(ctx context.Context, docketUUID string) (*model.Response, error)
 
 	UpdateFormStatus(ctx context.Context, id string, status string) (*model.Response, error)
 
@@ -53,13 +54,14 @@ type service struct {
 	orgSettingRepo    repository.OrganizationSettingRepository
 	globalSettingRepo repository.GeneralSettingRepository
 	userRepo          repository.UserCRUDService
+	docketStatusRepo  repository.DocketStatusRepositoryService
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
-	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, userRepo repository.UserCRUDService) Service {
+	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, docketStatusRepo repository.DocketStatusRepositoryService, userRepo repository.UserCRUDService) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
-		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, userRepo: userRepo}
+		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, docketStatusRepo: docketStatusRepo, userRepo: userRepo}
 }

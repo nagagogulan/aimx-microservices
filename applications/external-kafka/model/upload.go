@@ -15,3 +15,9 @@ type FileUploadResponse struct {
 	FileSize int64  `json:"file_size,omitempty"`
 	FilePath string `json:"file_path,omitempty"`
 }
+
+// DocketStatusMessage represents the structure of a message for docket status updates
+type DocketStatusMessage struct {
+	UUID   string `json:"uuid"`
+	Status string `json:"status"` // "failed" or "success"
+}

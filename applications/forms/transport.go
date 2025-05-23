@@ -178,6 +178,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/docket/sendforevaluation", gin.WrapF(httptransport.NewServer(
+		endpoints.SendForEvaluationEndpoint,
+		decodeSendForEvaluationRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	router.GET("/listform", gin.WrapF(httptransport.NewServer(
 		endpoints.ListFormsEndpoint,
 		decodeListFormsRequest,
@@ -273,16 +280,16 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	if request.Type != 1 {
-		claims, err := middleware.DecodeHeaderGetClaims(r)
-		if err != nil {
-			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
-		}
+	// if request.Type != 1 {
+	// 	claims, err := middleware.DecodeHeaderGetClaims(r)
+	// 	if err != nil {
+	// 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	// 	}
 
-		ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
-		ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
-		ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
-	}
+	// 	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+	// 	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+	// 	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
+	// }
 	// Extract Gin context
 	// newCtx, err := commonlib.ExtractGinContext(ctx)
 	// if err != nil {
@@ -615,6 +622,26 @@ func decodeDeactivateOrganizationRequest(ctx context.Context, r *http.Request) (
 func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	// No request body needed for this endpoint
 	return nil, nil
+}
+func decodeSendForEvaluationRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+
+	var request struct {
+		DocketUUID string `json:"docket_uuid"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+
+	if request.DocketUUID == "" {
+		return nil, fmt.Errorf("docket_uuid is required")
+	}
+
+	return request, nil
 }
 
 // func decodeUpdateFormStatusRequest(ctx context.Context, r *http.Request) (interface{}, error) {
