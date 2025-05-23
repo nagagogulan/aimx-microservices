@@ -19,7 +19,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
 
-	// middleware "github.com/PecozQ/aimx-library/middleware"
+	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/gofrs/uuid"
 	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -224,7 +224,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	}
 
 	// Optional: Run async
-	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
+	go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return createdForm, err
 
 }
@@ -498,7 +498,7 @@ func (s *service) UpdateFormStatus(ctx context.Context, id string, status string
 				"form_type": fmt.Sprintf("%d", updatedForm.Type),
 			},
 		}
-		kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs") // Optional: Run async in goroutine
+		kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs") // Optional: Run async in goroutine
 	}
 	return &model.Response{Message: "Form status updated successfully"}, nil
 }
