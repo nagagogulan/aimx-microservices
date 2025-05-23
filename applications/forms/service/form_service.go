@@ -323,9 +323,7 @@ func (s *service) GetAllFormTypes(ctx context.Context) ([]dto.FormType, error) {
 }
 
 func (s *service) UpdateForm(ctx context.Context, id string, status string) (*model.Response, error) {
-	var audit dto.AuditLogs
 	org, err := s.formRepo.GetFormById(ctx, id)
-	fmt.Println("The organization is givn eas: %v", org)
 	if err != nil {
 		return nil, errcom.ErrRecordNotFounds
 	}
@@ -352,50 +350,13 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		return nil, err
 	}
 
-	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
-	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
-	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
-	if updatedForm.Type == 3 {
-		var projectdocketName string
-		var datasetname string
-		for _, field := range updatedForm.Fields {
-			if field.Label == "Project Name" {
-				if val, ok := field.Value.(string); ok {
-					projectdocketName = val
-					break
-				}
-			}
-			if field.Label == "Dataset Name" {
-				if val, ok := field.Value.(string); ok {
-					datasetname = val
-					break
-				}
-			}
-		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "Admin",
-			Activity:       "Changed Status to " + status,
-			ProjectDocket:  projectdocketName,
-			Dataset:        datasetname,
-			Details: map[string]string{
-				"form_id":   updatedForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", updatedForm.Type),
-			},
-		}
-
-	}
-
 	// When trying to reject a pending organization
-	if org.Status == 0 && updatedForm.Status == 2 {
+	if org.Type == 1 && org.Status == 0 && updatedForm.Status == 2 {
 		return &model.Response{Message: "Form rejected"}, nil
 	}
 
 	// This is for handling already approved organization and then if we are rejecting the organization
-	if updatedForm.Status == 2 {
+	if org.Type == 1 && updatedForm.Status == 2 {
 		for _, field := range updatedForm.Fields {
 			if field.Label == "Admin Email Address" {
 				fmt.Println("Found Admin Email Address field:")
@@ -480,14 +441,66 @@ func (s *service) UpdateForm(ctx context.Context, id string, status string) (*mo
 		fmt.Println("OrganizationSetting created successfully for organization ID:", organizationId)
 
 	}
+
+	// If it is an organization approval or reject then send an email
 	sendEmail(orgreq.Email, status)
 
 	// Final response message
 	if status == "APPROVED" && updatedForm != nil {
 		return &model.Response{Message: "Form successfully approved"}, nil
 	}
-	go kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	return &model.Response{Message: "Form rejected"}, nil
+}
+
+func (s *service) UpdateFormStatus(ctx context.Context, id string, status string) (*model.Response, error) {
+	var audit dto.AuditLogs
+	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
+	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+
+	updatedForm, err := s.formRepo.UpdateForm(ctx, id, status)
+	if err != nil {
+		if errors.Is(err, errors.New(errcom.ErrRecordNotFound)) {
+			commonlib.LogMessage(s.logger, commonlib.Error, "FormUpdate", err.Error(), nil, "form", id)
+			return nil, errcom.ErrRecordNotFounds
+		}
+		return nil, err
+	}
+
+	if updatedForm.Type == 3 {
+		var projectdocketName string
+		var datasetname string
+		for _, field := range updatedForm.Fields {
+			if field.Label == "Project Name" {
+				if val, ok := field.Value.(string); ok {
+					projectdocketName = val
+					break
+				}
+			}
+			if field.Label == "Dataset Name" {
+				if val, ok := field.Value.(string); ok {
+					datasetname = val
+					break
+				}
+			}
+		}
+		audit = dto.AuditLogs{
+			OrganizationID: orgID,
+			Timestamp:      time.Now().UTC(),
+			UserID:         userID,
+			UserName:       email,
+			UserRole:       "Admin",
+			Activity:       "Changed Status to " + status,
+			ProjectDocket:  projectdocketName,
+			Dataset:        datasetname,
+			Details: map[string]string{
+				"form_id":   updatedForm.ID.String(),
+				"form_type": fmt.Sprintf("%d", updatedForm.Type),
+			},
+		}
+		kafka.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs") // Optional: Run async in goroutine
+	}
+	return &model.Response{Message: "Form status updated successfully"}, nil
 }
 
 func sendEmail(receiverEmail string, status string) error {

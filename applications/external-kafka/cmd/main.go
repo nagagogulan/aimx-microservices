@@ -47,6 +47,46 @@ func main() {
 	// 	fmt.Errorf("Error loading .env file")
 	// }
 
+	dbPortStr := os.Getenv("DBPORT")
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		fmt.Printf("Invalid DBPORT value: %v\n", err)
+		return
+	}
+	DB, err := pgsql.InitDB(&pgsql.Config{
+		DBHost:     os.Getenv("DBHOST"),
+		DBPort:     dbPort,
+		DBUser:     os.Getenv("DBUSER"),
+		DBPassword: os.Getenv("DBPASSWORD"),
+		DBName:     os.Getenv("DBNAME"),
+	})
+	if err != nil {
+		fmt.Println("Error initializing DB: %v", err)
+	}
+
+	// Ping the database to check if the connection is successful
+	sqlDB, err := DB.DB() // Get the raw SQL database instance
+
+	if err != nil {
+		fmt.Println("Error getting raw DB instance: %v", err)
+	}
+
+	// Attempt to ping the database to check if it's alive
+	err = sqlDB.Ping()
+	if err != nil {
+		fmt.Println("Failed to ping the database: %v", err)
+	} else {
+		fmt.Println("Database connection successful!")
+	}
+	err = pgsql.Migrate(DB)
+	if err != nil {
+		fmt.Println("Could not migrate database: %v", err)
+		return
+	}
+
+	// Close the DB connection when done (deferred)
+	defer sqlDB.Close()
+
 	uri := os.Getenv("MONGO_URI") // replace with your MongoDB URI
 
 	// Create context with timeout
@@ -69,11 +109,12 @@ func main() {
 	// Get a handle to a collection
 	db := client.Database(os.Getenv("MONGO_DBNAME"))
 
-	// Initialize form repository
+	// Initialize repositories
 	formRepo := repository.NewFormRepository(db)
+	sampleDatasetRepo := repository.NewSampleDatasetRepository(DB)
 
 	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
-	go worker.StartDatasetChunkSubscriber(formRepo)
+	go worker.StartDatasetChunkSubscriber(formRepo, sampleDatasetRepo)
 
 	go worker.StartFileChunkWorker()
 
@@ -92,19 +133,6 @@ func main() {
 	level.Info(logger).Log("msg", "subscriber service with Gin starting")
 	defer level.Info(logger).Log("msg", "subscriber service with Gin ended")
 
-	// Initialize database connection
-	db, err := pgsql.InitDB(&pgsql.Config{
-		DBHost:     os.Getenv("DBHOST"),
-		DBPort:     5432, // You might want to make this configurable
-		DBUser:     os.Getenv("DBUSER"),
-		DBPassword: os.Getenv("DBPASSWORD"),
-		DBName:     os.Getenv("DBNAME"),
-	})
-	if err != nil {
-		level.Error(logger).Log("msg", "Failed to connect to database", "err", err)
-		os.Exit(1)
-	}
-
 	// Create the upload service
 	var uploadSvc service.UploadService
 	{
@@ -114,7 +142,7 @@ func main() {
 	}
 
 	// Initialize repositories
-	docketStatusRepo := repository.NewDocketStatusRepositoryService(db)
+	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 
 	// Initialize services
 	statusSvc := service.NewStatusService(docketStatusRepo, logger)

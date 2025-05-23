@@ -44,10 +44,15 @@ var assemblersMutex sync.Mutex
 // FormRepo holds the form repository service
 var FormRepo repository.FormRepositoryService
 
+// SampleDatasetRepo holds the sample dataset repository service
+var SampleDatasetRepo repository.SampleDatasetRepositoryService
+
 // StartDatasetChunkSubscriber initializes a Kafka consumer for the sample-dataset-chunk topic
-func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService) {
+func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService, sampleDatasetRepo repository.SampleDatasetRepositoryService) {
 	// Set the form repository
 	FormRepo = formRepo
+	// Set the sample dataset repository
+	SampleDatasetRepo = sampleDatasetRepo
 
 	log.Println("Starting dataset chunk subscriber...")
 
@@ -224,7 +229,29 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 			} else {
 				log.Printf("Successfully created form for dataset: %s (UUID: %s, Form ID: %s)",
 					msg.Name, msg.UUID, createdForm.ID.Hex())
+
+				// Store values in the SampleDataset table
+				if SampleDatasetRepo != nil {
+					log.Printf("Creating sample dataset entry for: %s (UUID: %s)", msg.Name, msg.UUID)
+
+					// Create a map with the required fields
+					sampleDataset := &dto.CreateSampleDatasetRequest{
+						Name:    msg.Name,
+						IntUUID: msg.UUID,
+						ExtUUID: createdForm.ID.Hex(),
+					}
+					_, err := SampleDatasetRepo.CreateSampleDataset(context.Background(), sampleDataset)
+					if err != nil {
+						log.Printf("Error creating sample dataset entry: %v", err)
+					} else {
+						log.Printf("Successfully created sample dataset entry for: %s (UUID: %s)", msg.Name, msg.UUID)
+					}
+				} else {
+					log.Printf("Sample dataset repository not initialized for %s (UUID: %s), skipping sample dataset creation",
+						msg.Name, msg.UUID)
+				}
 			}
+
 		} else {
 			if msg.FormData.Type == 0 && len(msg.FormData.Fields) == 0 {
 				log.Printf("No form data found for %s (UUID: %s), skipping form creation",

@@ -23,6 +23,8 @@ type Service interface {
 	UpdateForm(ctx context.Context, id string, status string) (*model.Response, error)
 	SendForEvaluation(ctx context.Context, docketUUID string) (*model.Response, error)
 
+	UpdateFormStatus(ctx context.Context, id string, status string) (*model.Response, error)
+
 	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 

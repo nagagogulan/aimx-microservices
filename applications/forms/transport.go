@@ -200,6 +200,14 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	// Update Form Status
+	router.PUT("/status/update", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateFormStatusEndpoint,
+		decodeUpdateFormRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -635,6 +643,42 @@ func decodeSendForEvaluationRequest(ctx context.Context, r *http.Request) (inter
 
 	return request, nil
 }
+
+// func decodeUpdateFormStatusRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+// 	claims, err := middleware.DecodeHeaderGetClaims(r)
+// 	if err != nil {
+// 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+// 	}
+// 	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+// 	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+// 	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
+
+// 	var request struct {
+// 		ID     string `json:"id"`
+// 		Status string `json:"status"`
+// 	}
+
+// 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+// 		return nil, err
+// 	}
+
+// 	// Validate required fields
+// 	if request.ID == "" {
+// 		return nil, fmt.Errorf("id is required")
+// 	}
+// 	if request.Status == "" {
+// 		return nil, fmt.Errorf("status is required")
+// 	}
+
+// 	// Create UpdateFormRequest with context
+// 	updateRequest := &dto.UpdateFormRequest{
+// 		ID:     request.ID,
+// 		Status: request.Status,
+// 		Ctx:    ctx,
+// 	}
+
+// 	return updateRequest, nil
+// }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
