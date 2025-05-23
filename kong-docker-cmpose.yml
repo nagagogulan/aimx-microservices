@@ -5,7 +5,7 @@ services:
     image: kong:3.6
     environment:
       KONG_DATABASE: postgres
-      KONG_PG_HOST: 13.229.196.7
+      KONG_PG_HOST: 54.251.96.179
       KONG_PG_PORT: 5432
       KONG_PG_USER: myappuser
       KONG_PG_PASSWORD: SmartWork@123
@@ -27,7 +27,7 @@ services:
       - "8444:8444"   # Admin API HTTPS
     environment:
       KONG_DATABASE: postgres
-      KONG_PG_HOST: 13.229.196.7
+      KONG_PG_HOST: 54.251.96.179
       KONG_PG_PORT: 5432
       KONG_PG_USER: myappuser
       KONG_PG_PASSWORD: SmartWork@123
