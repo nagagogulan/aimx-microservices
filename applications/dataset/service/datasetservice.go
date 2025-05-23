@@ -15,6 +15,7 @@ import (
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
 	"github.com/gofrs/uuid"
 	"github.com/segmentio/kafka-go"
@@ -30,13 +31,18 @@ type Service interface {
 	DeleteFile(ctx context.Context, filepath model.DeleteFileRequest) error
 	OpenFile(ctx context.Context, filePath string) (*os.File, error)
 	ChunkFileToKafka(ctx context.Context, req dto.ChunkFileRequest) (*dto.ChunkFileResponse, error)
+	GetAllSampleDatasets(ctx context.Context) ([]dto.SampleDatasetResponse, error)
 	TestKong(ctx context.Context) (map[string]string, error)
 }
 
-type fileService struct{}
+type fileService struct {
+	sampleDatasetRepo repository.SampleDatasetRepositoryService
+}
 
-func NewService() Service {
-	return &fileService{}
+func NewService(sampleDatasetRepo repository.SampleDatasetRepositoryService) Service {
+	return &fileService{
+		sampleDatasetRepo: sampleDatasetRepo,
+	}
 }
 
 // UploadDataset handles saving the uploaded dataset file using streaming.
@@ -291,6 +297,17 @@ func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, e
 // 		FilePath: req.FilePath,
 // 	}, nil
 // }
+
+// GetAllSampleDatasets retrieves all sample datasets from the repository
+func (s *fileService) GetAllSampleDatasets(ctx context.Context) ([]dto.SampleDatasetResponse, error) {
+	// Call the repository method to get all sample datasets
+	datasets, err := s.sampleDatasetRepo.GetAllSampleDatasets(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sample datasets: %w", err)
+	}
+
+	return datasets, nil
+}
 
 // TestKong is a simple endpoint to check if Kong is running
 func (s *fileService) TestKong(ctx context.Context) (map[string]string, error) {

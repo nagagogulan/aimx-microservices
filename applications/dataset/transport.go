@@ -113,6 +113,14 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	// Endpoint to get all sample datasets
+	router.GET("/sampledatasets", gin.WrapF(httptransport.NewServer(
+		endpoints.GetAllSampleDatasets,
+		decodeGetAllSampleDatasetsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	// Test endpoint for Kong
 	router.GET("/test", gin.WrapF(httptransport.NewServer(
 		endpoints.TestKongEndpoint,
@@ -301,6 +309,18 @@ func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, er
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+// decodeGetAllSampleDatasetsRequest is a decoder for the GetAllSampleDatasets endpoint
+func decodeGetAllSampleDatasetsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// Verify authentication
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+
+	// No request body needed for this endpoint
+	return nil, nil
 }
 
 // decodeTestKongRequest is a simple decoder for the test endpoint

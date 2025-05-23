@@ -17,24 +17,26 @@ import (
 )
 
 type Endpoints struct {
-	UploadDataSet       endpoint.Endpoint
-	UploadSampleDataset endpoint.Endpoint // New endpoint for multipart upload
-	GetDataSetfile      endpoint.Endpoint
-	DeleteDataSetfile   endpoint.Endpoint
-	PreviewDataSetfile  endpoint.Endpoint
-	ChunkFileToKafka    endpoint.Endpoint // New endpoint for chunking files with form data
-	TestKongEndpoint    endpoint.Endpoint // Test endpoint for Kong
+	UploadDataSet        endpoint.Endpoint
+	UploadSampleDataset  endpoint.Endpoint // New endpoint for multipart upload
+	GetDataSetfile       endpoint.Endpoint
+	DeleteDataSetfile    endpoint.Endpoint
+	PreviewDataSetfile   endpoint.Endpoint
+	ChunkFileToKafka     endpoint.Endpoint // New endpoint for chunking files with form data
+	GetAllSampleDatasets endpoint.Endpoint // New endpoint to get all sample datasets
+	TestKongEndpoint     endpoint.Endpoint // Test endpoint for Kong
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
-		UploadDataSet:       Middleware(makeUploadDataSet(s), commonlib.TimeoutMs),
-		UploadSampleDataset: Middleware(makeUploadSampleDatasetEndpoint(s), commonlib.TimeoutMs),
-		GetDataSetfile:      Middleware(makeGetDataSetfile(s), commonlib.TimeoutMs),
-		DeleteDataSetfile:   Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
-		PreviewDataSetfile:  Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
-		ChunkFileToKafka:    Middleware(makeChunkFileToKafkaEndpoint(s), commonlib.TimeoutMs),
-		TestKongEndpoint:    Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
+		UploadDataSet:        Middleware(makeUploadDataSet(s), commonlib.TimeoutMs),
+		UploadSampleDataset:  Middleware(makeUploadSampleDatasetEndpoint(s), commonlib.TimeoutMs),
+		GetDataSetfile:       Middleware(makeGetDataSetfile(s), commonlib.TimeoutMs),
+		DeleteDataSetfile:    Middleware(makeDeleteFileEndpoint(s), commonlib.TimeoutMs),
+		PreviewDataSetfile:   Middleware(MakeOpenFileEndpoint(s), commonlib.TimeoutMs),
+		ChunkFileToKafka:     Middleware(makeChunkFileToKafkaEndpoint(s), commonlib.TimeoutMs),
+		GetAllSampleDatasets: Middleware(makeGetAllSampleDatasetsEndpoint(s), commonlib.TimeoutMs),
+		TestKongEndpoint:     Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -158,6 +160,18 @@ func makeChunkFileToKafkaEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return s.ChunkFileToKafka(ctx, req)
+	}
+}
+
+// makeGetAllSampleDatasetsEndpoint creates an endpoint for the GetAllSampleDatasets method
+func makeGetAllSampleDatasetsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// No request processing needed for this endpoint
+		datasets, err := s.GetAllSampleDatasets(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return datasets, nil
 	}
 }
 
