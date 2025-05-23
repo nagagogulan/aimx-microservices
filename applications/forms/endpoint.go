@@ -43,6 +43,8 @@ type Endpoints struct {
 
 	DeactivateOrganizationEndpoint endpoint.Endpoint
 
+	UpdateFormStatusEndpoint endpoint.Endpoint
+
 	TestKongEndpoint endpoint.Endpoint
 }
 
@@ -69,6 +71,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetCommentsByIdEndpoint: Middleware(makeGetCommentsByIdEndpoint(s), commonlib.TimeoutMs),
 
 		DeactivateOrganizationEndpoint: Middleware(makeDeactivateOrganizationEndpoint(s), commonlib.TimeoutMs),
+
+		UpdateFormStatusEndpoint: Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
 
 		TestKongEndpoint: Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 	}
@@ -338,6 +342,20 @@ func makeDeactivateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 		return map[string]interface{}{
 			"message": "Organization deactivated successfully",
 		}, nil
+	}
+}
+
+func makeUpdateFormStatusEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*dto.UpdateFormRequest)
+		fmt.Println("Form ID:", req.ID)
+		fmt.Println("Form Status:", req.Status)
+
+		form, err := s.UpdateFormStatus(req.Ctx, req.ID, req.Status)
+		if err != nil {
+			return nil, err
+		}
+		return form, nil
 	}
 }
 

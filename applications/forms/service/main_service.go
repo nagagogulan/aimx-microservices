@@ -22,6 +22,8 @@ type Service interface {
 	GetFormByType(ctx context.Context, doc_type, page, limit, status int) (*model.GetFormResponse, error)
 	UpdateForm(ctx context.Context, id string, status string) (*model.Response, error)
 
+	UpdateFormStatus(ctx context.Context, id string, status string) (*model.Response, error)
+
 	CreateFormType(ctx context.Context, formtype dto.FormType) (*dto.FormType, error)
 	GetAllFormTypes(ctx context.Context) ([]dto.FormType, error)
 
@@ -50,14 +52,14 @@ type service struct {
 	logger            kitlog.Logger
 	orgSettingRepo    repository.OrganizationSettingRepository
 	globalSettingRepo repository.GeneralSettingRepository
-	userRepo repository.UserCRUDService
+	userRepo          repository.UserCRUDService
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
-	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService,userRepo repository.UserCRUDService) Service {
+	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, userRepo repository.UserCRUDService) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
-		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo,userRepo:userRepo}
+		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, userRepo: userRepo}
 }
