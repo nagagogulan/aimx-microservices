@@ -5,28 +5,32 @@ networks:
   aimx-network:
     driver: bridge
 
+volumes:
+  dataset-data:
+  kafka-data:    
+
 services:
-  ext-identity:
-    image: nagagogulan/aimx-ext-identity:latest
-    container_name: identity-container
-    ports:
-      - "8081:8081"
-    environment:
-      - DBHOST=13.229.196.7
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # ext-identity:
+  #   image: nagagogulan/aimx-ext-identity:latest
+  #   container_name: identity-container
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
   # ext-forms:
   #   image: nagagogulan/aimx-ext-forms:latest
@@ -40,7 +44,7 @@ services:
   #     - DBPASSWORD=SmartWork@123
   #     - DBNAME=aimxdb
   #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb
+  #     - MONGO_DBNAME=mydb     
   #     - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
   #     - SMTP_EMAIL=nithiyavel402@gmail.com
   #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
@@ -72,27 +76,32 @@ services:
   #   networks:
   #     - aimx-network
 
-  # ext-dataset:
-  #   image: nagagogulan/aimx-ext-dataset:latest
-  #   container_name: dataset-container
-  #   ports:
-  #     - "8084:8084"
-  #   environment:
-  #     - DBHOST=13.229.196.7
-  #     - DBPORT=5432
-  #     - DBUSER=myappuser
-  #     - DBPASSWORD=SmartWork@123
-  #     - DBNAME=aimxdb
-  #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb
-  #     - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
-  #     - SMTP_EMAIL=nithiyavel402@gmail.com
-  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-  #     - ACCESS_EXPIRE_MINUTES=15
-  #     - REFRESH_EXPIRE_HOURS=168
-  #   networks:
-  #     - aimx-network
+  ext-dataset:
+    image: nagagogulan/aimx-ext-dataset:latest
+    container_name: dataset-container
+    ports:
+      - "8084:8084"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
+
+    volumes:
+      - dataset-data:/app/data
+
+  
 
   # ext-profile:
   #   image: nagagogulan/aimx-ext-profile:latest
@@ -196,24 +205,26 @@ services:
   #     - aimx-network
 
 
-  # ext-external-kafka:
-  #   image: nagagogulan/aimx-ext-external-kafka:latest
-  #   container_name: external-kafka-container
-  #   ports:
-  #     - "8088:8088"
-  #   environment:
-  #     - DBHOST=13.229.196.7
-  #     - DBPORT=5432
-  #     - DBUSER=myappuser
-  #     - DBPASSWORD=SmartWork@123
-  #     - DBNAME=aimxdb
-  #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb
-  #     - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
-  #     - SMTP_EMAIL=nithiyavel402@gmail.com
-  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-  #     - ACCESS_EXPIRE_MINUTES=15
-  #     - REFRESH_EXPIRE_HOURS=168
-  #   networks:
-  #     - aimx-network
+  ext-external-kafka:
+    image: nagagogulan/aimx-ext-external-kafka:latest
+    container_name: external-kafka-container
+    ports:
+      - "8088:8088"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
+    volumes:
+      - kafka-data:/var/lib/kafka/data  
