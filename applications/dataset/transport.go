@@ -129,10 +129,11 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
-	// Add this static file server for images
+	//Add this static file server for images
 	r.Static("/images", "./images")
 	r.Static("/datasetfile", "./datasetfile")
 	r.Static("/file", "./file")
+	r.Static("/docketfile", "./docketfile")
 
 	return r
 }
