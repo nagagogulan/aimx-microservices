@@ -226,11 +226,13 @@ services:
       - REFRESH_SECRET=${REFRESH_SECRET}
       - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
       - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
+      - TEMPORAL_TASK_QUEUE=${TEMPORAL_TASK_QUEUE}
+      - TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}
        
     env_file:
       - .env
     networks:
       - aimx-network
-
     volumes:
       - int-kafka-logs:/app/logs  
