@@ -4,28 +4,32 @@ networks:
   aimx-network:
     driver: bridge
 
+volumes:
+  dataset-data:
+  kafka-data: 
+
 services:
-  int-identity:
-    image: nagagogulan/aimx-int-identity:latest
-    container_name: identity-container
-    ports:
-      - "8081:8081"
-    environment:
-      - DBHOST=54.251.96.179
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://54.251.96.179:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_URL=54.251.96.179:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # int-identity:
+  #   image: nagagogulan/aimx-int-identity:latest
+  #   container_name: identity-container
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - DBHOST=54.251.96.179
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://54.251.96.179:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_URL=54.251.96.179:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
   # int-forms:
   #   image: nagagogulan/aimx-int-forms:latest
@@ -92,28 +96,30 @@ services:
       - REFRESH_EXPIRE_HOURS=168
     networks:
       - aimx-network
+    volumes:
+      - dataset-data:/app/data  
 
-  int-profile:
-    image: nagagogulan/aimx-int-profile:latest
-    container_name: profile-container
-    ports:
-      - "8085:8085"
-    environment:
-      - DBHOST=54.251.96.179
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://54.251.96.179:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_URL=54.251.96.179:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
+  # int-profile:
+  #   image: nagagogulan/aimx-int-profile:latest
+  #   container_name: profile-container
+  #   ports:
+  #     - "8085:8085"
+  #   environment:
+  #     - DBHOST=54.251.96.179
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://54.251.96.179:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_URL=54.251.96.179:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
 
   # int-user_management:
   #   image: nagagogulan/aimx-int-user_management:latest
@@ -160,42 +166,28 @@ services:
   #   networks:
   #     - aimx-network
 
-  # kong-migrations:
-  #   image: kong:3.6
-  #   environment:
-  #     KONG_DATABASE: postgres
-  #     KONG_PG_HOST: 54.251.96.179
-  #     KONG_PG_PORT: 5432
-  #     KONG_PG_USER: myappuser
-  #     KONG_PG_PASSWORD: SmartWork@123
-  #     KONG_PG_DATABASE: postgres
-  #     KONG_PASSWORD: kongadmin
-  #   command: kong migrations bootstrap
-  #   networks:
-  #     - aimx-network
 
-  # kong:
-  #   image: kong:3.6
-  #   container_name: kong
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8000:8000"   # Proxy
-  #     - "8443:8443"   # Proxy HTTPS
-  #     - "8001:8001"   # Admin API
-  #     - "8002:8002"   # Admin GUI
-  #     - "8444:8444"   # Admin API HTTPS
-  #   environment:
-  #     KONG_DATABASE: postgres
-  #     KONG_PG_HOST: 54.251.96.179
-  #     KONG_PG_PORT: 5432
-  #     KONG_PG_USER: myappuser
-  #     KONG_PG_PASSWORD: SmartWork@123
-  #     KONG_PG_DATABASE: postgres
-  #     KONG_ADMIN_ACCESS_LOG: /dev/stdout
-  #     KONG_ADMIN_ERROR_LOG: /dev/stderr
-  #     KONG_PROXY_ACCESS_LOG: /dev/stdout
-  #     KONG_PROXY_ERROR_LOG: /dev/stderr
-  #     KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
-  #     KONG_ADMIN_GUI_LISTEN: "0.0.0.0:8002"
-  #   networks:
-  #     - aimx-network
+  int-external-kafka:
+    image: nagagogulan/aimx-int-internal-kafka:latest
+    container_name: internal-kafka-container
+    ports:
+      - "8088:8088"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+                                          
