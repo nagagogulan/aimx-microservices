@@ -175,18 +175,18 @@ services:
   #     - aimx-network
 
 
-  int-external-kafka:
+  int-internal-kafka:
     image: nagagogulan/aimx-int-internal-kafka:latest
     container_name: internal-kafka-container
     ports:
       - "8088:8088"
     environment:
-      - DBHOST=13.229.196.7
+      - DBHOST=54.251.96.179
       - DBPORT=5432
       - DBUSER=myappuser
       - DBPASSWORD=SmartWork@123
       - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_URI=mongodb://54.251.96.179:27017
       - MONGO_DBNAME=mydb
       - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
       - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
@@ -198,7 +198,6 @@ services:
       - TEMPORAL_NAMESPACE=default
       - TEMPORAL_ADDRESS=54.251.96.179:7233
       - TEMPORAL_TASK_QUEUE=evaluation
- 
     networks:
       - aimx-network
     volumes:
