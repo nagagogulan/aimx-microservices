@@ -1151,7 +1151,7 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 	metadata["uuid"] = CreateDocketStatus.ID
 
 	// Publish metadata to Kafka
-	err = publishDocketMetadata(metadata, docketUUID)
+	err = publishDocketMetadata(metadata)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", "Failed to publish to Kafka", err, "DocketUUID", docketUUID)
 		return nil, fmt.Errorf("failed to publish metadata to Kafka: %w", err)
@@ -1161,7 +1161,7 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 }
 
 // publishDocketMetadata publishes the docket metadata to Kafka using the external Kafka service
-func publishDocketMetadata(metadata map[string]interface{}, docketUUID string) error {
+func publishDocketMetadata(metadata map[string]interface{}) error {
 	// Get Kafka broker address from environment variable
 	brokerAddress := os.Getenv("KAFKA_EXT_BROKER_ADDRESS")
 	if brokerAddress == "" {
@@ -1177,9 +1177,9 @@ func publishDocketMetadata(metadata map[string]interface{}, docketUUID string) e
 
 	// Create a message payload
 	message := map[string]interface{}{
-		"docket_uuid": docketUUID,
-		"metadata":    metadata,
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		// "docket_uuid": docketUUID,
+		"metadata":  metadata,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
 
 	// Convert the message to JSON

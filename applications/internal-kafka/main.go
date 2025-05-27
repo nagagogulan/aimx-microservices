@@ -32,9 +32,9 @@ type Message struct {
 
 // DocketEvaluationMessage represents the structure of a message for docket evaluation
 type DocketEvaluationMessage struct {
-	DocketUUID string                 `json:"docket_uuid"`
-	Metadata   map[string]interface{} `json:"metadata"`
-	Timestamp  string                 `json:"timestamp"`
+	// DocketUUID string                 `json:"docket_uuid"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	Timestamp string                 `json:"timestamp"`
 }
 
 // FIXME: Need to check and store in the same file path as the external
@@ -99,8 +99,6 @@ func handleDocketEvaluation(m kafkas.Message, formsService service.FormsService)
 		return
 	}
 
-	log.Printf("Processing docket evaluation request for UUID: %s", evalMsg.DocketUUID)
-
 	// Log original metadata for debugging
 	metadataBytes, _ := json.MarshalIndent(evalMsg.Metadata, "", "  ")
 	log.Printf("Original docket metadata: %s", string(metadataBytes))
@@ -120,18 +118,17 @@ func handleDocketEvaluation(m kafkas.Message, formsService service.FormsService)
 	}
 
 	// Post the updated metadata to Temporal queue
-	err = postToTemporalQueue(evalMsg.DocketUUID, evalMsg.Metadata)
+	err = postToTemporalQueue(evalMsg.Metadata)
 	if err != nil {
 		log.Printf("Error posting to Temporal queue: %v", err)
 	} else {
-		log.Printf("Successfully posted metadata to Temporal queue for docket UUID: %s", evalMsg.DocketUUID)
+		log.Printf("Successfully posted metadata to Temporal queue for UUID: %s", evalMsg.Metadata["uuid"])
 	}
 
-	log.Printf("Docket evaluation request processed for UUID: %s", evalMsg.DocketUUID)
 }
 
 // postToTemporalQueue sends the updated metadata to a Temporal workflow
-func postToTemporalQueue(docketUUID string, metadata map[string]interface{}) error {
+func postToTemporalQueue(metadata map[string]interface{}) error {
 	// Get Temporal client configuration from environment variables
 	temporalAddress := os.Getenv("TEMPORAL_ADDRESS")
 	if temporalAddress == "" {
@@ -153,7 +150,7 @@ func postToTemporalQueue(docketUUID string, metadata map[string]interface{}) err
 	}
 
 	// Generate a workflow ID using the docket UUID
-	workflowID := fmt.Sprintf("workflow-%s", docketUUID)
+	workflowID := fmt.Sprintf("workflow-%s", metadata["uuid"])
 
 	log.Printf("Connecting to Temporal server at %s", temporalAddress)
 
@@ -168,7 +165,7 @@ func postToTemporalQueue(docketUUID string, metadata map[string]interface{}) err
 	defer c.Close()
 
 	// Ensure the UUID is in the metadata
-	metadata["uuid"] = docketUUID
+	// metadata["uuid"] = docketUUID
 
 	// Log the payload being sent to Temporal
 	payloadBytes, _ := json.MarshalIndent(metadata, "", "  ")
