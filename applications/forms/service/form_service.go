@@ -1189,13 +1189,12 @@ func publishDocketMetadata(metadata map[string]interface{}) error {
 	}
 	// Write the message to Kafka
 	err = writer.WriteMessages(context.Background(), kafka.Message{
-		Key:   []byte(docketUUID),
+		Key:   []byte(metadata["uuid"].(string)),
 		Value: messageJSON,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write message to Kafka: %w", err)
 	}
 
-	fmt.Printf("Published docket %s to Kafka topic %s\n", docketUUID, topic)
 	return nil
 }
