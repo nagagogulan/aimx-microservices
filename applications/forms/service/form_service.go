@@ -1188,8 +1188,16 @@ func publishDocketMetadata(metadata map[string]interface{}) error {
 		return fmt.Errorf("failed to marshal message to JSON: %w", err)
 	}
 	// Write the message to Kafka
+	var uuidKey string
+	if uuidValue, ok := metadata["uuid"].(string); ok {
+		uuidKey = uuidValue
+	} else {
+		// If uuid is not a string, convert it to string
+		uuidKey = fmt.Sprintf("%v", metadata["uuid"])
+	}
+
 	err = writer.WriteMessages(context.Background(), kafka.Message{
-		Key:   []byte(metadata["uuid"]),
+		Key:   []byte(uuidKey),
 		Value: messageJSON,
 	})
 	if err != nil {
