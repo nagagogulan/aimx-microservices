@@ -1141,7 +1141,7 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 		Status:   "PENDING",
 	}
 
-	CreateDocketStatus, err = s.docketStatusRepo.CreateDocketStatus(ctx, docketStatusReq)
+	CreateDocketStatus, err := s.docketStatusRepo.CreateDocketStatus(ctx, docketStatusReq)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", err.Error(), err, "DocketUUID", docketUUID)
 		return nil, fmt.Errorf("failed to create docket status: %w", err)
