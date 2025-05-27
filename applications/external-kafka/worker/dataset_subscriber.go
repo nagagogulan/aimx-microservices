@@ -57,7 +57,7 @@ func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService, samp
 	log.Println("Starting dataset chunk subscriber...")
 
 	// Create a Kafka reader for the sample-dataset-chunk topic
-	reader := kafkas.GetKafkaReader("sample-dataset-chunk", "dataset-chunk-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	reader := kafkas.GetKafkaReader("sample-dataset-chunk", "dataset-chunk-consumer-group", os.Getenv("KAFKA_INT_BROKER_ADDRESS"))
 
 	// Create a context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())

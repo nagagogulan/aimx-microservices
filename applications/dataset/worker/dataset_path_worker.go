@@ -30,7 +30,7 @@ func StartDatasetPathWorker() {
 	log.Println("Starting dataset path worker...")
 
 	// Create a Kafka reader for the sample-dataset-paths topic
-	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS")) // This is the internal kafka broker address
 
 	// Create a context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())
