@@ -117,7 +117,7 @@ services:
     networks:
       - aimx-network
     volumes:
-      - ext-dataset-logs:/app/logs   
+      - int-dataset-logs:/app/logs   
 
        
 
@@ -204,11 +204,11 @@ services:
   #   networks:
   #     - aimx-network
 
-  int-external-kafka:
+  int-internal-kafka:
     build:
-      context: ./applications/external-kafka
+      context: ./applications/internal-kafka
       dockerfile: Dockerfile
-    container_name: external-kafka-container
+    container_name: internal-kafka-container
     ports:
       - "8088:8088"
     environment:
