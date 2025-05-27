@@ -558,7 +558,13 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 func (s *service) SearchOrganizations(ctx context.Context, searchTerm string) ([]dto.OrganizationSearchResponse, error) {
 	organizations, err := s.OrgRepo.SearchOrganizationsByName(ctx, searchTerm)
 	if err != nil {
-		return nil, err
+		// Return empty array instead of null
+		return []dto.OrganizationSearchResponse{}, err
+	}
+
+	// If no organizations found, return empty array instead of null
+	if organizations == nil {
+		return []dto.OrganizationSearchResponse{}, nil
 	}
 
 	return organizations, nil
