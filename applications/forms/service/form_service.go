@@ -1189,7 +1189,7 @@ func publishDocketMetadata(metadata map[string]interface{}) error {
 	}
 	// Write the message to Kafka
 	err = writer.WriteMessages(context.Background(), kafka.Message{
-		Key:   []byte(metadata["uuid"].(string)),
+		Key:   []byte(metadata["uuid"]),
 		Value: messageJSON,
 	})
 	if err != nil {
