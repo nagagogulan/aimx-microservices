@@ -66,7 +66,7 @@ services:
   #     - DBNAME=aiKAFKA_BROKER_ADDRESSmxdb
   #     - MONGO_URI=mongodb://54.251.96.179:27017
   #     - MONGO_DBNAME=mydb
-  #     - KAFKA_URL=54.251.96.179:9092
+  #     - KAFKA_BROKER_ADDRESS=54.251.96.179:9092
   #     - SMTP_EMAIL=nithiyavel402@gmail.com
   #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
   #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
@@ -112,7 +112,7 @@ services:
   #     - DBNAME=aimxdb
   #     - MONGO_URI=mongodb://54.251.96.179:27017
   #     - MONGO_DBNAME=mydb
-  #     - KAFKA_URL=54.251.96.179:9092
+  #     - KAFKA_BROKER_ADDRESS=54.251.96.179:9092
   #     - SMTP_EMAIL=nithiyavel402@gmail.com
   #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
   #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
@@ -134,7 +134,7 @@ services:
   #     - DBNAME=aimxdb
   #     - MONGO_URI=mongodb://54.251.96.179:27017
   #     - MONGO_DBNAME=mydb
-  #     - KAFKA_URL=54.251.96.179:9092
+  #     - KAFKA_BROKER_ADDRESS=54.251.96.179:9092
   #     - SMTP_EMAIL=nithiyavel402@gmail.com
   #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
   #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
@@ -157,7 +157,7 @@ services:
   #     - DBNAME=aimxdb
   #     - MONGO_URI=mongodb://54.251.96.179:27017
   #     - MONGO_DBNAME=mydb
-  #     - KAFKA_URL=54.251.96.179:9092
+  #     - KAFKA_BROKER_ADDRESS=54.251.96.179:9092
   #     - SMTP_EMAIL=nithiyavel402@gmail.com
   #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
   #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
@@ -186,6 +186,7 @@ services:
       - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
       - ACCESS_EXPIRE_MINUTES=15
       - REFRESH_EXPIRE_HOURS=168
+      
     networks:
       - aimx-network
     volumes:
