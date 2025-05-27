@@ -69,7 +69,9 @@ func (s *formsService) UpdateMetadataWithFormData(metadata map[string]interface{
 		return metadata, fmt.Errorf("MetaData is not a map")
 	}
 
-	originalDataset, exists := metaData["originalDataset"]
+	// originalDataset, exists := metaData["originalDataset"]
+	originalDataset, exists := metaData["sampleDataset"]
+
 	if !exists {
 		return metadata, fmt.Errorf("originalDataset not found in form MetaData")
 	}
