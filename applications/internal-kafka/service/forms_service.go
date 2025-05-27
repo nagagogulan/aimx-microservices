@@ -59,7 +59,18 @@ func (s *formsService) UpdateMetadataWithFormData(metadata map[string]interface{
 	}
 	log.Printf("Fetching form ********* ", form)
 
-	// fix me: need to change with original dataset instead of sample dataset
+	// Check if MetaData exists in the form
+	if form.MetaData == nil {
+		return metadata, fmt.Errorf("MetaData not found in form data")
+	}
+
+	// Try to extract originalDataset from MetaData
+	metaData, ok := form.MetaData.(map[string]interface{})
+	if !ok {
+		return metadata, fmt.Errorf("MetaData is not a map")
+	}
+	log.Printf("Fetching metadata ********* ", metaData)
+
 	// originalDataset, exists := metaData["originalDataset"]
 	originalDataset := form.SampleDataset
 
