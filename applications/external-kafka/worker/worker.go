@@ -19,7 +19,7 @@ type FilePathMsg struct {
 }
 
 func StartFileChunkWorker() {
-	reader := kafkas.GetKafkaReader("docket-file-paths", "docket-file-path-group", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	reader := kafkas.GetKafkaReader("docket-file-paths", "docket-file-path-group", os.Getenv("KAFKA_EXT_BROKER_ADDRESS"))
 	for {
 		m, err := reader.ReadMessage(context.Background())
 		if err != nil {
@@ -54,7 +54,7 @@ func streamFileChunks(filePath, topic string) {
 	}
 	fileSize := fileInfo.Size()
 
-	writer := kafkas.GetKafkaWriter(topic, os.Getenv("KAFKA_BROKER_ADDRESS"))
+	writer := kafkas.GetKafkaWriter(topic, os.Getenv("KAFKA_EXT_BROKER_ADDRESS"))
 	reader := bufio.NewReader(file)
 	buffer := make([]byte, 1024*512) // 500kb chunks
 	chunkIndex := 0

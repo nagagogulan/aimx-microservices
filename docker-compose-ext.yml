@@ -36,32 +36,33 @@ services:
   #   networks:
   #     - aimx-network
 
-  # ext-forms:
-  #   build:
-  #     context: ./applications/forms
-  #     dockerfile: Dockerfile
-  #   container_name: forms-container
-  #   ports:
-  #     - "8082:8082"
-  #   environment:
-  #     - DBHOST=${EXT_DBHOST}
-  #     - DBPORT=${EXT_DBPORT}
-  #     - DBUSER=${EXT_DBUSER}
-  #     - DBPASSWORD=${EXT_DBPASSWORD}
-  #     - DBNAME=${EXT_DBNAME}
-  #     - MONGO_URI=${EXT_MONGO_URI}
-  #     - MONGO_DBNAME=${EXT_MONGO_DBNAME}
-  #     - KAFKA_URL=${EXT_KAFKA_URL}
-  #     - SMTP_EMAIL=${SMTP_EMAIL}
-  #     - SMTP_PAS=${SMTP_PAS}
-  #     - ACCESS_SECRET=${ACCESS_SECRET}
-  #     - REFRESH_SECRET=${REFRESH_SECRET}
-  #     - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
-  #     - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - aimx-network
+  ext-forms:
+    build:
+      context: ./applications/forms
+      dockerfile: Dockerfile
+    container_name: forms-container
+    ports:
+      - "8082:8082"
+    environment:
+      - DBHOST=${EXT_DBHOST}
+      - DBPORT=${EXT_DBPORT}
+      - DBUSER=${EXT_DBUSER}
+      - DBPASSWORD=${EXT_DBPASSWORD}
+      - DBNAME=${EXT_DBNAME}
+      - MONGO_URI=${EXT_MONGO_URI}
+      - MONGO_DBNAME=${EXT_MONGO_DBNAME}
+      - KAFKA_URL=${EXT_KAFKA_URL}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PAS=${SMTP_PAS}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - ACCESS_EXPIRE_MINUTES=${ACCESS_EXPIRE_MINUTES}
+      - REFRESH_EXPIRE_HOURS=${REFRESH_EXPIRE_HOURS}
+
+    env_file:
+      - .env
+    networks:
+      - aimx-network
 
   # ext-roles:
   #   build:
@@ -75,7 +76,7 @@ services:
   #     - DBPORT=${EXT_DBPORT}
   #     - DBUSER=${EXT_DBUSER}
   #     - DBPASSWORD=${EXT_DBPASSWORD}
-  #     - DBNAME=${EXT_DBNAME}
+  #     - DBNAME=${KAFKA_BROKER_ADDRESS=54.251.96.179:909EXT_DBNAME}
   #     - MONGO_URI=${EXT_MONGO_URI}
   #     - MONGO_DBNAME=${EXT_MONGO_DBNAME}
   #     - KAFKA_URL=${EXT_KAFKA_URL}
@@ -114,7 +115,7 @@ services:
     # networks:
     #   - aimx-network
     
-    # volumes:
+    # volumes:KAFKA_BROKER_ADDRESS=54.251.96.179:909
     #   - ext-dataset-logs:/app/logs  
 
   # ext-profile:
@@ -225,9 +226,8 @@ services:
   #     - .env
   #   networks:
   #     - aimx-network
-
-    # volumes:
-    #   - ext-kafka-logs:/app/logs  
+  #   volumes:
+  #     - ext-kafka-logs:/app/logs  
 
 
   # ext-system:

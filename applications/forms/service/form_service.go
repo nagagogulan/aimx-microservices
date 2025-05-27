@@ -1109,7 +1109,7 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 // publishDocketMetadata publishes the docket metadata to Kafka using the external Kafka service
 func publishDocketMetadata(metadata map[string]interface{}, docketUUID string) error {
 	// Get Kafka broker address from environment variable
-	brokerAddress := os.Getenv("KAFKA_BROKER_ADDRESS")
+	brokerAddress := os.Getenv("KAFKA_EXT_BROKER_ADDRESS")
 	if brokerAddress == "" {
 		brokerAddress = "localhost:9092" // Default if not set
 	}
