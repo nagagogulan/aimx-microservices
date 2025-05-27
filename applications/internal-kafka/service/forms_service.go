@@ -39,6 +39,8 @@ func (s *formsService) GetFormByID(ctx context.Context, formID string) (*dto.For
 
 // UpdateMetadataWithFormData updates the metadata with form data
 func (s *formsService) UpdateMetadataWithFormData(metadata map[string]interface{}) (map[string]interface{}, error) {
+	log.Printf("Recieved metadata --- ", metadata)
+
 	// Extract the modelDatasetUrl UUID from metadata
 	modelDatasetUrlValue, exists := metadata["modelDatasetUrl"]
 	if !exists {
@@ -59,25 +61,11 @@ func (s *formsService) UpdateMetadataWithFormData(metadata map[string]interface{
 	}
 	log.Printf("Fetching form ********* ", form)
 
-	// Check if MetaData exists in the form
-	if form.MetaData == nil {
-		return metadata, fmt.Errorf("MetaData not found in form data")
-	}
-
-	// Try to extract originalDataset from MetaData
-	metaData, ok := form.MetaData.(map[string]interface{})
-	if !ok {
-		return metadata, fmt.Errorf("MetaData is not a map")
-	}
-	log.Printf("Fetching metadata ********* ", metaData)
-
 	// originalDataset, exists := metaData["originalDataset"]
-	originalDataset := form.SampleDataset
-
-	log.Printf("Found originalDataset in form data", originalDataset)
-
 	// Update the modelDatasetUrl in metadata with the originalDataset value
-	metadata["modelDatasetUrl"] = originalDataset
+	metadata["modelDatasetUrl"] = form.SampleDataset
+
+	log.Printf("updated metadata --- ", metadata)
 
 	return metadata, nil
 }
