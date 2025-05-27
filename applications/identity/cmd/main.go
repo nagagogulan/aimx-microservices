@@ -39,6 +39,23 @@ func main() {
 	// 	// DBPassword: "Admin",
 	// 	// DBName:     "mylocaldb",
 	// })
+
+	// // Get the current working directory (from where the command is run)
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	fmt.Errorf("Error getting current working directory:", err)
+	// }
+	// fmt.Println("Current Working Directory:", dir)
+
+	// // Construct the path to the .env file in the root directory
+	// envPath := filepath.Join(dir, "./.env")
+
+	// // Load the .env file from the correct path
+	// err = godotenv.Load(envPath)
+	// if err != nil {
+	// 	fmt.Errorf("Error loading .env file")
+	// }
+
 	dbPortStr := os.Getenv("DBPORT")
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {

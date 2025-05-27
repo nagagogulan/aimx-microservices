@@ -554,6 +554,16 @@ func (s *service) generateJWTForExistingUser(ctx context.Context, userData *enti
 		User_Id: userData.ID, Refresh_Token: jwtToken.RefreshToken, Role_Id: userData.RoleID}, nil
 }
 
+// SearchOrganizations searches for organizations by name using the repository
+func (s *service) SearchOrganizations(ctx context.Context, searchTerm string) ([]dto.OrganizationSearchResponse, error) {
+	organizations, err := s.OrgRepo.SearchOrganizationsByName(ctx, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+
+	return organizations, nil
+}
+
 // TestKong is a simple endpoint to check if Kong is running
 func (s *service) TestKong(ctx context.Context) (*model.Response, error) {
 	return &model.Response{
