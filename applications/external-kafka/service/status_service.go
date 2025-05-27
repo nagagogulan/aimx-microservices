@@ -82,7 +82,7 @@ func (s *statusService) UpdateDocketStatus(ctx context.Context, docketUUID strin
 // publishToGetEvaluatedMetric publishes a message to the get-evaluated-metric topic
 func (s *statusService) publishToGetEvaluatedMetric(docketUUID string) error {
 	// Get Kafka broker address from environment variable
-	brokerAddress := os.Getenv("KAFKA_BROKER_ADDRESS")
+	brokerAddress := os.Getenv("KAFKA_INT_BROKER_ADDRESS")
 	if brokerAddress == "" {
 		brokerAddress = "localhost:9092" // Default if not set
 	}
