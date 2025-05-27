@@ -19,19 +19,21 @@ type Endpoints struct {
 	CreateUserEndpoint endpoint.Endpoint
 	verifyOTPEndpoint  endpoint.Endpoint
 	// SendQREndpoint       endpoint.Endpoint
-	SendQRVerifyEndpoint endpoint.Endpoint
-	RefreshTokenEndpoint endpoint.Endpoint
-	TestKongEndpoint     endpoint.Endpoint
+	SendQRVerifyEndpoint       endpoint.Endpoint
+	RefreshTokenEndpoint       endpoint.Endpoint
+	SearchOrganizationEndpoint endpoint.Endpoint
+	TestKongEndpoint           endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
 	return Endpoints{
 		//UserAndRole
-		CreateUserEndpoint:   Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
-		verifyOTPEndpoint:    Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
-		SendQRVerifyEndpoint: Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
-		RefreshTokenEndpoint: Middleware(makeRefreshTokenEndpoint(s), common.TimeoutMs),
-		TestKongEndpoint:     Middleware(makeTestKongEndpoint(s), common.TimeoutMs),
+		CreateUserEndpoint:         Middleware(makeCreateUserEndpoint(s), common.TimeoutMs),
+		verifyOTPEndpoint:          Middleware(makeVerifyotpEndpoint(s), common.TimeoutMs),
+		SendQRVerifyEndpoint:       Middleware(makeSendQRVerifyEndpoint(s), common.TimeoutMs),
+		RefreshTokenEndpoint:       Middleware(makeRefreshTokenEndpoint(s), common.TimeoutMs),
+		SearchOrganizationEndpoint: Middleware(makeSearchOrganizationEndpoint(s), common.TimeoutMs),
+		TestKongEndpoint:           Middleware(makeTestKongEndpoint(s), common.TimeoutMs),
 	}
 }
 func Middleware(endpoint endpoint.Endpoint, timeout time.Duration) endpoint.Endpoint {
@@ -63,6 +65,7 @@ func makeVerifyotpEndpoint(s service.Service) endpoint.Endpoint {
 		return model.UserAuthResponse{Message: res.Message, QRURL: res.QRURL, QRImage: res.QRImage}, nil
 	}
 }
+
 func makeSendQRVerifyEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		fmt.Println("after decode makeCreateUserEndpoint", &request)
@@ -91,6 +94,19 @@ func makeRefreshTokenEndpoint(s service.Service) endpoint.Endpoint {
 			Message:  res.Message,
 			JWTToken: res.JWTToken,
 		}, nil
+	}
+}
+
+func makeSearchOrganizationEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		searchTerm := request.(string)
+
+		organizations, err := s.SearchOrganizations(ctx, searchTerm)
+		if err != nil {
+			return nil, err
+		}
+
+		return organizations, nil
 	}
 }
 

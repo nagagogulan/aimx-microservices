@@ -15,6 +15,7 @@ type Service interface {
 	VerifyOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.UserAuthResponse, error)
 	VerifyTOTP(ctx context.Context, req *dto.UserAuthDetail) (*model.Response, error)
 	UpdateAccessToken(ctx context.Context, req *dto.RefreshAuthDetail) (*model.RefreshTokenResponse, error)
+	SearchOrganizations(ctx context.Context, searchTerm string) ([]dto.OrganizationSearchResponse, error)
 	TestKong(ctx context.Context) (*model.Response, error)
 }
 

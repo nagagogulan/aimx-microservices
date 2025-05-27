@@ -62,6 +62,14 @@ func MakeHTTPHandler(s service.Service) http.Handler {
 		options...,
 	)))
 
+	// Search Organization endpoint
+	router.GET("/searchOrganization", gin.WrapF(httptransport.NewServer(
+		endpoints.SearchOrganizationEndpoint,
+		decodeSearchOrganizationRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	// Test endpoint for Kong
 	router.GET("/test", gin.WrapF(httptransport.NewServer(
 		endpoints.TestKongEndpoint,
@@ -112,6 +120,16 @@ func decodeRefreshTokenRequest(_ context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	return &req, nil
+}
+
+func decodeSearchOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// Get the searchTerm from query parameters
+	searchTerm := r.URL.Query().Get("searchTerm")
+	if searchTerm == "" {
+		return nil, fmt.Errorf("searchTerm parameter is required")
+	}
+
+	return searchTerm, nil
 }
 
 func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {
