@@ -1024,7 +1024,17 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 		fmt.Println("Form.MetaData is primitive.D, converting to map")
 		// Convert primitive.D to map
 		for _, elem := range bsonDoc {
-			metadata[elem.Key] = elem.Value
+			// Special handling for nested BSON documents
+			if nestedDoc, ok := elem.Value.(primitive.D); ok {
+				// Convert nested primitive.D to map
+				nestedMap := make(map[string]interface{})
+				for _, nestedElem := range nestedDoc {
+					nestedMap[nestedElem.Key] = nestedElem.Value
+				}
+				metadata[elem.Key] = nestedMap
+			} else {
+				metadata[elem.Key] = elem.Value
+			}
 		}
 	} else if mapData, ok := form.MetaData.(map[string]interface{}); ok && mapData != nil {
 		fmt.Println("Form.MetaData is already a map")
@@ -1042,21 +1052,65 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 					fmt.Println("Field.Value is primitive.D, converting to map")
 					// Convert primitive.D to map
 					for _, elem := range bsonDoc {
-						metadata[elem.Key] = elem.Value
-
-						// Special handling for nested BSON documents like modelWeightUrl
-						if elem.Key == "modelWeightUrl" {
-							if nestedDoc, ok := elem.Value.(primitive.D); ok {
+						// Special handling for nested BSON documents
+						if nestedDoc, ok := elem.Value.(primitive.D); ok {
+							// Convert nested primitive.D to map
+							nestedMap := make(map[string]interface{})
+							for _, nestedElem := range nestedDoc {
+								nestedMap[nestedElem.Key] = nestedElem.Value
+							}
+							metadata[elem.Key] = nestedMap
+						} else if elem.Key == "modelWeightUrl" && elem.Value != nil {
+							// Handle modelWeightUrl specifically if it's not a primitive.D
+							// but might be another type that needs conversion
+							switch v := elem.Value.(type) {
+							case []interface{}:
+								// If it's an array, convert to map
 								weightUrlMap := make(map[string]interface{})
-								for _, nestedElem := range nestedDoc {
-									weightUrlMap[nestedElem.Key] = nestedElem.Value
+								for _, item := range v {
+									if kvPair, ok := item.(map[string]interface{}); ok {
+										if key, hasKey := kvPair["Key"]; hasKey {
+											if keyStr, ok := key.(string); ok {
+												weightUrlMap[keyStr] = kvPair["Value"]
+											}
+										}
+									}
 								}
 								metadata["modelWeightUrl"] = weightUrlMap
+							case map[string]interface{}:
+								// If it's already a map, use it directly
+								metadata["modelWeightUrl"] = v
+							default:
+								// For any other type, store as is
+								metadata[elem.Key] = elem.Value
 							}
+						} else {
+							metadata[elem.Key] = elem.Value
+						}
+					}
+				} else if mapData, ok := field.Value.(map[string]interface{}); ok && mapData != nil {
+					// If field.Value is already a map, use it directly
+					metadata = mapData
+				}
+			}
+		}
+	}
+
+	// Additional check for modelWeightUrl to ensure it's in the correct format
+	if weightUrl, exists := metadata["modelWeightUrl"]; exists {
+		// Check if it's an array of key-value pairs and convert to map
+		if weightUrlArray, ok := weightUrl.([]interface{}); ok {
+			weightUrlMap := make(map[string]interface{})
+			for _, item := range weightUrlArray {
+				if kvPair, ok := item.(map[string]interface{}); ok {
+					if key, hasKey := kvPair["Key"]; hasKey {
+						if keyStr, ok := key.(string); ok {
+							weightUrlMap[keyStr] = kvPair["Value"]
 						}
 					}
 				}
 			}
+			metadata["modelWeightUrl"] = weightUrlMap
 		}
 	}
 
@@ -1087,14 +1141,14 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 		Status:   "PENDING",
 	}
 
-	_, err = s.docketStatusRepo.CreateDocketStatus(ctx, docketStatusReq)
+	CreateDocketStatus, err = s.docketStatusRepo.CreateDocketStatus(ctx, docketStatusReq)
 	if err != nil {
 		commonlib.LogMessage(s.logger, commonlib.Error, "SendForEvaluation", err.Error(), err, "DocketUUID", docketUUID)
 		return nil, fmt.Errorf("failed to create docket status: %w", err)
 	}
 
 	// Add the docket UUID to the metadata
-	metadata["uuid"] = docketUUID
+	metadata["uuid"] = CreateDocketStatus.ID
 
 	// Publish metadata to Kafka
 	err = publishDocketMetadata(metadata, docketUUID)
