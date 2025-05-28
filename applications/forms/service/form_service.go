@@ -158,7 +158,12 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 			return nil, fmt.Errorf("modelWeightUrl must contain either a non-empty path or link")
 		}
 	}
-
+	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+	if form.Type != 1 {
+		if orgID != "" {
+			form.OrganizationID = orgID
+		}
+	}
 	createdForm, err := s.formRepo.CreateForm(ctx, form)
 	if err != nil {
 		return nil, errcom.ErrUnableToCreate
@@ -167,7 +172,6 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	var datasetName string
 	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
 	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
-	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
 	if createdForm.Type == 2 {
 		for _, field := range createdForm.Fields {
 			if field.Label == "Dataset Name" {
