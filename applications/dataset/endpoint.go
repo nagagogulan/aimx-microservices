@@ -4,14 +4,17 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/xuri/excelize/v2"
 	"whatsdare.com/fullstack/aimx/backend/model"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
@@ -110,31 +113,65 @@ func makeDeleteFileEndpoint(s service.Service) endpoint.Endpoint {
 //	}
 func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(model.OpenFileRequest)
+		req, ok := request.(model.OpenFileRequest)
+		if !ok {
+			return model.OpenFileResponse{Err: "invalid request type"}, nil
+		}
+
 		file, err := s.OpenFile(ctx, req.FileURL)
 		if err != nil {
 			return model.OpenFileResponse{Err: err.Error()}, nil
 		}
 		defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-		var lines []string
-		for i := 0; i < 10 && scanner.Scan(); i++ {
-			lines = append(lines, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			return model.OpenFileResponse{Err: fmt.Sprintf("failed to read file: %v", err)}, nil
+		filePath := file.Name()
+		ext := strings.ToLower(filepath.Ext(filePath))
+		var preview []string
+
+		switch ext {
+		case ".csv":
+			// Reset file pointer to start
+			file.Seek(0, io.SeekStart)
+
+			scanner := bufio.NewScanner(file)
+			for i := 0; i < 10 && scanner.Scan(); i++ {
+				preview = append(preview, scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read csv file: %v", err)}, nil
+			}
+
+		case ".xlsx":
+			excelFile, err := excelize.OpenFile(filePath)
+			if err != nil {
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to open excel: %v", err)}, nil
+			}
+			defer excelFile.Close()
+
+			sheetName := excelFile.GetSheetName(0)
+			rows, err := excelFile.GetRows(sheetName)
+			if err != nil {
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read rows: %v", err)}, nil
+			}
+
+			for i := 0; i < len(rows) && i < 10; i++ {
+				preview = append(preview, strings.Join(rows[i], ","))
+			}
+
+		default:
+			return model.OpenFileResponse{Err: fmt.Sprintf("unsupported file type: %s", ext)}, nil
 		}
 
 		fileInfo, err := file.Stat()
 		if err != nil {
 			return model.OpenFileResponse{Err: fmt.Sprintf("failed to get file info: %v", err)}, nil
 		}
+
 		return model.OpenFileResponse{
 			FileName:    fileInfo.Name(),
 			FileSize:    fileInfo.Size(),
-			FilePath:    file.Name(),
-			FilePreview: strings.Join(lines, "\n"),
+			FilePath:    filePath,
+			FilePreview: strings.Join(preview, "\n"),
 		}, nil
 	}
 }
