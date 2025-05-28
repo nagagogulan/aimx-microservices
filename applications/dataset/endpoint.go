@@ -144,18 +144,18 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 		case ".xlsx":
 			excelFile, err := excelize.OpenFile(filePath)
 			if err != nil {
-				return model.OpenFileResponse{Err: fmt.Sprintf("failed to open excel: %v", err)}, nil
+				return nil, err
 			}
 			defer excelFile.Close()
 
 			sheetName := excelFile.GetSheetName(0)
 			rows, err := excelFile.GetRows(sheetName)
 			if err != nil {
-				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read rows: %v", err)}, nil
+				return nil, err
 			}
 
 			for i := 0; i < len(rows) && i < 10; i++ {
-				preview = append(preview, strings.Join(rows[i], ","))
+				preview = append(preview, strings.Join(rows[i], "\t"))
 			}
 
 		default:
