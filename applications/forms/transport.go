@@ -280,16 +280,16 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
 	}
-	// if request.Type != 1 {
-	// 	claims, err := middleware.DecodeHeaderGetClaims(r)
-	// 	if err != nil {
-	// 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
-	// 	}
+	if request.Type != 1 {
+		claims, err := middleware.DecodeHeaderGetClaims(r)
+		if err != nil {
+			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+		}
 
-	// 	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
-	// 	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
-	// 	ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
-	// }
+		ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
+		ctx = context.WithValue(ctx, middleware.CtxOrganizationIDKey, claims.OrganizationID)
+	}
 	// Extract Gin context
 	// newCtx, err := commonlib.ExtractGinContext(ctx)
 	// if err != nil {
