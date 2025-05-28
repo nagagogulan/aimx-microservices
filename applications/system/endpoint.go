@@ -85,9 +85,9 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 		// Extract required fields from request
 		role := req["role"].(string)
 		orgID := req["org_id"].(string)
-		if orgID == "" {
-			orgID = "all"
-		}
+		// if orgID == "" {
+		// 	orgID = "all"
+		// }
 		// Extract and convert pagination parameters safely
 		pageFloat, ok := req["page"].(float64)
 		if !ok {
@@ -104,7 +104,7 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 
 		// Call the service
 
-		response, err := s.GetAuditLog(ctx,username,role, orgID, page, limit)
+		response, err := s.GetAuditLog(ctx, username, role, orgID, page, limit)
 		if err != nil {
 			return nil, err
 		}
