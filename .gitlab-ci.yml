@@ -1,4 +1,6 @@
 image: golang:1.23
+tags:
+  - docker-go
 
 stages:
   - clone
@@ -28,7 +30,7 @@ build-all-services:
   services:
     - docker:dind
   tags:
-    - Docker-Go
+    - docker-go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -46,7 +48,7 @@ push-images:
   services:
     - docker:dind
   tags:
-    - Docker-Go
+    - docker-go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -58,7 +60,6 @@ push-images:
     - cd source
     - go mod tidy
     - go mod vendor
-    # Tag and push all services
     - |
       for service in identity forms roles dataset profile user_management request_management system external-kafka; do
         IMAGE_NAME="backend_ext-$service"
@@ -70,6 +71,8 @@ push-images:
 deploy-to-ec2:
   stage: deploy
   image: alpine:latest
+  tags:
+    - docker-go
   only:
     - main
   before_script:
