@@ -1,6 +1,4 @@
 image: golang:1.23
-tags:
-  - docker-go
 
 stages:
   - clone
@@ -19,6 +17,8 @@ variables:
 clone:
   image: alpine:latest
   stage: clone
+  tags:
+    - docker-go
   script:
     - apk update && apk add git
     - echo "Cloning repository..."
