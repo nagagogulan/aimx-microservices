@@ -28,7 +28,7 @@ build-all-services:
   services:
     - docker:dind
   tags:
-    - Docker-Go
+    - docker-go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
