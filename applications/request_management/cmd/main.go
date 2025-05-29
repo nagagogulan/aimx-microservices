@@ -5,14 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
-	"github.com/joho/godotenv"
 	base "whatsdare.com/fullstack/aimx/backend"
 	"whatsdare.com/fullstack/aimx/backend/service"
 )
@@ -56,7 +54,7 @@ func main() {
 	// if err != nil {
 	// 	fmt.Errorf("Error loading .env file")
 	// }
-	
+
 	dbPortStr := os.Getenv("DBPORT")
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
