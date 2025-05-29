@@ -1,108 +1,80 @@
-# image: golang:1.23
+image: golang:1.23
 
-# stages:
-#   - clone
-#   - build
-#   - deploy
+stages:
+  - clone
+  - build
+  - push
+  - deploy
 
-# variables:
-#   DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-#   GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
-#   GIT_BRANCH: "dev"
-#   SERVICES: "identity dataset"
-#   DOCKER_DRIVER: overlay2
-#   DOCKER_TLS_CERTDIR: ""
-#   DOCKER_HOST: unix:///var/run/docker.sock
+variables:
+  DOCKER_IMAGE_PREFIX: nagagogulan/aimx
+  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
+  GIT_BRANCH: "dev"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: unix:///var/run/docker.sock
 
-# clone:
-#   image: alpine:latest
-#   stage: clone
-#   script:
-#     - apk update && apk add git
-#     - echo "Cloning repository..."
-#     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
+clone:
+  image: alpine:latest
+  stage: clone
+  script:
+    - apk update && apk add git
+    - echo "Cloning repository..."
+    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
 
-# build-all-services:
-#   image: golang:1.23
-#   stage: build
-#   services:
-#     - name: docker:stable-dind
-#       alias: docker
-#   tags:
-#     - Docker-Go
-#   before_script:
-#     - apt-get update && apt-get install -y docker.io git
-#     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-#     - go env -w GOPRIVATE=github.com/PecozQ/*
-#     - docker info
-    
-#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+build-all-services:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  tags:
+    - Docker-Go
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - apk add --no-cache git
+    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+    - cd source
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
+    - docker-compose -f docker-compose-ext.yml build
 
-  
-  
-#   script:
-#   - cd applications/
-#   - for service in $SERVICES; do
-#       cd $service || exit 1;
-#       go mod tidy;
-#       go mod vendor;
-#       docker build -t $DOCKER_IMAGE_PREFIX-$service:latest .;
-#       docker tag $DOCKER_IMAGE_PREFIX-$service:latest nagagogulan/aimx-$service:latest;
-#       docker push nagagogulan/aimx-$service:latest;
-#       cd - || exit 1;
-#     done
+push-images:
+  stage: push
+  image: golang:1.23
+  services:
+    - docker:dind
+  tags:
+    - Docker-Go
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - apk add --no-cache git docker
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+  script:
+    - cd source
+    - go mod tidy
+    - go mod vendor
+    # Tag and push all services
+    - |
+      for service in identity forms roles dataset profile user_management request_management system external-kafka; do
+        IMAGE_NAME="backend_ext-$service"
+        TAGGED_NAME="$DOCKER_IMAGE_PREFIX-ext-$service:latest"
+        docker tag $IMAGE_NAME:latest $TAGGED_NAME
+        docker push $TAGGED_NAME
+      done
 
-
-
-
-
-
-      
-# deploy_microservices:
-#   stage: deploy
-#   image: alpine:latest
-#   only:
-#     - dev
-#   before_script:
-#     - apk add --no-cache openssh bash
-#     - mkdir -p ~/.ssh
-#     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-#     - chmod 600 ~/.ssh/id_rsa
-#     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-#   script:
-#   - |
-#     ssh "$EC2_USER@$EC2_HOST" << EOF
-#       docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-      
-#       # List of services to deploy
-#       SERVICES="identity dataset forms roles profile user_management"
-      
-#       for SERVICE in $SERVICES; do
-#         echo "Deploying \$SERVICE..."
-
-#         # Pull the latest image for the service
-#         docker pull "$DOCKER_IMAGE_PREFIX-\$SERVICE:latest"
-
-#         # Check if a container with the name of the service is running, then stop and remove it
-#         container_id=$(docker ps -q --filter name="\$SERVICE")
-#         if [ -n "\$container_id" ]; then
-#           echo "Stopping and removing existing container for \$SERVICE..."
-#           docker stop "\$container_id"
-#           docker rm "\$container_id"
-#         fi
-
-#         # Run the new container
-#         case "\$SERVICE" in
-#           identity) docker run -d --name identity -p 8081:8081 "$DOCKER_IMAGE_PREFIX-identity:latest" ;;
-#           forms) docker run -d --name forms -p 8082:8082 "$DOCKER_IMAGE_PREFIX-forms:latest" ;;
-#           roles) docker run -d --name roles -p 8083:8083 "$DOCKER_IMAGE_PREFIX-roles:latest" ;;
-#           dataset) docker run -d --name dataset -p 8084:8084 "$DOCKER_IMAGE_PREFIX-dataset:latest" ;;
-#           profile) docker run -d --name profile -p 8085:8085 "$DOCKER_IMAGE_PREFIX-profile:latest" ;;
-#           user_management) docker run -d --name user_management -p 8086:8086 "$DOCKER_IMAGE_PREFIX-user_management:latest" ;;
-#         esac
-
-#       done
-#     EOF
-
-
-
+deploy-to-ec2:
+  stage: deploy
+  image: alpine:latest
+  only:
+    - main
+  before_script:
+    - apk add --no-cache openssh
+  script:
+    - echo "$SSH_PRIVATE_KEY" > key.pem
+    - chmod 600 key.pem
+    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
