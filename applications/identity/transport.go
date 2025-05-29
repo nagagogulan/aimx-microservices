@@ -125,11 +125,11 @@ func decodeRefreshTokenRequest(_ context.Context, r *http.Request) (interface{},
 func decodeSearchOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	// Get the searchTerm from query parameters
 	searchTerm := r.URL.Query().Get("searchTerm")
-	if searchTerm == "" {
-		return nil, fmt.Errorf("searchTerm parameter is required")
+	if searchTerm != "" {
+		return searchTerm, nil
 	}
-
-	return searchTerm, nil
+	//searchTerm is coming empty so to  get all Organizations using added "all"
+	return "all", nil
 }
 
 func decodeTestKongRequest(_ context.Context, r *http.Request) (interface{}, error) {

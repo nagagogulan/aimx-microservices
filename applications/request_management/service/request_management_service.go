@@ -75,7 +75,7 @@ func (s *requestService) UpdateRequestStatus(ctx context.Context, id uuid.UUID, 
 		}
 
 		switch req.RequestType {
-		case common.ENUM_TO_HASH["RequestType"]["Increase in Storege Size"]:
+		case common.ENUM_TO_HASH["RequestType"]["Increase in Storage Size"]:
 			setting.MaxProjectDocketSize += int64(req.Value)
 		case common.ENUM_TO_HASH["RequestType"]["Increase in User Count"]:
 			setting.MaxUsersPerOrganization += req.Value
