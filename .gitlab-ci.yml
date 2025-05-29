@@ -17,8 +17,6 @@ variables:
 clone:
   image: alpine:latest
   stage: clone
-  tags:
-    - docker-go     # add the tag here to ensure runner picks it
   script:
     - apk update && apk add git
     - echo "Cloning repository..."
@@ -30,7 +28,7 @@ build-all-services:
   services:
     - docker:dind
   tags:
-    - docker-go
+    - Docker-Go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -48,7 +46,7 @@ push-images:
   services:
     - docker:dind
   tags:
-    - docker-go
+    - Docker-Go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -60,6 +58,7 @@ push-images:
     - cd source
     - go mod tidy
     - go mod vendor
+    # Tag and push all services
     - |
       for service in identity forms roles dataset profile user_management request_management system external-kafka; do
         IMAGE_NAME="backend_ext-$service"
@@ -73,11 +72,9 @@ deploy-to-ec2:
   image: alpine:latest
   only:
     - main
-  tags:
-    - docker-go
   before_script:
     - apk add --no-cache openssh
   script:
     - echo "$SSH_PRIVATE_KEY" > key.pem
     - chmod 600 key.pem
-    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
+    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "cd /path/to/your/project && git pull origin $GIT_BRANCH && docker-compose -f docker-compose-ext-server.yml up -d --build"
