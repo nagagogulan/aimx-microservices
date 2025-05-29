@@ -39,41 +39,41 @@ build-all-services:
   script:
     - docker-compose -f docker-compose-ext.yml build
 
-push-images:
-  stage: push
-  image: golang:1.23
-  services:
-    - docker:dind
-  tags:
-    - Docker-Go
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - apk add --no-cache git docker
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-  script:
-    - cd source
-    - go mod tidy
-    - go mod vendor
-    # Tag and push all services
-    - |
-      for service in identity forms roles dataset profile user_management request_management system external-kafka; do
-        IMAGE_NAME="backend_ext-$service"
-        TAGGED_NAME="$DOCKER_IMAGE_PREFIX-ext-$service:latest"
-        docker tag $IMAGE_NAME:latest $TAGGED_NAME
-        docker push $TAGGED_NAME
-      done
+# push-images:
+#   stage: push
+#   image: golang:1.23
+#   services:
+#     - docker:dind
+#   tags:
+#     - Docker-Go
+#   variables:
+#     DOCKER_HOST: tcp://docker:2375/
+#     DOCKER_TLS_CERTDIR: ""
+#   before_script:
+#     - apk add --no-cache git docker
+#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+#   script:
+#     - cd source
+#     - go mod tidy
+#     - go mod vendor
+#     # Tag and push all services
+#     - |
+#       for service in identity forms roles dataset profile user_management request_management system external-kafka; do
+#         IMAGE_NAME="backend_ext-$service"
+#         TAGGED_NAME="$DOCKER_IMAGE_PREFIX-ext-$service:latest"
+#         docker tag $IMAGE_NAME:latest $TAGGED_NAME
+#         docker push $TAGGED_NAME
+#       done
 
-deploy-to-ec2:
-  stage: deploy
-  image: alpine:latest
-  only:
-    - main
-  before_script:
-    - apk add --no-cache openssh
-  script:
-    - echo "$SSH_PRIVATE_KEY" > key.pem
-    - chmod 600 key.pem
-    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
+# deploy-to-ec2:
+#   stage: deploy
+#   image: alpine:latest
+#   only:
+#     - main
+#   before_script:
+#     - apk add --no-cache openssh
+#   script:
+#     - echo "$SSH_PRIVATE_KEY" > key.pem
+#     - chmod 600 key.pem
+#     - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
