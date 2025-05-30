@@ -1,12 +1,15 @@
 package base
 
 import (
+	"archive/zip"
 	"bufio"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -126,53 +129,221 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 
 		filePath := file.Name()
 		ext := strings.ToLower(filepath.Ext(filePath))
-		var preview []string
+		fileInfo, err := file.Stat()
+		if err != nil {
+			return model.OpenFileResponse{Err: fmt.Sprintf("failed to get file info: %v", err)}, nil
+		}
 
 		switch ext {
 		case ".csv":
-			// Reset file pointer to start
 			file.Seek(0, io.SeekStart)
-
 			scanner := bufio.NewScanner(file)
+			var preview []string
 			for i := 0; i < 10 && scanner.Scan(); i++ {
 				preview = append(preview, scanner.Text())
 			}
 			if err := scanner.Err(); err != nil {
 				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read csv file: %v", err)}, nil
 			}
+			return model.OpenFileResponse{
+				FileName:    fileInfo.Name(),
+				FileSize:    fileInfo.Size(),
+				FilePath:    filePath,
+				FileType:    "csv",
+				FilePreview: strings.Join(preview, "\n"),
+			}, nil
+		case ".docx":
+			file.Seek(0, io.SeekStart)
+			scanner := bufio.NewScanner(file)
+			var preview []string
+			for i := 0; i < 10 && scanner.Scan(); i++ {
+				preview = append(preview, scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read csv file: %v", err)}, nil
+			}
+			return model.OpenFileResponse{
+				FileName:    fileInfo.Name(),
+				FileSize:    fileInfo.Size(),
+				FilePath:    filePath,
+				FileType:    "docx",
+				FilePreview: strings.Join(preview, "\n"),
+			}, nil
 
 		case ".xlsx":
 			excelFile, err := excelize.OpenFile(filePath)
 			if err != nil {
-				return nil, err
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read xlsx file: %v", err)}, nil
 			}
 			defer excelFile.Close()
 
 			sheetName := excelFile.GetSheetName(0)
 			rows, err := excelFile.GetRows(sheetName)
 			if err != nil {
-				return nil, err
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to read sheet rows: %v", err)}, nil
 			}
 
+			var preview []string
 			for i := 0; i < len(rows) && i < 10; i++ {
 				preview = append(preview, strings.Join(rows[i], "\t"))
 			}
+
+			return model.OpenFileResponse{
+				FileName:    fileInfo.Name(),
+				FileSize:    fileInfo.Size(),
+				FilePath:    filePath,
+				FileType:    "xlsx",
+				FilePreview: strings.Join(preview, "\n"),
+			}, nil
+		case ".zip":
+			reader, err := zip.OpenReader(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to open zip file: %w", err)
+			}
+			defer reader.Close()
+
+			nodeMap := make(map[string]*model.FileNode)
+
+			for _, file := range reader.File {
+				path := strings.ReplaceAll(file.Name, "\\", "/")
+				if path == "" {
+					continue
+				}
+
+				if file.FileInfo().IsDir() {
+					dirPath := strings.TrimSuffix(path, "/")
+					if _, exists := nodeMap[dirPath]; !exists {
+						nodeMap[dirPath] = &model.FileNode{
+							Name:     filepath.Base(dirPath),
+							Type:     "folder",
+							Children: []model.FileNode{},
+						}
+					}
+					continue
+				}
+
+				dir := filepath.Dir(path)
+				if dir != "." {
+					parts := strings.Split(dir, "/")
+					currentPath := ""
+					for _, part := range parts {
+						if currentPath != "" {
+							currentPath += "/"
+						}
+						currentPath += part
+						if _, exists := nodeMap[currentPath]; !exists {
+							nodeMap[currentPath] = &model.FileNode{
+								Name:     part,
+								Type:     "folder",
+								Children: []model.FileNode{},
+							}
+						}
+					}
+				}
+
+				fileName := filepath.Base(path)
+				ext := strings.ToLower(filepath.Ext(fileName))
+
+				fileNode := model.FileNode{
+					Name: fileName,
+					Type: "file",
+				}
+
+				// Try to preview file content
+				rc, err := file.Open()
+				if err == nil {
+					content, _ := io.ReadAll(rc)
+					rc.Close()
+
+					switch ext {
+					case ".jpg", ".jpeg":
+						fileNode.Type = "image"
+						fileNode.Preview = []string{"data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(content)}
+
+					case ".png":
+						fileNode.Type = "image"
+						fileNode.Preview = []string{"data:image/png;base64," + base64.StdEncoding.EncodeToString(content)}
+
+					case ".gif":
+						fileNode.Type = "image"
+						fileNode.Preview = []string{"data:image/gif;base64," + base64.StdEncoding.EncodeToString(content)}
+
+					case ".csv":
+						lines := strings.Split(string(content), "\n")
+						if len(lines) > 10 {
+							lines = lines[:10]
+						}
+						fileNode.Type = "csv"
+						fileNode.Preview = lines
+
+					case ".xlsx":
+						tempFile, err := os.CreateTemp("", "*.xlsx")
+						if err != nil {
+							return model.OpenFileResponse{Err: "failed to create temp file for xlsx"}, nil
+						}
+						defer os.Remove(tempFile.Name())
+
+						if _, err := tempFile.Write(content); err != nil {
+							return model.OpenFileResponse{Err: "failed to write temp xlsx content"}, nil
+						}
+						tempFile.Close()
+
+						excelFile, err := excelize.OpenFile(tempFile.Name())
+						if err != nil {
+							return model.OpenFileResponse{Err: fmt.Sprintf("failed to read xlsx file: %v", err)}, nil
+						}
+						defer excelFile.Close()
+
+						sheetName := excelFile.GetSheetName(0)
+						rows, err := excelFile.GetRows(sheetName)
+						if err != nil {
+							return model.OpenFileResponse{Err: fmt.Sprintf("failed to read sheet rows: %v", err)}, nil
+						}
+
+						var preview []string
+						for i := 0; i < len(rows) && i < 10; i++ {
+							preview = append(preview, strings.Join(rows[i], "\t"))
+						}
+						fileNode.Type = "xlsx"
+						fileNode.Preview = preview
+
+					default:
+						// Skip or limit other file types
+						fileNode.Preview = []string{"Not supported"}
+					}
+				}
+
+				if dir == "." {
+					nodeMap[fileName] = &model.FileNode{
+						Name:    fileName,
+						Type:    "file",
+						Preview: fileNode.Preview,
+					}
+				} else {
+					parent := nodeMap[dir]
+					parent.Children = append(parent.Children, fileNode)
+				}
+			}
+
+			result := []model.FileNode{}
+			for path, node := range nodeMap {
+				if !strings.Contains(path, "/") {
+					result = append(result, *node)
+				}
+			}
+
+			return model.OpenFileResponse{
+				FileName:  fileInfo.Name(),
+				FileSize:  fileInfo.Size(),
+				FilePath:  filePath,
+				FileType:  "zip",
+				Structure: result,
+			}, nil
 
 		default:
 			return model.OpenFileResponse{Err: fmt.Sprintf("unsupported file type: %s", ext)}, nil
 		}
 
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return model.OpenFileResponse{Err: fmt.Sprintf("failed to get file info: %v", err)}, nil
-		}
-
-		return model.OpenFileResponse{
-			FileName:    fileInfo.Name(),
-			FileSize:    fileInfo.Size(),
-			FilePath:    filePath,
-			FilePreview: strings.Join(preview, "\n"),
-		}, nil
 	}
 }
 
