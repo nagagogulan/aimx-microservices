@@ -9,52 +9,52 @@ volumes:
   ext-dataset-app:   
 
 services:
-  # ext-identity:
-  #   image: nagagogulan/aimx-ext-identity:latest
-  #   container_name: identity-container
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     - DBHOST=13.229.196.7
-  #     - DBPORT=5432
-  #     - DBUSER=myappuser
-  #     - DBPASSWORD=SmartWork@123
-  #     - DBNAME=aimxdb
-  #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb
-  #     - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
-  #     - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
-  #     - SMTP_EMAIL=nithiyavel402@gmail.com
-  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-  #     - ACCESS_EXPIRE_MINUTES=15
-  #     - REFRESH_EXPIRE_HOURS=168
-  #   networks:
-  #     - aimx-network
+  ext-identity:
+    image: nagagogulan/aimx-ext-identity:latest
+    container_name: identity-container
+    ports:
+      - "8081:8081"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb
+      - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
+      - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
 
-  # ext-forms:
-  #   image: nagagogulan/aimx-ext-forms:latest
-  #   container_name: forms-container
-  #   ports:
-  #     - "8082:8082"
-  #   environment:
-  #     - DBHOST=13.229.196.7
-  #     - DBPORT=5432
-  #     - DBUSER=myappuser
-  #     - DBPASSWORD=SmartWork@123
-  #     - DBNAME=aimxdb
-  #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb     
-  #     - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
-  #     - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
-  #     - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
-  #     - SMTP_EMAIL=nithiyavel402@gmail.com
-  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-  #     - ACCESS_EXPIRE_MINUTES=15
-  #     - REFRESH_EXPIRE_HOURS=168
-  #   networks:
-  #     - aimx-network
+  ext-forms:
+    image: nagagogulan/aimx-ext-forms:latest
+    container_name: forms-container
+    ports:
+      - "8082:8082"
+    environment:
+      - DBHOST=13.229.196.7
+      - DBPORT=5432
+      - DBUSER=myappuser
+      - DBPASSWORD=SmartWork@123
+      - DBNAME=aimxdb
+      - MONGO_URI=mongodb://13.229.196.7:27017
+      - MONGO_DBNAME=mydb     
+      - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
+      - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
+      - KAFKA_BROKER_ADDRESS=13.229.196.7:9092
+      - SMTP_EMAIL=nithiyavel402@gmail.com
+      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+      - ACCESS_EXPIRE_MINUTES=15
+      - REFRESH_EXPIRE_HOURS=168
+    networks:
+      - aimx-network
 
   # ext-roles:
   #   image: nagagogulan/aimx-ext-roles:latest
@@ -79,30 +79,30 @@ services:
   #   networks:
   #     - aimx-network
 
-  ext-dataset:
-    image: nagagogulan/aimx-ext-dataset:latest
-    container_name: dataset-container
-    ports:
-      - "8084:8084"
-    environment:
-      - DBHOST=13.229.196.7
-      - DBPORT=5432
-      - DBUSER=myappuser
-      - DBPASSWORD=SmartWork@123
-      - DBNAME=aimxdb
-      - MONGO_URI=mongodb://13.229.196.7:27017
-      - MONGO_DBNAME=mydb
-      - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
-      - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
-      - SMTP_EMAIL=nithiyavel402@gmail.com
-      - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-      - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-      - ACCESS_EXPIRE_MINUTES=15
-      - REFRESH_EXPIRE_HOURS=168
-    networks:
-      - aimx-network
-    volumes:
-      - ext-dataset-app:/app
+  # ext-dataset:
+  #   image: nagagogulan/aimx-ext-dataset:latest
+  #   container_name: dataset-container
+  #   ports:
+  #     - "8084:8084"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
+  #     - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #   networks:
+  #     - aimx-network
+  #   volumes:
+  #     - ext-dataset-app:/app
 
   
 
@@ -153,35 +153,11 @@ services:
   #     - aimx-network
   
 
-  # ext-request_management:
-  #   image: nagagogulan/aimx-ext-request_management:latest
-  #   container_name: request_management_container
-  #   ports:
-  #     - "8087:8087"
-  #   environment:
-  #     - DBHOST=13.229.196.7
-  #     - DBPORT=5432
-  #     - DBUSER=myappuser
-  #     - DBPASSWORD=SmartWork@123
-  #     - DBNAME=aimxdb
-  #     - MONGO_URI=mongodb://13.229.196.7:27017
-  #     - MONGO_DBNAME=mydb
-  #     - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
-  #     - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
-  #     - SMTP_EMAIL=nithiyavel402@gmail.com
-  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
-  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
-  #     - ACCESS_EXPIRE_MINUTES=15
-  #     - REFRESH_EXPIRE_HOURS=168
-  #   networks:
-  #     - aimx-network
-
-
-  ext-system:
-    image: nagagogulan/aimx-ext-system:latest
-    container_name: system_container
+  ext-request_management:
+    image: nagagogulan/aimx-ext-request_management:latest
+    container_name: request_management_container
     ports:
-      - "8089:8089"
+      - "8087:8087"
     environment:
       - DBHOST=13.229.196.7
       - DBPORT=5432
@@ -191,25 +167,49 @@ services:
       - MONGO_URI=mongodb://13.229.196.7:27017
       - MONGO_DBNAME=mydb
       - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
-      - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092  
+      - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092
       - SMTP_EMAIL=nithiyavel402@gmail.com
       - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
       - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
       - ACCESS_EXPIRE_MINUTES=15
       - REFRESH_EXPIRE_HOURS=168
-      - FIREBASE_TYPE=service_account
-      - FIREBASE_PROJECT_ID=aimx-a7d32
-      - FIREBASE_PRIVATE_KEY_ID=62344ffd5b06db130547da5ea4e119f5f6011150
-      - FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+DDinSKafx2cF\nboM8doKVMzQJENUpLwMBMLp9okJNKUVQaZCs71e2lgU4fLH35OQRmhkUDFvu0Xkc\nvb68nRlhcPJG7U8Ok78IMhlR+/l1CXgaWIkMOQ5p7zXvce04lF7CYfzYjrZVtczl\n/jWCHccfX3rCL4lMUgnf5M8G2rCbNFYurtFYZK8uJ1RmmyPIfbl3yu3mk4TjEg+B\nTOiF89UoMImxnm1Pat8BVC+OyELg58KrqMiGL2V1w/9SKeaG0fZiWFN0iHSSyC5O\noqXHBmDJcmKk1ex+TlWRLsoMLeiY4/Lohxz9g8wLigCHVH4OlbKl51W14Yailybr\ni0+4eTM1AgMBAAECggEAIIzV0DsGhOPBfqHqutqea4EBVtMp+zuI03Wd32JA4lfg\n/hCSnbgBqS1hOAdNcQSkVmpzBKbIQStiB7zs8/+hRvnyGRlQmtHN3JC+GvdiBrxo\nNHT5Bh2onRbCQWBdLb1lzHu9c3bf/macsUC8t+wzPGmdTDCZnreHZvBY0Bb5PB+q\nsWBOepXIlx8rlVAX1zsyw6+cu1yhGUTKx9YdcsesC9eeqx3/geJURoB6tFiMhwfn\nsVBU5vxcaNvgvZbAXnGcpvhZtlkcnImm5tP67fCzn9OLOu5cRcVs/sSPiTnJjtpO\nh1CCEzwskp2NKE3NPMDKmE6nj84K2F3v5tCe4W0jsQKBgQD70kPRzw/Ja9jcgxub\n6ljwE0MTLYEkQMBXwl4XCsI9xkyGF29shpWuU2oQRZ6LfL44Iyjti7zJfpG4XMMp\nBiPVompVxUumh1jESUygs7tGi+c0Ec4hmqPs1Alw+veTCOLm/x8m8kIRRK8LYu1G\nkvOc9jHBDfe0J7qkjrSMfdfz5QKBgQDBM4rnBYxcB/973+EYL+etFiKj0m4reU85\nmUrwi+E646m4RCWmQvMTIxb77BargF1F7O8f4yllcl/wkUHRLLqfs5u2Ip7wACDi\n3lhJ9wbxbVZKs4oVM7xRWJtWXpgGsY/EpMM97lUF1TcLhNeqGNP1+KmR+h+khsKS\nY9n6x4vtEQKBgGP469fFnnzWhfe1TSau+LQG0aAxdo2P70xn67a2HLstmH+7mg65\nt37HutnO6cxyr4nV24/C5CYSS4OnwArvVxafLhvzAb+RCBqVBwjdkcHGFPnE/9Kz\nc9S3sS/bUqJa6snOCu4JS1VTsTKSCaT0/iYYT1RXWTl6dEyUIvWLmEpJAoGBAI5e\nkw8m0YXIBwabtd4C/zBXTXN3T+QNYspJIiYcjf69YYX+AdiBIWqKwxclpJcA4rry\nnEvdM9Yj8HrwL5Ya5fNlgWs4G/MzxQgpXNo0hRNHxP0LTMfO9gjjyKRe1JyqIA2C\ndLWgeVrxAb0lSV95KEjr0tlVfhfZjmwd1LWucnhhAoGBAOXAqgpFk9+7tuugwDV/\ndhnf5GnTc6h3yU4+ww1oZG4A616MVDllP+0D6j0EPOTT4lNr4CniwXZ8MhFG8cAl\n3vKh0P1GHhiwabTbmcrCMpFXmwqLnB6Csoea3Chv+AX7sqHZGLwLPErikJnt6YbD\noiWc8Mk6hmg8Ofdf7FOUFZ4L\n-----END PRIVATE KEY-----\n"
-      - FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@aimx-a7d32.iam.gserviceaccount.com
-      - FIREBASE_CLIENT_ID=107700438027314431773
-      - FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
-      - FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
-      - FIREBASE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
-      - FIREBASE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40aimx-a7d32.iam.gserviceaccount.com
-      - FIREBASE_UNIVERSE_DOMAIN=googleapis.com
     networks:
       - aimx-network
+
+
+  # ext-system:
+  #   image: nagagogulan/aimx-ext-system:latest
+  #   container_name: system_container
+  #   ports:
+  #     - "8089:8089"
+  #   environment:
+  #     - DBHOST=13.229.196.7
+  #     - DBPORT=5432
+  #     - DBUSER=myappuser
+  #     - DBPASSWORD=SmartWork@123
+  #     - DBNAME=aimxdb
+  #     - MONGO_URI=mongodb://13.229.196.7:27017
+  #     - MONGO_DBNAME=mydb
+  #     - KAFKA_EXT_BROKER_ADDRESS=13.229.196.7:9092
+  #     - KAFKA_INT_BROKER_ADDRESS=54.251.96.179:9092  
+  #     - SMTP_EMAIL=nithiyavel402@gmail.com
+  #     - ACCESS_SECRET=UQnP5Uv3SxZjeO7Dn5kK3Fx9WoqVUuX1N6OApUpkT4I=
+  #     - REFRESH_SECRET=kC3aYdRHfYJtzEZ0Rh8JrD8PIl1hKDHAlNYNoBMcB0o=
+  #     - ACCESS_EXPIRE_MINUTES=15
+  #     - REFRESH_EXPIRE_HOURS=168
+  #     - FIREBASE_TYPE=service_account
+  #     - FIREBASE_PROJECT_ID=aimx-a7d32
+  #     - FIREBASE_PRIVATE_KEY_ID=62344ffd5b06db130547da5ea4e119f5f6011150
+  #     - FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+DDinSKafx2cF\nboM8doKVMzQJENUpLwMBMLp9okJNKUVQaZCs71e2lgU4fLH35OQRmhkUDFvu0Xkc\nvb68nRlhcPJG7U8Ok78IMhlR+/l1CXgaWIkMOQ5p7zXvce04lF7CYfzYjrZVtczl\n/jWCHccfX3rCL4lMUgnf5M8G2rCbNFYurtFYZK8uJ1RmmyPIfbl3yu3mk4TjEg+B\nTOiF89UoMImxnm1Pat8BVC+OyELg58KrqMiGL2V1w/9SKeaG0fZiWFN0iHSSyC5O\noqXHBmDJcmKk1ex+TlWRLsoMLeiY4/Lohxz9g8wLigCHVH4OlbKl51W14Yailybr\ni0+4eTM1AgMBAAECggEAIIzV0DsGhOPBfqHqutqea4EBVtMp+zuI03Wd32JA4lfg\n/hCSnbgBqS1hOAdNcQSkVmpzBKbIQStiB7zs8/+hRvnyGRlQmtHN3JC+GvdiBrxo\nNHT5Bh2onRbCQWBdLb1lzHu9c3bf/macsUC8t+wzPGmdTDCZnreHZvBY0Bb5PB+q\nsWBOepXIlx8rlVAX1zsyw6+cu1yhGUTKx9YdcsesC9eeqx3/geJURoB6tFiMhwfn\nsVBU5vxcaNvgvZbAXnGcpvhZtlkcnImm5tP67fCzn9OLOu5cRcVs/sSPiTnJjtpO\nh1CCEzwskp2NKE3NPMDKmE6nj84K2F3v5tCe4W0jsQKBgQD70kPRzw/Ja9jcgxub\n6ljwE0MTLYEkQMBXwl4XCsI9xkyGF29shpWuU2oQRZ6LfL44Iyjti7zJfpG4XMMp\nBiPVompVxUumh1jESUygs7tGi+c0Ec4hmqPs1Alw+veTCOLm/x8m8kIRRK8LYu1G\nkvOc9jHBDfe0J7qkjrSMfdfz5QKBgQDBM4rnBYxcB/973+EYL+etFiKj0m4reU85\nmUrwi+E646m4RCWmQvMTIxb77BargF1F7O8f4yllcl/wkUHRLLqfs5u2Ip7wACDi\n3lhJ9wbxbVZKs4oVM7xRWJtWXpgGsY/EpMM97lUF1TcLhNeqGNP1+KmR+h+khsKS\nY9n6x4vtEQKBgGP469fFnnzWhfe1TSau+LQG0aAxdo2P70xn67a2HLstmH+7mg65\nt37HutnO6cxyr4nV24/C5CYSS4OnwArvVxafLhvzAb+RCBqVBwjdkcHGFPnE/9Kz\nc9S3sS/bUqJa6snOCu4JS1VTsTKSCaT0/iYYT1RXWTl6dEyUIvWLmEpJAoGBAI5e\nkw8m0YXIBwabtd4C/zBXTXN3T+QNYspJIiYcjf69YYX+AdiBIWqKwxclpJcA4rry\nnEvdM9Yj8HrwL5Ya5fNlgWs4G/MzxQgpXNo0hRNHxP0LTMfO9gjjyKRe1JyqIA2C\ndLWgeVrxAb0lSV95KEjr0tlVfhfZjmwd1LWucnhhAoGBAOXAqgpFk9+7tuugwDV/\ndhnf5GnTc6h3yU4+ww1oZG4A616MVDllP+0D6j0EPOTT4lNr4CniwXZ8MhFG8cAl\n3vKh0P1GHhiwabTbmcrCMpFXmwqLnB6Csoea3Chv+AX7sqHZGLwLPErikJnt6YbD\noiWc8Mk6hmg8Ofdf7FOUFZ4L\n-----END PRIVATE KEY-----\n"
+  #     - FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@aimx-a7d32.iam.gserviceaccount.com
+  #     - FIREBASE_CLIENT_ID=107700438027314431773
+  #     - FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+  #     - FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
+  #     - FIREBASE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
+  #     - FIREBASE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40aimx-a7d32.iam.gserviceaccount.com
+  #     - FIREBASE_UNIVERSE_DOMAIN=googleapis.com
+  #   networks:
+  #     - aimx-network
 
 
   # ext-external-kafka:
