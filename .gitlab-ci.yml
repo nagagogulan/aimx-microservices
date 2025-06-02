@@ -17,8 +17,6 @@ variables:
 clone:
   image: alpine:latest
   stage: clone
-  tags:
-    - docker-go     # add the tag here to ensure runner picks it
   script:
     - apk update && apk add git
     - echo "Cloning repository..."
@@ -29,8 +27,6 @@ build-all-services:
   image: docker:latest
   services:
     - docker:dind
-  tags:
-    - docker-go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -47,8 +43,6 @@ push-images:
   image: golang:1.23
   services:
     - docker:dind
-  tags:
-    - docker-go
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
@@ -73,8 +67,6 @@ deploy-to-ec2:
   image: alpine:latest
   only:
     - main
-  tags:
-    - docker-go
   before_script:
     - apk add --no-cache openssh
   script:
