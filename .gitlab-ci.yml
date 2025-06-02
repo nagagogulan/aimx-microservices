@@ -36,6 +36,7 @@ build-all-services:
     - ls
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
+    - cd applications && ls -la
     - go mod tidy
     - go mod vendor
     - docker-compose -f docker-compose-ext.yml up -d --build
