@@ -34,10 +34,10 @@ build-all-services:
     - apk add --no-cache git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source  # ✅ Add this line
+   
    
   script: |-
-    cd source/applications
+    cd applications
     for d in */; do
       echo "Processing $d"
       cd "$d"
