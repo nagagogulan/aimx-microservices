@@ -31,22 +31,22 @@ build-all-services:
     DOCKER_HOST: unix:///var/run/docker.sock
     DOCKER_TLS_CERTDIR: ""
   before_script:
-    - apk add --no-cache git docker-cli docker-compose go
+    - apk add --no-cache git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - ls
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source  # ✅ Add this line
   script: |-
     cd source/applications
     for d in */; do
-     echo "Processing $d"
-     cd "$d"
-     if [ -f go.mod ]; then
-       go mod tidy
-       go mod vendor
-     else
-       echo "No go.mod in $d, skipping..."
-     fi
-     cd ..
+      echo "Processing $d"
+      cd "$d"
+      if [ -f go.mod ]; then
+        go mod tidy
+        go mod vendor
+      else
+        echo "No go.mod in $d, skipping..."
+      fi
+      cd ..
     done
     docker-compose -f docker-compose-ext.yml up -d --build
 
