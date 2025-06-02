@@ -33,7 +33,7 @@ build-all-services:
   before_script:
     - apk add --no-cache git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - cd source
+    - ls
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - docker-compose -f docker-compose-ext.yml build
