@@ -37,7 +37,16 @@ build-all-services:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd applications && ls -la
-    - for d in */ ; do cd "$d" && go mod tidy && go mod vendor && cd ..; done
+    - for d in */; do \
+      echo "Processing $d" && \
+      cd "$d" && \
+      if [ -f go.mod ]; then \
+        go mod tidy && go mod vendor; \
+      else \
+        echo "No go.mod in $d, skipping..."; \
+      fi && \
+      cd ..; \
+      done
     - docker-compose -f docker-compose-ext.yml up -d --build
 
 push-images:
