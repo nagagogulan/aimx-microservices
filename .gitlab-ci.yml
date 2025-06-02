@@ -35,19 +35,20 @@ build-all-services:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - ls
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd applications && ls -la
-    - for d in */; do \
-      echo "Processing $d" && \
-      cd "$d" && \
-      if [ -f go.mod ]; then \
-        go mod tidy && go mod vendor; \
-      else \
-        echo "No go.mod in $d, skipping..."; \
-      fi && \
-      cd ..; \
-      done
-    - docker-compose -f docker-compose-ext.yml up -d --build
+  script: |-
+    cd source/applications
+    for d in */; do
+     echo "Processing $d"
+     cd "$d"
+     if [ -f go.mod ]; then
+       go mod tidy
+       go mod vendor
+     else
+       echo "No go.mod in $d, skipping..."
+     fi
+     cd ..
+    done
+    docker-compose -f docker-compose-ext.yml up -d --build
 
 push-images:
   stage: push
