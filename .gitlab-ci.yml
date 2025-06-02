@@ -35,8 +35,7 @@ build-all-services:
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source  # ✅ Add this line
-    - echo "=== Contents of ./source ==="
-    - ls -la source
+   
   script: |-
     cd source/applications
     for d in */; do
