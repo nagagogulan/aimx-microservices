@@ -17,12 +17,16 @@ variables:
 clone:
   image: alpine:latest
   stage: clone
+<<<<<<< HEAD
   tags:
     - docker-go
+=======
+>>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
   script:
     - apk update && apk add git
     - echo "Cloning repository..."
     - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
+<<<<<<< HEAD
 
 build-all-services:
   stage: build
@@ -52,6 +56,44 @@ push-images:
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_TLS_CERTDIR: ""
+=======
+
+build-all-services:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - apk add --no-cache git
+    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+   
+   
+  script: |-
+    cd applications
+    for d in */; do
+      echo "Processing $d"
+      cd "$d"
+      if [ -f go.mod ]; then
+        go mod tidy
+        go mod vendor
+      else
+        echo "No go.mod in $d, skipping..."
+      fi
+      cd ..
+    done
+    docker-compose -f docker-compose-ext.yml up -d --build
+
+push-images:
+  stage: push
+  image: golang:1.23
+  services:
+    - docker:dind
+
+>>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
   before_script:
     - apk add --no-cache git docker
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -71,8 +113,11 @@ push-images:
 deploy-to-ec2:
   stage: deploy
   image: alpine:latest
+<<<<<<< HEAD
   tags:
     - docker-go
+=======
+>>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
   only:
     - main
   before_script:
@@ -80,4 +125,8 @@ deploy-to-ec2:
   script:
     - echo "$SSH_PRIVATE_KEY" > key.pem
     - chmod 600 key.pem
+<<<<<<< HEAD
     - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "cd /path/to/your/project && git pull origin $GIT_BRANCH && docker-compose -f docker-compose-ext-server.yml up -d --build"
+=======
+    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
+>>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
