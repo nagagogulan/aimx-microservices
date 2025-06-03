@@ -196,6 +196,7 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 				FilePreview: strings.Join(preview, "\n"),
 			}, nil
 		case ".zip":
+			fmt.Println("Info: file format is zip")
 			reader, err := zip.OpenReader(filePath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to open zip file: %w", err)
