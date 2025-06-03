@@ -16,6 +16,6 @@
     WORKDIR /app
     COPY --from=builder /app/dataset .
     
-    EXPOSE 8080
+    EXPOSE 8084
     CMD ["./dataset"]
     
