@@ -77,19 +77,19 @@ type GetZipPreviewResponse struct {
 	Err       string     `json:"error,omitempty"`
 }
 type OpenFileResponse struct {
-	ID          string     `json:"id"`
-	Structure   []FileNode `json:"structure,omitempty"`
-	FileName    string     `json:"fileName,omitempty"`
-	FileSize    int64      `json:"fileSize,omitempty"`
-	FilePath    string     `json:"filePath,omitempty"`
-	FilePreview string     `json:"filePreview,omitempty"`
-	Err         string     `json:"err,omitempty"`
-	FileType    string     `json:"fileType"`
+	ID          string      `json:"id"`
+	Structure   []*FileNode `json:"structure"`
+	FileName    string      `json:"fileName,omitempty"`
+	FileSize    int64       `json:"fileSize,omitempty"`
+	FilePath    string      `json:"filePath,omitempty"`
+	FilePreview string      `json:"filePreview,omitempty"`
+	Err         string      `json:"err,omitempty"`
+	FileType    string      `json:"fileType"`
 }
 
 type FileNode struct {
-	Name     string     `json:"name"`
-	Type     string     `json:"type"` // "file" or "folder"
-	Preview  []string   `json:"preview,omitempty"`
-	Children []FileNode `json:"children,omitempty"`
+	Name     string      `json:"name"`
+	Type     string      `json:"type"` // "file" or "folder"
+	Preview  []string    `json:"preview,omitempty"`
+	Children []*FileNode `json:"children,omitempty"`
 }

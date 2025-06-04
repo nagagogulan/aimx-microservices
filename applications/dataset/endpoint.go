@@ -206,30 +206,55 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 
 			nodeMap := make(map[string]*model.FileNode)
 
+			// Recursive folder creation - use pointers for Children
+			var ensurePath func(path string) *model.FileNode
+			ensurePath = func(path string) *model.FileNode {
+				path = filepath.ToSlash(path)
+				if node, exists := nodeMap[path]; exists {
+					return node
+				}
+
+				node := &model.FileNode{
+					Name:     filepath.Base(path),
+					Type:     "folder",
+					Children: []*model.FileNode{}, // <-- slice of pointers!
+				}
+				nodeMap[path] = node
+
+				parentPath := filepath.ToSlash(filepath.Dir(path))
+				if parentPath != "." && parentPath != path {
+					parent := ensurePath(parentPath)
+					parent.Children = append(parent.Children, node) // append pointer
+				}
+				return node
+			}
+
 			for _, file := range reader.File {
-				// Normalize to forward slashes
-				path := strings.ReplaceAll(file.Name, "\\", "/")
-				if path == "" {
+				fullPath := filepath.ToSlash(file.Name)
+				if fullPath == "" {
 					continue
 				}
 
 				isDir := file.FileInfo().IsDir()
 				if isDir {
-					path = strings.TrimSuffix(path, "/")
+					fullPath = strings.TrimSuffix(fullPath, "/")
 				}
 
-				// Create folder node or prepare file node
+				parentPath := filepath.ToSlash(filepath.Dir(fullPath))
+				if parentPath != "." {
+					ensurePath(parentPath) // ensure all parent folders exist
+				}
+
 				node := &model.FileNode{
-					Name:     filepath.Base(path),
+					Name:     filepath.Base(fullPath),
 					Type:     "folder",
-					Children: []model.FileNode{},
+					Children: []*model.FileNode{}, // slice of pointers!
 				}
 				if !isDir {
 					node.Type = "file"
 				}
-				nodeMap[path] = node
+				nodeMap[fullPath] = node
 
-				// Read file content and extract preview for known types
 				if !isDir {
 					rc, err := file.Open()
 					if err != nil {
@@ -260,66 +285,42 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 						node.Type = "csv"
 						node.Preview = lines
 					case ".xlsx":
-						tempFile, err := os.CreateTemp("", "*.xlsx")
+						tmp, err := os.CreateTemp("", "*.xlsx")
 						if err != nil {
-							return model.OpenFileResponse{Err: "failed to create temp file for xlsx"}, nil
+							node.Preview = []string{"Error: cannot preview xlsx"}
+							break
 						}
-						defer os.Remove(tempFile.Name())
+						defer os.Remove(tmp.Name())
+						tmp.Write(content)
+						tmp.Close()
 
-						if _, err := tempFile.Write(content); err != nil {
-							return model.OpenFileResponse{Err: "failed to write temp xlsx content"}, nil
+						excel, err := excelize.OpenFile(tmp.Name())
+						if err == nil {
+							defer excel.Close()
+							sheet := excel.GetSheetName(0)
+							rows, _ := excel.GetRows(sheet)
+							for i := 0; i < len(rows) && i < 10; i++ {
+								node.Preview = append(node.Preview, strings.Join(rows[i], "\t"))
+							}
+							node.Type = "xlsx"
 						}
-						tempFile.Close()
-
-						excelFile, err := excelize.OpenFile(tempFile.Name())
-						if err != nil {
-							return model.OpenFileResponse{Err: fmt.Sprintf("failed to read xlsx file: %v", err)}, nil
-						}
-						defer excelFile.Close()
-
-						sheetName := excelFile.GetSheetName(0)
-						rows, err := excelFile.GetRows(sheetName)
-						if err != nil {
-							return model.OpenFileResponse{Err: fmt.Sprintf("failed to read sheet rows: %v", err)}, nil
-						}
-
-						var preview []string
-						for i := 0; i < len(rows) && i < 10; i++ {
-							preview = append(preview, strings.Join(rows[i], "\t"))
-						}
-						node.Type = "xlsx"
-						node.Preview = preview
 					default:
 						node.Preview = []string{"Not supported"}
 					}
 				}
 
-				// Attach to parent
-				parentPath := filepath.Dir(path)
-				parentPath = strings.ReplaceAll(parentPath, "\\", "/") // Normalize
-
-				if parentPath != "." && parentPath != path {
-					if parent, ok := nodeMap[parentPath]; ok {
-						parent.Children = append(parent.Children, *node)
-					}
+				// Attach file node to parent folder pointer (only files here)
+				if parent, ok := nodeMap[parentPath]; ok && fullPath != parentPath {
+					parent.Children = append(parent.Children, node) // append pointer
 				}
 			}
 
-			// Track all nodes that were attached as children
-			attached := map[string]bool{}
-			for _, node := range nodeMap {
-				for _, child := range node.Children {
-					attached[child.Name] = true
-				}
-			}
-
-			// Collect top-level folders or files
-			var result []model.FileNode
+			// Return only root nodes (whose parent is ".")
+			var result []*model.FileNode
 			for path, node := range nodeMap {
-				if !attached[node.Name] {
-					// Fix Windows-style name
-					node.Name = strings.ReplaceAll(path, "/", "\\")
-					result = append(result, *node)
+				parentPath := filepath.ToSlash(filepath.Dir(path))
+				if parentPath == "." || nodeMap[parentPath] == nil {
+					result = append(result, node)
 				}
 			}
 
