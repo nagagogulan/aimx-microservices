@@ -63,7 +63,7 @@ func (s *fileService) UploadDataset(ctx context.Context, fileHeader *multipart.F
 	uuidStr := id.String()
 
 	// Create the directory structure: /dataset/{{uuid}}/sample/
-	dirPath := filepath.Join("datasets", uuidStr, "sample")
+	dirPath := filepath.Join("shared", "datasets", uuidStr, "sample")
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return dto.DatasetUploadResponse{}, fmt.Errorf("failed to create directory structure: %w", err)
 	}
