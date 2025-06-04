@@ -214,10 +214,18 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 				if file.FileInfo().IsDir() {
 					dirPath := strings.TrimSuffix(path, "/")
 					if _, exists := nodeMap[dirPath]; !exists {
-						nodeMap[dirPath] = &model.FileNode{
+						node := &model.FileNode{
 							Name:     filepath.Base(dirPath),
 							Type:     "folder",
 							Children: []model.FileNode{},
+						}
+						nodeMap[dirPath] = node
+
+						parentPath := filepath.Dir(dirPath)
+						if parentPath != "." && parentPath != dirPath {
+							if parent, ok := nodeMap[parentPath]; ok {
+								parent.Children = append(parent.Children, *node)
+							}
 						}
 					}
 					continue
@@ -234,10 +242,18 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 						}
 						currentPath += part
 						if _, exists := nodeMap[currentPath]; !exists {
-							nodeMap[currentPath] = &model.FileNode{
+							node := &model.FileNode{
 								Name:     part,
 								Type:     "folder",
 								Children: []model.FileNode{},
+							}
+							nodeMap[currentPath] = node
+
+							parentPath := filepath.Dir(currentPath)
+							if parentPath != "." && parentPath != currentPath {
+								if parent, ok := nodeMap[parentPath]; ok {
+									parent.Children = append(parent.Children, *node)
+								}
 							}
 						}
 					}
@@ -308,26 +324,21 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 					}
 				}
 
-				fullFilePath := path
-				nodeMap[fullFilePath] = &fileNode
+				nodeMap[path] = &fileNode
 
-				// Add file to parent folder
+				// Attach to parent folder
 				if dir != "." {
-					parent := nodeMap[dir]
-					parent.Children = append(parent.Children, fileNode)
+					if parent, exists := nodeMap[dir]; exists {
+						parent.Children = append(parent.Children, fileNode)
+					}
 				}
 			}
 
-			// Now build the tree
+			// Collect only root nodes (no parent)
 			result := []model.FileNode{}
 			for path, node := range nodeMap {
 				if strings.Count(path, "/") == 0 {
 					result = append(result, *node)
-				} else {
-					parentPath := filepath.Dir(path)
-					if parent, exists := nodeMap[parentPath]; exists {
-						parent.Children = append(parent.Children, *node)
-					}
 				}
 			}
 
