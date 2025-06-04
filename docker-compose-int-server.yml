@@ -103,7 +103,7 @@ services:
     networks:
       - aimx-network
     volumes:
-      - ./shared-data:/data
+      - shared-data:/app/shared
 
   # int-profile:
   #   image: nagagogulan/aimx-int-profile:latest
@@ -202,8 +202,6 @@ services:
     networks:
       - aimx-network
     volumes:
-      - ./shared-data:/data
+      - shared-data:/app/shared
 
-    # working_dir: /app
-    # command: ["./internal-kafka"]  
                                           
