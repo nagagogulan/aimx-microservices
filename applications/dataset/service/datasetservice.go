@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
-	kafkas "github.com/PecozQ/aimx-library/kafka"
 	"github.com/gofrs/uuid"
 	"github.com/segmentio/kafka-go"
 	"whatsdare.com/fullstack/aimx/backend/model"
@@ -363,7 +363,23 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 	}
 
 	// Initialize Kafka writer for the sample-dataset-paths topic
-	writer := kafkas.GetKafkaWriter("sample-dataset-paths", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	//writer := kafkas.GetKafkaWriter("sample-dataset-paths", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	broker := os.Getenv("KAFKA_BROKER_ADDRESS")
+	if broker == "" {
+		log.Fatal("KAFKA_BROKER_ADDRESS is not set")
+	}
+
+	// Initialize Kafka writer
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  []string{broker},
+		Topic:    "sample-dataset-paths",
+		Balancer: &kafka.LeastBytes{},
+	})
+	defer func() {
+		if err := writer.Close(); err != nil {
+			log.Printf("Error closing Kafka writer: %v", err)
+		}
+	}()
 
 	// Send the message to Kafka
 	err = writer.WriteMessages(ctx, kafka.Message{
