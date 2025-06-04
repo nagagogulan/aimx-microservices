@@ -223,6 +223,7 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 					continue
 				}
 
+				// Ensure folder hierarchy exists
 				dir := filepath.Dir(path)
 				if dir != "." {
 					parts := strings.Split(dir, "/")
@@ -250,7 +251,6 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 					Type: "file",
 				}
 
-				// Try to preview file content
 				rc, err := file.Open()
 				if err == nil {
 					content, _ := io.ReadAll(rc)
@@ -260,15 +260,12 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 					case ".jpg", ".jpeg":
 						fileNode.Type = "image"
 						fileNode.Preview = []string{"data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(content)}
-
 					case ".png":
 						fileNode.Type = "image"
 						fileNode.Preview = []string{"data:image/png;base64," + base64.StdEncoding.EncodeToString(content)}
-
 					case ".gif":
 						fileNode.Type = "image"
 						fileNode.Preview = []string{"data:image/gif;base64," + base64.StdEncoding.EncodeToString(content)}
-
 					case ".csv":
 						lines := strings.Split(string(content), "\n")
 						if len(lines) > 10 {
@@ -276,7 +273,6 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 						}
 						fileNode.Type = "csv"
 						fileNode.Preview = lines
-
 					case ".xlsx":
 						tempFile, err := os.CreateTemp("", "*.xlsx")
 						if err != nil {
@@ -307,29 +303,31 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 						}
 						fileNode.Type = "xlsx"
 						fileNode.Preview = preview
-
 					default:
-						// Skip or limit other file types
 						fileNode.Preview = []string{"Not supported"}
 					}
 				}
 
-				if dir == "." {
-					nodeMap[fileName] = &model.FileNode{
-						Name:    fileName,
-						Type:    "file",
-						Preview: fileNode.Preview,
-					}
-				} else {
+				fullFilePath := path
+				nodeMap[fullFilePath] = &fileNode
+
+				// Add file to parent folder
+				if dir != "." {
 					parent := nodeMap[dir]
 					parent.Children = append(parent.Children, fileNode)
 				}
 			}
 
+			// Now build the tree
 			result := []model.FileNode{}
 			for path, node := range nodeMap {
-				if !strings.Contains(path, "/") {
+				if strings.Count(path, "/") == 0 {
 					result = append(result, *node)
+				} else {
+					parentPath := filepath.Dir(path)
+					if parent, exists := nodeMap[parentPath]; exists {
+						parent.Children = append(parent.Children, *node)
+					}
 				}
 			}
 
