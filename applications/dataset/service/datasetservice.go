@@ -116,10 +116,10 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	var filePath string
 
 	// File extension validation based on file type
-	baseDir, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get working directory: %w", err)
-	}
+	// baseDir, err := os.Getwd()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get working directory: %w", err)
+	// }
 
 	// Prepare relative folder path based on form type
 	switch enumLabel {
@@ -148,7 +148,7 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	}
 
 	// Combine with base directory and "data"
-	fullDir := filepath.Join(baseDir, "shared", filePath)
+	fullDir := filepath.Join("shared", filePath)
 
 	// Create all required directories
 	if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
@@ -213,28 +213,28 @@ func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileR
 }
 
 func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, error) {
-	// dir, err := os.Getwd()
-	// if err != nil {
-	// 	fmt.Errorf("Error getting current working directory")
-	// }
-	// fmt.Println("Current Working Directory:", dir)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Errorf("Error getting current working directory")
+	}
+	fmt.Println("Current Working Directory:", dir)
 
-	// localRoot := dir
+	localRoot := dir
 
-	// // Join with the local path
-	// localFilePath := filepath.Join(localRoot, fileURL)
+	// Join with the local path
+	localFilePath := filepath.Join(localRoot, fileURL)
 
 	// Check file existence and handle any errors
-	if _, err := os.Stat(fileURL); err != nil {
+	if _, err := os.Stat(localFilePath); err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("file does not exist: %s", fileURL)
+			return nil, fmt.Errorf("file does not exist: %s", localFilePath)
 		}
 		// Handle other errors like permission denied or others
 		return nil, fmt.Errorf("error checking file existence: %w", err)
 	}
 
 	// Open the file
-	file, err := os.Open(fileURL)
+	file, err := os.Open(localFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file")
 	}

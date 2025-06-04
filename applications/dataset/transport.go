@@ -130,10 +130,10 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	).ServeHTTP))
 
 	//Add this static file server for images
-	r.Static("/images", "./images")
-	r.Static("/datasetfile", "./datasetfile")
-	r.Static("/file", "./file")
-	r.Static("/docketfile", "./docketfile")
+	r.Static("shared", "./shared")
+	// r.Static("shared/datasetfile", "./datasetfile")
+	// r.Static("shared/file", "./file")
+	// r.Static("shared/docketfile", "./docketfile")
 
 	return r
 }
