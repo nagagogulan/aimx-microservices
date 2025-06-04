@@ -116,6 +116,12 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	var filePath string
 
 	// File extension validation based on file type
+	baseDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	// Prepare relative folder path based on form type
 	switch enumLabel {
 	case 0:
 		if !validDatasetExtensions[ext] {
@@ -141,14 +147,17 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		return nil, errcom.ErrUnsupportedFileFormat
 	}
 
-	// Create necessary directories
-	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("unable to create upload dir: %w", err)
+	// Combine with base directory and "data"
+	fullDir := filepath.Join(baseDir, "shared", filePath)
+
+	// Create all required directories
+	if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("unable to create upload directory: %w", err)
 	}
 
-	// Construct full file path
+	// Construct full file name and path
 	newFileName := fmt.Sprintf("%s_%s.%s", timestamp, id.String(), ext)
-	fullPath := filepath.Join(filePath, newFileName)
+	fullPath := filepath.Join(fullDir, newFileName)
 
 	// Create destination file
 	outFile, err := os.Create(fullPath)
@@ -162,11 +171,11 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 	if _, err := io.Copy(outFile, contentReader); err != nil {
 		return nil, fmt.Errorf("failed to stream file")
 	}
-
+	normalizedPath := strings.ReplaceAll(fullPath, "\\", "/")
 	// Return response
 	return &model.UploadResponse{
 		ID:       id,
-		FilePath: fullPath,
+		FilePath: normalizedPath,
 	}, nil
 }
 
@@ -204,28 +213,28 @@ func (s *fileService) DeleteFile(ctx context.Context, filepath model.DeleteFileR
 }
 
 func (s *fileService) OpenFile(ctx context.Context, fileURL string) (*os.File, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Errorf("Error getting current working directory")
-	}
-	fmt.Println("Current Working Directory:", dir)
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	fmt.Errorf("Error getting current working directory")
+	// }
+	// fmt.Println("Current Working Directory:", dir)
 
-	localRoot := dir
+	// localRoot := dir
 
-	// Join with the local path
-	localFilePath := filepath.Join(localRoot, fileURL)
+	// // Join with the local path
+	// localFilePath := filepath.Join(localRoot, fileURL)
 
 	// Check file existence and handle any errors
-	if _, err := os.Stat(localFilePath); err != nil {
+	if _, err := os.Stat(fileURL); err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("file does not exist: %s", localFilePath)
+			return nil, fmt.Errorf("file does not exist: %s", fileURL)
 		}
 		// Handle other errors like permission denied or others
 		return nil, fmt.Errorf("error checking file existence: %w", err)
 	}
 
 	// Open the file
-	file, err := os.Open(localFilePath)
+	file, err := os.Open(fileURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file")
 	}

@@ -197,98 +197,68 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 			}, nil
 		case ".zip":
 			fmt.Println("Info: file format is zip")
+
 			reader, err := zip.OpenReader(filePath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to open zip file: %w", err)
+				return model.OpenFileResponse{Err: fmt.Sprintf("failed to open zip file: %v", err)}, nil
 			}
 			defer reader.Close()
 
 			nodeMap := make(map[string]*model.FileNode)
 
 			for _, file := range reader.File {
+				// Normalize to forward slashes
 				path := strings.ReplaceAll(file.Name, "\\", "/")
 				if path == "" {
 					continue
 				}
 
-				if file.FileInfo().IsDir() {
-					dirPath := strings.TrimSuffix(path, "/")
-					if _, exists := nodeMap[dirPath]; !exists {
-						node := &model.FileNode{
-							Name:     filepath.Base(dirPath),
-							Type:     "folder",
-							Children: []model.FileNode{},
-						}
-						nodeMap[dirPath] = node
+				isDir := file.FileInfo().IsDir()
+				if isDir {
+					path = strings.TrimSuffix(path, "/")
+				}
 
-						parentPath := filepath.Dir(dirPath)
-						if parentPath != "." && parentPath != dirPath {
-							if parent, ok := nodeMap[parentPath]; ok {
-								parent.Children = append(parent.Children, *node)
-							}
-						}
+				// Create folder node or prepare file node
+				node := &model.FileNode{
+					Name:     filepath.Base(path),
+					Type:     "folder",
+					Children: []model.FileNode{},
+				}
+				if !isDir {
+					node.Type = "file"
+				}
+				nodeMap[path] = node
+
+				// Read file content and extract preview for known types
+				if !isDir {
+					rc, err := file.Open()
+					if err != nil {
+						continue
 					}
-					continue
-				}
-
-				// Ensure folder hierarchy exists
-				dir := filepath.Dir(path)
-				if dir != "." {
-					parts := strings.Split(dir, "/")
-					currentPath := ""
-					for _, part := range parts {
-						if currentPath != "" {
-							currentPath += "/"
-						}
-						currentPath += part
-						if _, exists := nodeMap[currentPath]; !exists {
-							node := &model.FileNode{
-								Name:     part,
-								Type:     "folder",
-								Children: []model.FileNode{},
-							}
-							nodeMap[currentPath] = node
-
-							parentPath := filepath.Dir(currentPath)
-							if parentPath != "." && parentPath != currentPath {
-								if parent, ok := nodeMap[parentPath]; ok {
-									parent.Children = append(parent.Children, *node)
-								}
-							}
-						}
-					}
-				}
-
-				fileName := filepath.Base(path)
-				ext := strings.ToLower(filepath.Ext(fileName))
-
-				fileNode := model.FileNode{
-					Name: fileName,
-					Type: "file",
-				}
-
-				rc, err := file.Open()
-				if err == nil {
 					content, _ := io.ReadAll(rc)
 					rc.Close()
 
+					ext := strings.ToLower(filepath.Ext(file.Name))
 					switch ext {
 					case ".jpg", ".jpeg":
-						fileNode.Type = "image"
-						fileNode.Preview = []string{"data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(content)}
+						node.Type = "image"
+						node.Preview = []string{"data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(content)}
 					case ".png":
-						fileNode.Type = "image"
-						fileNode.Preview = []string{"data:image/png;base64," + base64.StdEncoding.EncodeToString(content)}
+						node.Type = "image"
+						node.Preview = []string{"data:image/png;base64," + base64.StdEncoding.EncodeToString(content)}
 					case ".gif":
-						fileNode.Type = "image"
-						fileNode.Preview = []string{"data:image/gif;base64," + base64.StdEncoding.EncodeToString(content)}
+						node.Type = "image"
+						node.Preview = []string{"data:image/gif;base64," + base64.StdEncoding.EncodeToString(content)}
 					case ".csv":
 						lines := strings.Split(string(content), "\n")
+						for i := range lines {
+							lines[i] = strings.TrimRight(lines[i], "\r\n")
+						}
 						if len(lines) > 10 {
 							lines = lines[:10]
 						}
-						fileNode.Type = "csv"
-						fileNode.Preview = lines
+						node.Type = "csv"
+						node.Preview = lines
 					case ".xlsx":
 						tempFile, err := os.CreateTemp("", "*.xlsx")
 						if err != nil {
@@ -317,27 +287,38 @@ func MakeOpenFileEndpoint(s service.Service) endpoint.Endpoint {
 						for i := 0; i < len(rows) && i < 10; i++ {
 							preview = append(preview, strings.Join(rows[i], "\t"))
 						}
-						fileNode.Type = "xlsx"
-						fileNode.Preview = preview
+						node.Type = "xlsx"
+						node.Preview = preview
 					default:
-						fileNode.Preview = []string{"Not supported"}
+						node.Preview = []string{"Not supported"}
 					}
 				}
 
-				nodeMap[path] = &fileNode
+				// Attach to parent
+				parentPath := filepath.Dir(path)
+				parentPath = strings.ReplaceAll(parentPath, "\\", "/") // Normalize
 
-				// Attach to parent folder
-				if dir != "." {
-					if parent, exists := nodeMap[dir]; exists {
-						parent.Children = append(parent.Children, fileNode)
+				if parentPath != "." && parentPath != path {
+					if parent, ok := nodeMap[parentPath]; ok {
+						parent.Children = append(parent.Children, *node)
 					}
 				}
 			}
 
-			// Collect only root nodes (no parent)
-			result := []model.FileNode{}
+			// Track all nodes that were attached as children
+			attached := map[string]bool{}
+			for _, node := range nodeMap {
+				for _, child := range node.Children {
+					attached[child.Name] = true
+				}
+			}
+
+			// Collect top-level folders or files
+			var result []model.FileNode
 			for path, node := range nodeMap {
-				if strings.Count(path, "/") == 0 {
+				if !attached[node.Name] {
+					// Fix Windows-style name
+					node.Name = strings.ReplaceAll(path, "/", "\\")
 					result = append(result, *node)
 				}
 			}
