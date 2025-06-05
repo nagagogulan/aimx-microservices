@@ -136,7 +136,7 @@ func main() {
 	// Create the upload service
 	var uploadSvc service.UploadService
 	{
-		uploadSvc = service.NewUploadService(log.With(logger, "component", "UploadService"), "dockets")
+		uploadSvc = service.NewUploadService(log.With(logger, "component", "UploadService"), "shared/dockets")
 		// If you add middleware for the service, wrap it here:
 		// uploadSvc = service.NewLoggingMiddleware(log.With(logger, "component", "LoggingMiddleware"))(uploadSvc)
 	}

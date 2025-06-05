@@ -41,12 +41,12 @@ type DocketEvaluationMessage struct {
 
 func messageHandler(msg Message) bool {
 	// Ensure the dockets directory exists
-	if err := os.MkdirAll("./dockets", 0755); err != nil {
+	if err := os.MkdirAll("./shared/dockets", 0755); err != nil {
 		log.Printf("Error creating dockets directory: %v", err)
 		return false
 	}
 
-	filePath := "./dockets/" + msg.FileName
+	filePath := "./shared/dockets/" + msg.FileName
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
