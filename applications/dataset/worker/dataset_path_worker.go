@@ -32,7 +32,12 @@ func StartDatasetPathWorker() {
 	// Create a Kafka reader for the sample-dataset-paths topic
 	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS")) // This is the internal kafka broker address
 
-	// Create a context that can be cancelledKAFKA_EXT_BROKER_ADDRESS
+	// Create a context that can be cancelled
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle OS signals for graceful shutdown
+	go func() {
 		sigChan := make(chan os.Signal, 1)
 		// We don't need to handle signals here as they're already handled in main.go
 		// This is just a placeholder for the context cancellation
