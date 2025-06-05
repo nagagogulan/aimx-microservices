@@ -64,7 +64,7 @@ func StartMetricWorker() {
 	brokerAddress := os.Getenv("KAFKA_INT_BROKER_ADDRESS")
 	if brokerAddress == "" {
 		brokerAddress = "13.229.196.7:9092" // Use the same IP as in main.go
-		log.Printf("KAFKA_BROKER_ADDRESS not set, using default: %s", brokerAddress)
+		log.Printf("KAFKA_INT_BROKER_ADDRESS not set, using default: %s", brokerAddress)
 	}
 
 	reader := kafkas.GetKafkaReader(topic, groupID, brokerAddress)
