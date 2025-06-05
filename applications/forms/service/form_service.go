@@ -571,6 +571,33 @@ func sendEmail(receiverEmail string, status string) error {
 			"  </div>" +
 			"</body>" +
 			"</html>")
+
+	case "DEACTIVATED":
+		message = []byte("From: SingHealth <" + from + ">\r\n" +
+			"To: " + receiverEmail + "\r\n" +
+			"Subject: Organization Deactivated: Important Information\r\n" +
+			"Content-Type: text/html; charset=UTF-8\r\n" +
+			"\r\n" +
+			"<html>" +
+			"<body style='font-family: Arial, sans-serif;'>" +
+			"  <div style='background-color: #f4f4f4; padding: 20px;'>" +
+			"    <h2 style='color: #e67e22;'>⚠️ Your Organization Has Been Deactivated ⚠️</h2>" +
+			"    <p>Dear <strong>" + receiverEmail + "</strong>,</p>" +
+			"    <p>We would like to inform you that your organization has been <strong>deactivated</strong> from the platform.</p>" +
+			"    <p>This action may have been taken due to one or more of the following reasons:</p>" +
+			"    <ul>" +
+			"      <li>Inactivity over an extended period.</li>" +
+			"      <li>Policy violations or compliance issues.</li>" +
+			"      <li>Administrative review or suspension.</li>" +
+			"    </ul>" +
+			"    <p>If you believe this action was taken in error, or if you have any questions or concerns, please contact our support team immediately.</p>" +
+			"    <p>Thank you for your understanding.</p>" +
+			"    <p>Best regards,</p>" +
+			"    <p><strong>SingHealth Team</strong></p>" +
+			"    <p style='color: #888;'>This is an automated message. Please do not reply directly to this email.</p>" +
+			"  </div>" +
+			"</body>" +
+			"</html>")
 	}
 
 	// Send the email
@@ -987,6 +1014,7 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 					if err != nil {
 						return errcom.ErrUnabletoUpdate
 					}
+					sendEmail(org.OrganizationEmail, status)
 					return nil
 				}
 			}
