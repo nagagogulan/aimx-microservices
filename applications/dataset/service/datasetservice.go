@@ -363,7 +363,7 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 	}
 
 	// Initialize Kafka writer for the sample-dataset-paths topic
-	writer := kafkas.GetKafkaWriter("sample-dataset-paths", os.Getenv("KAFKA_BROKER_ADDRESS"))
+	writer := kafkas.GetKafkaWriter("sample-dataset-paths", os.Getenv("EXT_KAFKA_BROKER_ADDRESS"))
 
 	// Send the message to Kafka
 	err = writer.WriteMessages(ctx, kafka.Message{
