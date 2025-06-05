@@ -239,7 +239,7 @@ func main() {
 	kafkaBrokerAddress := os.Getenv("KAFKA_EXT_BROKER_ADDRESS")
 	if kafkaBrokerAddress == "" {
 		kafkaBrokerAddress = "13.229.196.7:9092" // Use the same IP as MongoDB
-		log.Printf("KAFKA_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
+		log.Printf("KAFKA_EXT_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
 	}
 
 	topic := "docket-chunks"

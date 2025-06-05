@@ -27,7 +27,7 @@ type DatasetPathMsg struct {
 
 // StartDatasetPathWorker initializes a Kafka consumer for the sample-dataset-paths topic
 func StartDatasetPathWorker() {
-	log.Println("Starting dataset path worker...")
+	log.Println("Starting dataset path worker....... => ")
 
 	// Create a Kafka reader for the sample-dataset-paths topic
 	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS")) // This is the internal kafka broker address
