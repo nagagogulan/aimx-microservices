@@ -30,7 +30,7 @@ func StartDatasetPathWorker() {
 	log.Println("Starting dataset path worker...")
 
 	// Create a Kafka reader for the sample-dataset-paths topic
-	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_EXT_BROKER_ADDRESS")) // This is the internal kafka broker address
+	reader := kafkas.GetKafkaReader("sample-dataset-paths", "dataset-path-consumer-group", os.Getenv("KAFKA_BROKER_ADDRESS")) // This is the internal kafka broker address
 
 	// Create a context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())
@@ -100,7 +100,7 @@ func processFilePath(ctx context.Context, msg DatasetPathMsg) error {
 	fileSize := fileInfo.Size()
 
 	// Initialize Kafka writer for the sample-dataset-chunk topic
-	writer := kafkas.GetKafkaWriter("sample-dataset-chunk", os.Getenv("KAFKA_EXT_BROKER_ADDRESS"))
+	writer := kafkas.GetKafkaWriter("sample-dataset-chunk", os.Getenv("KAFKA_BROKER_ADDRESS"))
 
 	// Set up buffered reader and chunk processing
 	reader := bufio.NewReader(file)
