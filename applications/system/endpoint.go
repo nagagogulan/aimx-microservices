@@ -82,28 +82,22 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(map[string]interface{})
 
-		// Extract required fields from request
-		role := req["role"].(string)
-		orgID := req["org_id"].(string)
-		// if orgID == "" {
-		// 	orgID = "all"
-		// }
-		// Extract and convert pagination parameters safely
-		pageFloat, ok := req["page"].(float64)
-		if !ok {
-			pageFloat = 1 // default page
-		}
-		limitFloat, ok := req["limit"].(float64)
-		if !ok {
-			limitFloat = 10 // default limit
-		}
-		username := req["username"].(string)
+		role, _ := req["role"].(string)
+		orgID, _ := req["org_id"].(string)
+		username, _ := req["username"].(string)
 
-		page := int(pageFloat)
-		limit := int(limitFloat)
+		// Type assertion and fallback for pagination
+		page := 1
+		if p, ok := req["page"].(int); ok && p > 0 {
+			page = p
+		}
+
+		limit := 10
+		if l, ok := req["limit"].(int); ok && l > 0 {
+			limit = l
+		}
 
 		// Call the service
-
 		response, err := s.GetAuditLog(ctx, username, role, orgID, page, limit)
 		if err != nil {
 			return nil, err
@@ -112,7 +106,6 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 		return response, nil
 	}
 }
-
 func makeFindAuditLogByUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*model.FindAuditByUserRequest)

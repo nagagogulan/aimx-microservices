@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	errcom "github.com/PecozQ/aimx-library/apperrors"
 	"github.com/PecozQ/aimx-library/common"
@@ -144,14 +145,28 @@ func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, 
 	if errs != nil {
 		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
+
 	role := r.URL.Query().Get("role")
 	orgID := r.URL.Query().Get("org_id")
 	username := r.URL.Query().Get("username")
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
+
 	if role == "" {
 		return nil, fmt.Errorf("role is required")
 	}
+
+	// Convert page and limit to int with default fallback
+	page := 1
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
+	}
+
+	limit := 10
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+
 	return map[string]interface{}{
 		"role":     role,
 		"org_id":   orgID,
