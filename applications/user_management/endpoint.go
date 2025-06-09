@@ -60,8 +60,16 @@ func makeListUsersEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errcom.ErrInvalidUserID
 		}
 
-		page := req["page"].(int)
-		limit := req["limit"].(int)
+		// Type assertion and fallback for pagination
+		page := 1
+		if p, ok := req["page"].(int); ok && p > 0 {
+			page = p
+		}
+
+		limit := 10
+		if l, ok := req["limit"].(int); ok && l > 0 {
+			limit = l
+		}
 		search := req["search"].(string)
 		rawType, ok := req["type"].(string)
 		if !ok {

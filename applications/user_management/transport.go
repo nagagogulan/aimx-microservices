@@ -117,18 +117,19 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	}
 
 	// Parse pagination and search
-	pageStr := r.URL.Query().Get("page")
-	limitStr := r.URL.Query().Get("limit")
+	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
 	search := r.URL.Query().Get("search")
 	reqType := r.URL.Query().Get("type")
 
-	page, _ := strconv.Atoi(pageStr)
-	if page < 1 {
-		page = 1
+	page := 1
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
 	}
-	limit, _ := strconv.Atoi(limitStr)
-	if limit < 1 {
-		limit = 10
+
+	limit := 10
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
 	}
 
 	// Parse filters from the request
