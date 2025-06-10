@@ -171,7 +171,7 @@ func main() {
 		IdleTimeout:  1 * time.Hour,
 	}
 
-	fmt.Println("Info", "Role service HTTP server started", "port", 8088)
+	fmt.Println("Info", "Role service HTTP server started on", "port", 8088)
 	err = server.ListenAndServe()
 	if err != nil {
 		// log.Fatalf("HTTP server failed: %v", err)

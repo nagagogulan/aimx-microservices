@@ -191,7 +191,6 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 		if err == nil {
 			log.Printf("File size: %d bytes", fileInfo.Size())
 		}
-
 		// If formData is present and FormRepo is set, create the form directly
 		if len(msg.FormData.Fields) > 0 && FormRepo != nil {
 			// Update form data with file path
@@ -227,6 +226,40 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 			if err != nil {
 				log.Printf("Error creating form: %v", err)
 			} else {
+			var audit dto.AuditLogs
+			var datasetName string
+			var email string
+			if createdForm.Type == 2 {
+				for _, field := range createdForm.Fields {
+					if field.Label == "Dataset Name" {
+						if val, ok := field.Value.(string); ok {
+							datasetName = val
+							break
+						}
+					}
+					if field.Label == "Admin Email Address" {
+						fmt.Println("Found Admin Email Address field:")
+						fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
+
+						if val, ok := field.Value.(string); ok {
+							email = val
+							break
+						}
+
+					}
+				}
+				audit = dto.AuditLogs{
+					Timestamp: time.Now().UTC(),
+					UserName:  email,
+					Activity:  "Created Dataset",
+					Dataset:   datasetName,
+					Details: map[string]string{
+						"form_id":   createdForm.ID.String(),
+						"form_type": fmt.Sprintf("%d", createdForm.Type),
+					},
+				}
+				go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
+			}
 				log.Printf("Successfully created form for dataset: %s (UUID: %s, Form ID: %s)",
 					msg.Name, msg.UUID, createdForm.ID.Hex())
 
