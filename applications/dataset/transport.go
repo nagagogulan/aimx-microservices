@@ -282,20 +282,25 @@ func decodePreviewFileRequest(_ context.Context, r *http.Request) (interface{}, 
 // }
 
 // decodeExtendedChunkFileRequest decodes the request for the extended chunk file API
-func decodeChunkFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeChunkFileRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	// Verify authentication
-	_, err := middleware.DecodeHeaderGetClaims(r)
+	claims, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
 		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
 	}
-
+	ctx = context.WithValue(ctx, middleware.CtxUserIDKey, claims.UserID)
+	ctx = context.WithValue(ctx, middleware.CtxEmailKey, claims.Email)
 	// Parse the request body
 	var req dto.ChunkFileRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, fmt.Errorf("failed to decode request body: %w", err)
 	}
-
+	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
 	// Validate required fields
+	req.UserName = email
+	req.UserId = userID
 	if req.Name == "" {
 		return nil, fmt.Errorf("name is required")
 	}

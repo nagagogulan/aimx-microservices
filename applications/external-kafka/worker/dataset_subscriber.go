@@ -13,6 +13,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
+	"github.com/gofrs/uuid"
 )
 
 // DatasetChunkMsg represents the structure of a message received from the sample-dataset-chunk topic
@@ -24,6 +25,8 @@ type DatasetChunkMsg struct {
 	ChunkData   []byte      `json:"chunkData"`
 	ChunkIndex  int         `json:"chunkIndex"`
 	FormData    dto.FormDTO `json:"formData"`
+	UserName    string      `json:"userName"`
+	UserId      string      `json:"userId"`
 }
 
 // FileAssembler keeps track of chunks for a specific file
@@ -47,12 +50,15 @@ var FormRepo repository.FormRepositoryService
 // SampleDatasetRepo holds the sample dataset repository service
 var SampleDatasetRepo repository.SampleDatasetRepositoryService
 
+var userRepo repository.UserCRUDService
+
 // StartDatasetChunkSubscriber initializes a Kafka consumer for the sample-dataset-chunk topic
-func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService, sampleDatasetRepo repository.SampleDatasetRepositoryService) {
+func StartDatasetChunkSubscriber(formRepo repository.FormRepositoryService, sampleDatasetRepo repository.SampleDatasetRepositoryService, usersRepo repository.UserCRUDService) {
 	// Set the form repository
 	FormRepo = formRepo
 	// Set the sample dataset repository
 	SampleDatasetRepo = sampleDatasetRepo
+	userRepo = usersRepo
 
 	log.Println("Starting dataset chunk subscriber...")
 
@@ -226,40 +232,40 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 			if err != nil {
 				log.Printf("Error creating form: %v", err)
 			} else {
-			var audit dto.AuditLogs
-			var datasetName string
-			var email string
-			if createdForm.Type == 2 {
-				for _, field := range createdForm.Fields {
-					if field.Label == "Dataset Name" {
-						if val, ok := field.Value.(string); ok {
-							datasetName = val
-							break
+				var audit dto.AuditLogs
+				var datasetName string
+				//var email string
+				id, err := uuid.FromString(msg.UserId)
+				if err != nil {
+					log.Printf("Error creating form: %v", err)
+				}
+
+				user, err := userRepo.GetUserByID(context.Background(), id)
+				if err != nil {
+					log.Printf("Get user: %v", err)
+				}
+				if createdForm.Type == 2 {
+					for _, field := range createdForm.Fields {
+						if field.Label == "Dataset Name" {
+							if val, ok := field.Value.(string); ok {
+								datasetName = val
+								break
+							}
 						}
 					}
-					if field.Label == "Admin Email Address" {
-						fmt.Println("Found Admin Email Address field:")
-						fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
-
-						if val, ok := field.Value.(string); ok {
-							email = val
-							break
-						}
-
+					audit = dto.AuditLogs{
+						Timestamp: time.Now().UTC(),
+						UserName:  msg.UserName,
+						Activity:  "Created Dataset",
+						Dataset:   datasetName,
+						UserRole:  user.Role.Name,
+						Details: map[string]string{
+							"form_id":   createdForm.ID.String(),
+							"form_type": fmt.Sprintf("%d", createdForm.Type),
+						},
 					}
+					go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 				}
-				audit = dto.AuditLogs{
-					Timestamp: time.Now().UTC(),
-					UserName:  email,
-					Activity:  "Created Dataset",
-					Dataset:   datasetName,
-					Details: map[string]string{
-						"form_id":   createdForm.ID.String(),
-						"form_type": fmt.Sprintf("%d", createdForm.Type),
-					},
-				}
-				go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
-			}
 				log.Printf("Successfully created form for dataset: %s (UUID: %s, Form ID: %s)",
 					msg.Name, msg.UUID, createdForm.ID.Hex())
 

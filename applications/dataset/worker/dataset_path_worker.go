@@ -22,7 +22,9 @@ type DatasetPathMsg struct {
 	UUID     string      `json:"uuid"`
 	FilePath string      `json:"filepath"`
 	FileSize int64       `json:"filesize"`
-	FormData dto.FormDTO `json:"formData"` // FormData is used by the dataset_subscriber
+	FormData dto.FormDTO `json:"formData"`
+	UserName string      `json:"userName"`
+	UserId   string      `json:"userId"` // FormData is used by the dataset_subscriber
 }
 
 // StartDatasetPathWorker initializes a Kafka consumer for the sample-dataset-paths topic
@@ -130,7 +132,10 @@ func processFilePath(ctx context.Context, msg DatasetPathMsg) error {
 				"filepath":      msg.FilePath,
 				"chunkData":     buffer[:n],
 				"chunkIndex":    chunkIndex,
-				"formData":      msg.FormData, // Include the form data
+				"formData":      msg.FormData,
+				"userName":      msg.UserName,
+				"userId":        msg.UserId,
+				// Include the form data
 			}
 			fmt.Println("the chunk msg is given as: ", chunkMsg)
 

@@ -112,9 +112,10 @@ func main() {
 	// Initialize repositories
 	formRepo := repository.NewFormRepository(db)
 	sampleDatasetRepo := repository.NewSampleDatasetRepository(DB)
+	userRepo := repository.NewUserCRUDRepository(DB)
 
 	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
-	go worker.StartDatasetChunkSubscriber(formRepo, sampleDatasetRepo)
+	go worker.StartDatasetChunkSubscriber(formRepo, sampleDatasetRepo, userRepo)
 
 	go worker.StartFileChunkWorker()
 
