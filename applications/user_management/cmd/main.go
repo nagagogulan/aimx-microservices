@@ -98,7 +98,7 @@ func main() {
 		Handler: service.CORS(http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`)),
 	}
 
-	fmt.Println("Info", "HTTP server started on", "port", 8086)
+	fmt.Println("Info", "HTTP server started", "port", 8086)
 	err = httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
