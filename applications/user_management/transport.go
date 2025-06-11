@@ -118,7 +118,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 
 	// Parse pagination and search
 	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
-	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("pageSize"))
 	search := r.URL.Query().Get("search")
 	reqType := r.URL.Query().Get("type")
 
