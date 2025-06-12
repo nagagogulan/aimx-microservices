@@ -172,10 +172,12 @@ func (s *fileService) UploadFile(ctx context.Context, req model.UploadRequest) (
 		return nil, fmt.Errorf("failed to stream file")
 	}
 	normalizedPath := strings.ReplaceAll(fullPath, "\\", "/")
+	fileName := filepath.Base(normalizedPath)
 	// Return response
 	return &model.UploadResponse{
 		ID:       id,
 		FilePath: normalizedPath,
+		FileName: fileName,
 	}, nil
 }
 

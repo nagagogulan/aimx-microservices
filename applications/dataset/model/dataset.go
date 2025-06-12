@@ -14,6 +14,7 @@ type UploadRequest struct {
 type UploadResponse struct {
 	ID        uuid.UUID  `json:"id"`
 	FilePath  string     `json:"file_path"`
+	FileName  string     `json:"fileName"`
 	Structure []FileNode `json:"structure,omitempty"`
 	Err       string     `json:"error,omitempty"`
 }

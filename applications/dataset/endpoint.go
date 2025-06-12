@@ -73,7 +73,7 @@ func makeUploadDataSet(s service.Service) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		return model.UploadResponse{ID: res.ID, FilePath: res.FilePath}, nil
+		return model.UploadResponse{ID: res.ID, FilePath: res.FilePath, FileName: res.FileName}, nil
 	}
 }
 func makeGetDataSetfile(s service.Service) endpoint.Endpoint {
