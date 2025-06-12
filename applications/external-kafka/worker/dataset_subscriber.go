@@ -227,6 +227,7 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 			// }
 
 			// Create the form
+			fmt.Println("check msg in value", msg)
 			log.Printf("Creating form for dataset: %s (UUID: %s)", msg.Name, msg.UUID)
 			createdForm, err := FormRepo.CreateForm(context.Background(), msg.FormData)
 			if err != nil {
@@ -237,7 +238,7 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				//var email string
 				id, err := uuid.FromString(msg.UserId)
 				if err != nil {
-					log.Printf("Error creating form: %v", err)
+					log.Printf("Invalid UserID format: %v", err)
 				}
 
 				user, err := userRepo.GetUserByID(context.Background(), id)
