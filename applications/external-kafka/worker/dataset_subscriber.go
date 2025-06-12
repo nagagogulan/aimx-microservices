@@ -13,7 +13,6 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
-	"github.com/gofrs/uuid"
 )
 
 // DatasetChunkMsg represents the structure of a message received from the sample-dataset-chunk topic
@@ -236,15 +235,15 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				var audit dto.AuditLogs
 				var datasetName string
 				//var email string
-				id, err := uuid.FromString(msg.UserId)
-				if err != nil {
-					log.Printf("Invalid UserID format: %v", err)
-				}
+				// id, err := uuid.FromString(msg.UserId)
+				// if err != nil {
+				// 	log.Printf("Invalid UserID format: %v", err)
+				// }
 
-				user, err := userRepo.GetUserByID(context.Background(), id)
-				if err != nil {
-					log.Printf("Get user: %v", err)
-				}
+				// user, err := userRepo.GetUserByID(context.Background(), id)
+				// if err != nil {
+				// 	log.Printf("Get user: %v", err)
+				// }
 				if createdForm.Type == 2 {
 					for _, field := range createdForm.Fields {
 						if field.Label == "Dataset Name" {
@@ -257,9 +256,10 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 					audit = dto.AuditLogs{
 						Timestamp: time.Now().UTC(),
 						UserName:  msg.UserName,
+						UserID:    msg.UserId,
 						Activity:  "Created Dataset",
 						Dataset:   datasetName,
-						UserRole:  user.Role.Name,
+						UserRole:  "SuperAdmin",
 						Details: map[string]string{
 							"form_id":   createdForm.ID.String(),
 							"form_type": fmt.Sprintf("%d", createdForm.Type),
