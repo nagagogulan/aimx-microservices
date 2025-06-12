@@ -121,15 +121,16 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	limitStr := strings.TrimSpace(r.URL.Query().Get("pageSize"))
 	search := r.URL.Query().Get("search")
 	reqType := r.URL.Query().Get("type")
-
-	page := 1
-	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-		page = p
+	var pages int
+	var limit int
+	page, err := strconv.Atoi(pageStr)
+	if err == nil && page > 0 {
+		pages = page
 	}
 
-	limit := 10
-	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-		limit = l
+	pageSize, err := strconv.Atoi(limitStr)
+	if err == nil && pageSize > 0 {
+		limit = pageSize
 	}
 
 	// Parse filters from the request
@@ -145,7 +146,7 @@ func decodeListUsersRequest(ctx context.Context, r *http.Request) (interface{}, 
 	return map[string]interface{}{
 		"organisation_id": claims.OrganizationID,
 		"user_id":         claims.UserID,
-		"page":            page,
+		"page":            pages,
 		"limit":           limit,
 		"search":          search,
 		"filters":         filters, // Include filters in the request
