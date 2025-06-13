@@ -93,7 +93,7 @@ func makeGetAuditLogEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		limit := 10
-		if l, ok := req["limit"].(int); ok && l > 0 {
+		if l, ok := req["limit"].(int); ok && l >= 0 {
 			limit = l
 		}
 

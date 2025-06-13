@@ -155,14 +155,12 @@ func decodeGetAuditLogRequest(_ context.Context, r *http.Request) (interface{}, 
 	if role == "" {
 		return nil, fmt.Errorf("role is required")
 	}
-
+	var page int
+	var limit int
 	// Convert page and limit to int with default fallback
-	page := 1
 	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
 		page = p
 	}
-
-	limit := 10
 	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
 		limit = l
 	}
