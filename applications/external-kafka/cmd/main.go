@@ -147,15 +147,15 @@ func main() {
 	}
 
 	// Initialize repositories
-	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
+	// docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 
 	// Initialize services
-	statusSvc := service.NewStatusService(docketStatusRepo, logger)
+	// statusSvc := service.NewStatusService(docketStatusRepo, logger)
 
 	// Start the docket status worker in a goroutine
-	go func() {
-		worker.StartDocketStatusWorker(statusSvc)
-	}()
+	// go func() {
+	// 	worker.StartDocketStatusWorker(statusSvc)
+	// }()
 
 	// Create Gin HTTP server (router)
 	// The NewGinServer function is defined in applications/subscriber/transport.go

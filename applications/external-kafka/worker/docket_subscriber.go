@@ -28,8 +28,8 @@ func StartDocketStatusResultSubscriber(
 	DocketStatusRepo = docketStatusRepo
 
 	reader := kafkas.GetKafkaReader(
-		"docket-status-result",
-		"docket-status-consumer-group",
+		"docket-status",
+		"docket-status-group",
 		os.Getenv("KAFKA_INT_BROKER_ADDRESS"),
 	)
 

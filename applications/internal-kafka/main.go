@@ -14,7 +14,7 @@ import (
 	"video-subscriber/worker"
 
 	"github.com/PecozQ/aimx-library/domain/repository"
-	kafka "github.com/PecozQ/aimx-library/kafka"
+	"github.com/PecozQ/aimx-library/kafka"
 	kafkas "github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -125,48 +125,6 @@ func handleDocketEvaluation(m kafkas.Message, formsService service.FormsService)
 		log.Printf("Successfully posted metadata to Temporal queue for UUID: %s", evalMsg.Metadata["uuid"])
 	}
 
-}
-
-func handleDockerStatusMessage(m kafkas.Message) {
-	log.Printf("Received docker-status message: Key=%s, Value=%s", string(m.Key), string(m.Value))
-
-	// Updated struct to include 'metrics'
-	var statusPayload struct {
-		UUID    string      `json:"uuid"`
-		Status  string      `json:"status"`  // "success" or "failed"
-		Metrics interface{} `json:"metrics"` // Can be any JSON value
-	}
-
-	// Parse the incoming message
-	if err := json.Unmarshal(m.Value, &statusPayload); err != nil {
-		log.Printf("❌ Error decoding docker-status payload: %v", err)
-		return
-	}
-
-	log.Printf("🟢 Docker status update:\n  UUID   = %s\n  Status = %s\n  Metrics = %+v",
-		statusPayload.UUID, statusPayload.Status, statusPayload.Metrics)
-
-	// Re-encode the full message (uuid, status, metrics) for the new topic
-	msgData, err := json.Marshal(statusPayload)
-	if err != nil {
-		log.Printf("❌ Error re-encoding status payload: %v", err)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	writer := kafka.GetKafkaWriter("docket-metric-result", "13.229.196.7:9092")
-
-	err = writer.WriteMessages(ctx, kafkas.Message{
-		Key:   []byte(statusPayload.UUID),
-		Value: msgData,
-	})
-	if err != nil {
-		log.Printf("❌ Failed to forward status to 'docket-status-result': %v", err)
-	} else {
-		log.Printf("✅ Forwarded to 'docket-status-result' for UUID: %s", statusPayload.UUID)
-	}
 }
 
 // postToTemporalQueue sends the updated metadata to a Temporal workflow
@@ -280,8 +238,8 @@ func main() {
 	// Get Kafka broker address from environment variable
 	kafkaBrokerAddress := os.Getenv("KAFKA_EXT_BROKER_ADDRESS")
 	if kafkaBrokerAddress == "" {
-		kafkaBrokerAddress = "13.229.196.7:9092"
-		log.Printf("KAFKA_EXT_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
+		kafkaBrokerAddress = "13.229.196.7:9092" // Use the same IP as MongoDB
+		log.Printf("KAFKA_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
 	}
 
 	topic := "docket-chunks"
@@ -297,52 +255,20 @@ func main() {
 	evalReader := kafka.GetKafkaReader(evalTopic, evalGroupID, kafkaBrokerAddress)
 	defer evalReader.Close()
 
-	// Kafka Internal Topic Setup: docker-status
-	intKafkaBrokerAddress := os.Getenv("KAFKA_INT_BROKER_ADDRESS")
-	if intKafkaBrokerAddress == "" {
-		intKafkaBrokerAddress = "54.251.96.179:9092"
-		log.Printf("KAFKA_INT_BROKER_ADDRESS not set, using default: %s", intKafkaBrokerAddress)
-	}
-	dockerStatusReader := kafka.GetKafkaReader("docker-status", "docker-status-consumer-group", intKafkaBrokerAddress)
-	defer dockerStatusReader.Close()
-
-	log.Println("Subscribed to Kafka topics")
+	log.Printf("Subscribed to Kafka topics: '%s' with group ID '%s' and '%s' with group ID '%s' at broker %s",
+		topic, groupID, evalTopic, evalGroupID, kafkaBrokerAddress)
 
 	ctx, cancel = context.WithCancel(context.Background())
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		sig := <-signals
 		log.Printf("Received signal: %s. Shutting down...", sig)
 		cancel()
 	}()
 
-	// Goroutine: docker-status topic consumer
-	go func() {
-		log.Println("Starting docker-status message consumer...")
-		for {
-			select {
-			case <-ctx.Done():
-				log.Println("Context cancelled, exiting docker-status consumer.")
-				return
-			default:
-				readCtx, readCancel := context.WithTimeout(ctx, 5*time.Second)
-				m, err := dockerStatusReader.ReadMessage(readCtx)
-				readCancel()
-				if err != nil {
-					if err == context.DeadlineExceeded {
-						continue
-					}
-					log.Printf("Error reading docker-status message: %v", err)
-					time.Sleep(1 * time.Second)
-					continue
-				}
-				handleDockerStatusMessage(m)
-			}
-		}
-	}()
-
-	// Goroutine: docket-evaluation consumer
+	// Start a goroutine to handle docket evaluation messages
 	go func() {
 		log.Println("Starting docket evaluation message consumer...")
 		for {
@@ -379,13 +305,13 @@ func main() {
 	// Initialize Temporal client for workflow monitoring
 	temporalAddress := os.Getenv("TEMPORAL_ADDRESS")
 	if temporalAddress == "" {
-		temporalAddress = "54.251.96.179:7233"
+		temporalAddress = "54.251.96.179:7233" // Use the IP address instead of localhost
 		log.Printf("TEMPORAL_ADDRESS not set, using: %s", temporalAddress)
 	}
 
 	namespace := os.Getenv("TEMPORAL_NAMESPACE")
 	if namespace == "" {
-		namespace = "default"
+		namespace = "default" // Default namespace
 		log.Printf("TEMPORAL_NAMESPACE not set, using default: %s", namespace)
 	}
 
@@ -404,23 +330,22 @@ func main() {
 		log.Println("Successfully connected to Temporal server")
 	}
 
-	// Metric Worker
+	// Start the metric worker in a goroutine
 	go func() {
 		log.Println("Starting metric worker...")
 		worker.StartMetricWorker()
 	}()
 
-	// Main Kafka docket-chunks message loop
-	log.Println("Waiting for docket-chunks messages...")
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Context cancelled, exiting main loop.")
+			log.Println("Context cancelled, exiting message loop.")
 			return
 		default:
 			readCtx, readCancel := context.WithTimeout(ctx, 5*time.Second)
 			m, err := r.ReadMessage(readCtx)
 			readCancel()
+
 			if err != nil {
 				if err == context.DeadlineExceeded {
 					continue
@@ -433,6 +358,7 @@ func main() {
 				time.Sleep(1 * time.Second)
 				continue
 			}
+
 			log.Printf("Message received from Kafka: Topic %s, Partition %d, Offset %d, Key: %s",
 				m.Topic, m.Partition, m.Offset, string(m.Key))
 
@@ -441,6 +367,7 @@ func main() {
 				log.Printf("Error unmarshalling message value: %v. Message: %s", err, string(m.Value))
 				continue
 			}
+
 			messageHandler(msgData)
 		}
 	}
