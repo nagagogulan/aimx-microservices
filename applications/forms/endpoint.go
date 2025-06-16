@@ -12,6 +12,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"errors"
@@ -46,6 +47,8 @@ type Endpoints struct {
 	TestKongEndpoint          endpoint.Endpoint
 	SendForEvaluationEndpoint endpoint.Endpoint
 	UpdateFormStatusEndpoint  endpoint.Endpoint
+
+	GetDocketMetrics endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -75,6 +78,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		TestKongEndpoint:          Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
+
+		GetDocketMetrics: Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -381,5 +386,22 @@ func makeSendForEvaluationEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return result, nil
+	}
+}
+
+func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Cast the request to uuid.UUID
+		id, ok := request.(uuid.UUID)
+		if !ok {
+			return nil, fmt.Errorf("invalid UUID parameter")
+		}
+
+		// Call service
+		metrics, err := s.GetDocketMetrics(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return metrics, nil
 	}
 }

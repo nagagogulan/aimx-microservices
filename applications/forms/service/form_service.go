@@ -1247,3 +1247,29 @@ func publishDocketMetadata(metadata map[string]interface{}) error {
 
 	return nil
 }
+
+func (s *service) GetDocketMetrics(ctx context.Context, id uuid.UUID) (*dto.DocketMetricsDTO, error) {
+	// Get the docket status by internal UUID
+	docketStatus, err := s.docketStatusRepo.GetDocketStatusByID(ctx, id.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch docket status: %w", err)
+	}
+
+	metricID := docketStatus.DocketMetricsId
+	if metricID == "" {
+		return nil, fmt.Errorf("docket status does not contain a valid DocketMetricsId")
+	}
+
+	metrics, err := s.docketMetricsRepo.GetByID(ctx, metricID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch docket metrics: %w", err)
+	}
+
+	return &dto.DocketMetricsDTO{
+		ID:             metrics.ID,
+		Metadata:       metrics.Metadata,
+		CreatedAt:      metrics.CreatedAt,
+		UpdatedAt:      metrics.UpdatedAt,
+		DocketStatusID: metrics.DocketStatusID, // ✅ Correct field name
+	}, nil
+}

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	errcom "github.com/PecozQ/aimx-library/apperrors"
 	errorlib "github.com/PecozQ/aimx-library/apperrors"
 	commonlib "github.com/PecozQ/aimx-library/common"
 	"github.com/PecozQ/aimx-library/domain/dto"
@@ -204,6 +205,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 	router.PUT("/status/update", gin.WrapF(httptransport.NewServer(
 		endpoints.UpdateFormStatusEndpoint,
 		decodeUpdateFormRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	router.GET("/docketMetrics/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetDocketMetrics,
+		decodeUUIDParam,
 		encodeResponse,
 		options...,
 	).ServeHTTP))
@@ -683,4 +691,13 @@ func decodeSendForEvaluationRequest(ctx context.Context, r *http.Request) (inter
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+	}
+	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+	return uuid.FromString(idStr)
 }

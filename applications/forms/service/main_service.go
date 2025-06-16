@@ -41,6 +41,8 @@ type Service interface {
 	DeactivateOrganization(ctx context.Context, orgID uuid.UUID, status string) error
 
 	TestKong(ctx context.Context) (*model.Response, error)
+
+	GetDocketMetrics(ctx context.Context, id uuid.UUID) (*dto.DocketMetricsDTO, error)
 }
 
 type service struct {
@@ -55,13 +57,16 @@ type service struct {
 	globalSettingRepo repository.GeneralSettingRepository
 	userRepo          repository.UserCRUDService
 	docketStatusRepo  repository.DocketStatusRepositoryService
+	docketMetricsRepo repository.DocketMetricsRepository
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
-	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, docketStatusRepo repository.DocketStatusRepositoryService, userRepo repository.UserCRUDService) Service {
+	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, docketStatusRepo repository.DocketStatusRepositoryService, userRepo repository.UserCRUDService,
+	docketMetricsRepo repository.DocketMetricsRepository) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
-		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, docketStatusRepo: docketStatusRepo, userRepo: userRepo}
+		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, docketStatusRepo: docketStatusRepo,
+		userRepo: userRepo, docketMetricsRepo: docketMetricsRepo}
 }

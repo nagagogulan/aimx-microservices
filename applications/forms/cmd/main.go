@@ -150,9 +150,10 @@ func main() {
 	filterfieldRepo := repository.NewAddSearchfilterService(DB)
 	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 	userRepo := repository.NewUserCRUDRepository(DB)
+	metricsRepo := repository.NewDocketMetricsRepository(db)
 
 	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo,
-		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo, docketStatusRepo, userRepo)
+		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo, docketStatusRepo, userRepo, metricsRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{
