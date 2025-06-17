@@ -42,7 +42,7 @@ type Service interface {
 
 	TestKong(ctx context.Context) (*model.Response, error)
 
-	GetDocketMetrics(ctx context.Context, id uuid.UUID) (*dto.DocketMetricsDTO, error)
+	GetDocketMetrics(ctx context.Context, id string) (*dto.DocketMetricsDTO, error)
 }
 
 type service struct {

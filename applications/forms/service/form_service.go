@@ -1248,9 +1248,9 @@ func publishDocketMetadata(metadata map[string]interface{}) error {
 	return nil
 }
 
-func (s *service) GetDocketMetrics(ctx context.Context, id uuid.UUID) (*dto.DocketMetricsDTO, error) {
+func (s *service) GetDocketMetrics(ctx context.Context, id string) (*dto.DocketMetricsDTO, error) {
 	// Get the docket status by internal UUID
-	docketStatus, err := s.docketStatusRepo.GetDocketStatusByID(ctx, id.String())
+	docketStatus, err := s.docketStatusRepo.GetDocketStatusByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch docket status: %w", err)
 	}

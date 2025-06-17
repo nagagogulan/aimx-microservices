@@ -696,8 +696,8 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 	_, err := middleware.DecodeHeaderGetClaims(r)
 	if err != nil {
-		return nil, errcom.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
-	return uuid.FromString(idStr)
+	return idStr, nil
 }
