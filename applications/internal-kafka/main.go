@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"video-subscriber/service" // Use your local service package instead
-	"video-subscriber/worker"
 
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/kafka"
@@ -331,10 +330,10 @@ func main() {
 	}
 
 	// Start the metric worker in a goroutine
-	go func() {
-		log.Println("Starting metric worker...")
-		worker.StartMetricWorker()
-	}()
+	// go func() {
+	// 	log.Println("Starting metric worker...")
+	// 	worker.StartMetricWorker()
+	// }()
 
 	for {
 		select {
