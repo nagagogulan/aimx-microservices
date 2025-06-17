@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"video-subscriber/service" // Use your local service package instead
-	"video-subscriber/worker"
 
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/kafka"
@@ -239,7 +238,7 @@ func main() {
 	kafkaBrokerAddress := os.Getenv("KAFKA_EXT_BROKER_ADDRESS")
 	if kafkaBrokerAddress == "" {
 		kafkaBrokerAddress = "13.229.196.7:9092" // Use the same IP as MongoDB
-		log.Printf("KAFKA_EXT_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
+		log.Printf("KAFKA_BROKER_ADDRESS not set, using default: %s", kafkaBrokerAddress)
 	}
 
 	topic := "docket-chunks"
@@ -331,10 +330,10 @@ func main() {
 	}
 
 	// Start the metric worker in a goroutine
-	go func() {
-		log.Println("Starting metric worker...")
-		worker.StartMetricWorker()
-	}()
+	// go func() {
+	// 	log.Println("Starting metric worker...")
+	// 	worker.StartMetricWorker()
+	// }()
 
 	for {
 		select {

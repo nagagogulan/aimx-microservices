@@ -46,6 +46,8 @@ type Endpoints struct {
 	TestKongEndpoint          endpoint.Endpoint
 	SendForEvaluationEndpoint endpoint.Endpoint
 	UpdateFormStatusEndpoint  endpoint.Endpoint
+
+	GetDocketMetrics endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -75,6 +77,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		TestKongEndpoint:          Middleware(makeTestKongEndpoint(s), commonlib.TimeoutMs),
 		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
+
+		GetDocketMetrics: Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -381,5 +385,20 @@ func makeSendForEvaluationEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return result, nil
+	}
+}
+
+func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		idStr, ok := request.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid ID parameter")
+		}
+
+		metrics, err := s.GetDocketMetrics(ctx, idStr)
+		if err != nil {
+			return nil, err
+		}
+		return metrics, nil
 	}
 }

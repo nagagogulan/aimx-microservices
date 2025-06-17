@@ -113,11 +113,24 @@ func main() {
 	formRepo := repository.NewFormRepository(db)
 	sampleDatasetRepo := repository.NewSampleDatasetRepository(DB)
 	userRepo := repository.NewUserCRUDRepository(DB)
+	docketMetricsRepo := repository.NewDocketMetricsRepository(db)
+	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 
 	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
 	go worker.StartDatasetChunkSubscriber(formRepo, sampleDatasetRepo, userRepo)
 
 	go worker.StartFileChunkWorker()
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("❌ Recovered from panic in StartDocketStatusResultSubscriber: %v", r)
+			}
+		}()
+
+		// This is the call that might panic
+		worker.StartDocketStatusResultSubscriber(docketMetricsRepo, docketStatusRepo, formRepo)
+	}()
 
 	var logger log.Logger
 	{
@@ -143,15 +156,15 @@ func main() {
 	}
 
 	// Initialize repositories
-	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
+	// docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 
 	// Initialize services
-	statusSvc := service.NewStatusService(docketStatusRepo, logger)
+	// statusSvc := service.NewStatusService(docketStatusRepo, logger)
 
 	// Start the docket status worker in a goroutine
-	go func() {
-		worker.StartDocketStatusWorker(statusSvc)
-	}()
+	// go func() {
+	// 	worker.StartDocketStatusWorker(statusSvc)
+	// }()
 
 	// Create Gin HTTP server (router)
 	// The NewGinServer function is defined in applications/subscriber/transport.go

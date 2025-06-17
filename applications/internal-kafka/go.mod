@@ -7,6 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/PecozQ/aimx-library v0.0.480
 	github.com/segmentio/kafka-go v0.4.48
+	go.mongodb.org/mongo-driver v1.17.3
 	go.temporal.io/sdk v1.34.0
 )
 
@@ -63,7 +64,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	go.mongodb.org/mongo-driver v1.17.3 // indirect
 	go.temporal.io/api v1.46.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect

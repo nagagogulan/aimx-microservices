@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.24.2
 
 require (
-	github.com/PecozQ/aimx-library v0.0.528
+	github.com/PecozQ/aimx-library v0.0.535
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kit/kit v0.13.0
 	github.com/go-kit/log v0.2.1
