@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -125,7 +124,7 @@ func main() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("❌ Recovered from panic in StartDocketStatusResultSubscriber: %v", r)
+				fmt.Printf("❌ Recovered from panic in StartDocketStatusResultSubscriber: %v", r)
 			}
 		}()
 

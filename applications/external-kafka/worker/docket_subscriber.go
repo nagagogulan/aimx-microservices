@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -24,7 +25,7 @@ func StartDocketStatusResultSubscriber(
 ) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("❌ Recovered from panic in docket-status-result subscriber: %v", r)
+			fmt.Printf("❌ Recovered from panic in docket-status-result subscriber: %v", r)
 		}
 	}()
 
