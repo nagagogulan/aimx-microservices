@@ -129,7 +129,7 @@ func main() {
 		}()
 
 		// This is the call that might panic
-		worker.StartDocketStatusResultSubscriber(docketMetricsRepo, docketStatusRepo)
+		worker.StartDocketStatusResultSubscriber(docketMetricsRepo, docketStatusRepo, formRepo)
 	}()
 
 	var logger log.Logger

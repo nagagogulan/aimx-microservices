@@ -18,10 +18,13 @@ import (
 
 var DocketMetricRepo repository.DocketMetricsRepository
 var DocketStatusRepo repository.DocketStatusRepositoryService
+var FormRepo repository.FormRepositoryService
 
 func StartDocketStatusResultSubscriber(
 	docketMetricsRepo repository.DocketMetricsRepository,
 	docketStatusRepo repository.DocketStatusRepositoryService,
+	formRepo repository.FormRepositoryService
+
 ) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -33,6 +36,7 @@ func StartDocketStatusResultSubscriber(
 
 	DocketMetricRepo = docketMetricsRepo
 	DocketStatusRepo = docketStatusRepo
+	FormRepo = formRepo
 
 	reader := kafkas.GetKafkaReader(
 		"docket-status",
@@ -136,6 +140,11 @@ func processDocketStatus(ctx context.Context, uuidStr string, status string, met
 	if err != nil {
 		log.Printf("❌ Failed to update DocketStatus: %v", err)
 		return nil, err
+	}
+
+	err := FormRepo.UpdateDeactivateStatus(ctx, docketStatus.DocketId, "READY_FOR_REVIEW")
+	if err != nil {
+		return errcom.ErrUnabletoUpdate
 	}
 
 	log.Printf("✅ DocketStatus updated successfully for UUID: %s", uuidStr)
