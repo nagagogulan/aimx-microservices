@@ -272,7 +272,7 @@ func decodeCreateTemplateRequest(ctx context.Context, r *http.Request) (interfac
 // Decode register api request...
 func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request struct {
-		dto.TemplateDTO
+		dto.FormDTO
 		SampleDataset   interface{} `json:"sampleDataset,omitempty"`
 		OriginalDataset interface{} `json:"originalDataset,omitempty"`
 		MetaData        interface{} `json:"metaData,omitempty"`
@@ -305,6 +305,7 @@ func decodeCreateFormRequest(ctx context.Context, r *http.Request) (interface{},
 		"sampleDataset":   request.SampleDataset,
 		"originalDataset": request.OriginalDataset,
 		"metaData":        request.MetaData,
+		"status":          request.Status,
 	}
 
 	// Convert to JSON and back to FormDTO to ensure all fields are properly set
