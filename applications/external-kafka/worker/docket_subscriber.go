@@ -12,20 +12,20 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
+	errcom "github.com/PecozQ/aimx-library/apperrors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gofrs/uuid"
 )
 
 var DocketMetricRepo repository.DocketMetricsRepository
 var DocketStatusRepo repository.DocketStatusRepositoryService
-var FormRepo repository.FormRepositoryService
+var FormRepository repository.FormRepositoryService
 
 func StartDocketStatusResultSubscriber(
 	docketMetricsRepo repository.DocketMetricsRepository,
 	docketStatusRepo repository.DocketStatusRepositoryService,
-	formRepo repository.FormRepositoryService
-
-) {
+	formRepo repository.FormRepositoryService) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("❌ Recovered from panic in docket-status-result subscriber: %v", r)
@@ -36,7 +36,7 @@ func StartDocketStatusResultSubscriber(
 
 	DocketMetricRepo = docketMetricsRepo
 	DocketStatusRepo = docketStatusRepo
-	FormRepo = formRepo
+	FormRepository = formRepo
 
 	reader := kafkas.GetKafkaReader(
 		"docket-status",
@@ -142,11 +142,16 @@ func processDocketStatus(ctx context.Context, uuidStr string, status string, met
 		return nil, err
 	}
 
-	err := FormRepo.UpdateDeactivateStatus(ctx, docketStatus.DocketId, "READY_FOR_REVIEW")
+	formObjectID, err := primitive.ObjectIDFromHex(docketStatus.DocketId)
 	if err != nil {
-		return errcom.ErrUnabletoUpdate
+		log.Printf("❌ Invalid ObjectID: %v", err)
+		return nil, fmt.Errorf("invalid ObjectID for form: %v", err)
 	}
 
-	log.Printf("✅ DocketStatus updated successfully for UUID: %s", uuidStr)
+	err = FormRepository.UpdateDeactivateStatus(ctx, formObjectID, "READY_FOR_REVIEW")
+	if err != nil {
+		return nil, errcom.ErrUnabletoUpdate
+	}
+
 	return docketStatus, nil
 }
