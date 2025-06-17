@@ -113,8 +113,8 @@ func main() {
 	formRepo := repository.NewFormRepository(db)
 	sampleDatasetRepo := repository.NewSampleDatasetRepository(DB)
 	userRepo := repository.NewUserCRUDRepository(DB)
-	docketMetricsRepo := repository.NewDocketMetricsRepository(db)
-	docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
+	// docketMetricsRepo := repository.NewDocketMetricsRepository(db)
+	// docketStatusRepo := repository.NewDocketStatusRepositoryService(DB)
 
 	// Start the dataset chunk subscriber with form repository (processes chunks and creates forms)
 	go worker.StartDatasetChunkSubscriber(formRepo, sampleDatasetRepo, userRepo)
