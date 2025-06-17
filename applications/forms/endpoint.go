@@ -12,7 +12,6 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"errors"
@@ -391,14 +390,12 @@ func makeSendForEvaluationEndpoint(s service.Service) endpoint.Endpoint {
 
 func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		// Cast the request to uuid.UUID
-		id, ok := request.(uuid.UUID)
+		idStr, ok := request.(string)
 		if !ok {
-			return nil, fmt.Errorf("invalid UUID parameter")
+			return nil, fmt.Errorf("invalid ID parameter")
 		}
 
-		// Call service
-		metrics, err := s.GetDocketMetrics(ctx, id)
+		metrics, err := s.GetDocketMetrics(ctx, idStr)
 		if err != nil {
 			return nil, err
 		}
