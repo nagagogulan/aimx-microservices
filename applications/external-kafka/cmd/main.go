@@ -121,11 +121,16 @@ func main() {
 
 	go worker.StartFileChunkWorker()
 
-	try {
-		go worker.StartDocketStatusResultSubscriber(docketMetricsRepo, docketStatusRepo)
-	} catch(e) {
-		console.log("e", e)
-	}
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("❌ Recovered from panic in StartDocketStatusResultSubscriber: %v", r)
+			}
+		}()
+
+		// This is the call that might panic
+		worker.StartDocketStatusResultSubscriber(docketMetricsRepo, docketStatusRepo)
+	}()
 
 	var logger log.Logger
 	{
