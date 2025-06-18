@@ -1019,7 +1019,7 @@ func (s *service) DeactivateOrganization(ctx context.Context, orgID uuid.UUID, s
 				orgDomainInForm := domainParts[1]
 
 				if org.OrganizationDomain == orgDomainInForm {
-					err := s.formRepo.UpdateDeactivateStatus(ctx, form.ID, status)
+					_, err := s.formRepo.UpdateDeactivateStatus(ctx, form.ID, status)
 					if err != nil {
 						return errcom.ErrUnabletoUpdate
 					}
