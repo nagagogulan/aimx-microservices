@@ -225,6 +225,6 @@ func sendEmail(receiverEmail string, status string) error {
 		fmt.Println("Error sending email:", err)
 		return err
 	}
-	fmt.Println("Organization approval mail sent successfully")
+	fmt.Println("READY_FOR_REVIEW mail sent successfully")
 	return nil
 }

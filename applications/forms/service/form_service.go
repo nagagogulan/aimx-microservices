@@ -93,6 +93,22 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		}
 
 	} else if form.Type == 3 {
+		orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+		if orgID != "" {
+			orgsettings, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, orgID)
+			if err != nil {
+				return nil, errcom.ErrRecordNotFounds
+			}
+			typeTotal, err := s.formRepo.CountFormsByType(ctx, form.Type)
+			if err != nil {
+				return nil, err
+			}
+			if typeTotal > 0 && orgsettings != nil {
+				if typeTotal >= int64(orgsettings.MaxActiveProjects) {
+					return nil, errcom.ErrMaxActiveProjectReaxched
+				}
+			}
+		}
 		// Validate metadata for type=3 (docket form)
 		fmt.Printf("Form: %+v\n", form)
 
