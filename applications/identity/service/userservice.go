@@ -70,6 +70,11 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	if err := json.Unmarshal(org.Metadata, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal organization metadata: %w", err)
 	}
+	// Check if user exists
+	existingUser, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
+	if err != nil {
+		fmt.Errorf("failed to check user: %w", err)
+	}
 	if org.CurrentUserCount >= metadata.MaxUserCount {
 		return nil, errcom.ErrUserLimitReached
 	}
@@ -81,11 +86,6 @@ func (s *service) LoginWithOTP(ctx context.Context, req *dto.UserAuthRequest) (*
 	// Generate OTP & Secret Key
 	otp := generateOTP()
 
-	// Check if user exists
-	existingUser, err := s.TempUserRepo.GetOTPByUsername(ctx, req.Email)
-	if err != nil {
-		fmt.Errorf("failed to check user: %w", err)
-	}
 	if existingUser != nil && existingUser.IS_MFA_Enabled {
 		return nil, errcom.Err2FAlreadyVerified
 	}
