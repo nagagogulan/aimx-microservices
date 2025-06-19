@@ -184,73 +184,74 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 	if err != nil {
 		return nil, errcom.ErrUnableToCreate
 	}
-	var audit dto.AuditLogs
-	var datasetName string
-	userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
-	email, _ := ctx.Value(middleware.CtxEmailKey).(string)
-	userId, err := uuid.FromString(userID)
-	userDetail, err := s.userRepo.GetUserByID(ctx, userId)
-	if err != nil {
-		return nil, errcom.ErrUserNotFound
-	}
-	ctx = context.WithValue(ctx, "role", userDetail.Role.Name)
-	userrole, _ := ctx.Value("role").(string)
-	fmt.Println("Role", userrole)
-	if createdForm.Type == 2 {
-		for _, field := range createdForm.Fields {
-			if field.Label == "Dataset Name" {
-				if val, ok := field.Value.(string); ok {
-					datasetName = val
-					break
-				}
-			}
+	if form.Type != 1 {
+		var audit dto.AuditLogs
+		var datasetName string
+		userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+		email, _ := ctx.Value(middleware.CtxEmailKey).(string)
+		userId, err := uuid.FromString(userID)
+		userDetail, err := s.userRepo.GetUserByID(ctx, userId)
+		if err != nil {
+			return nil, errcom.ErrUserNotFound
 		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       userrole,
-			Activity:       "Created Dataset",
-			Dataset:        datasetName,
-			Details: map[string]string{
-				"form_id":   createdForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", createdForm.Type),
-			},
-		}
-		go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
-	} else if createdForm.Type == 3 {
-		fmt.Println("IIIIIIIIIIIIIIIIIIIIIIIIIII")
-		var projectdocketName string
-		for _, field := range createdForm.Fields {
-			if field.Label == "Project Name" {
-				if val, ok := field.Value.(string); ok {
-					projectdocketName = val
-					break
-				}
-				if field.Label == "Tagging to sample datasets" {
+		ctx = context.WithValue(ctx, "role", userDetail.Role.Name)
+		userrole, _ := ctx.Value("role").(string)
+		fmt.Println("Role", userrole)
+		if createdForm.Type == 2 {
+			for _, field := range createdForm.Fields {
+				if field.Label == "Dataset Name" {
 					if val, ok := field.Value.(string); ok {
 						datasetName = val
 						break
 					}
 				}
 			}
+			audit = dto.AuditLogs{
+				OrganizationID: orgID,
+				Timestamp:      time.Now().UTC(),
+				UserID:         userID,
+				UserName:       email,
+				UserRole:       userrole,
+				Activity:       "Created Dataset",
+				Dataset:        datasetName,
+				Details: map[string]string{
+					"form_id":   createdForm.ID.String(),
+					"form_type": fmt.Sprintf("%d", createdForm.Type),
+				},
+			}
+			go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
+		} else if createdForm.Type == 3 {
+			var projectdocketName string
+			for _, field := range createdForm.Fields {
+				if field.Label == "Project Name" {
+					if val, ok := field.Value.(string); ok {
+						projectdocketName = val
+						break
+					}
+					if field.Label == "Tagging to sample datasets" {
+						if val, ok := field.Value.(string); ok {
+							datasetName = val
+							break
+						}
+					}
+				}
+			}
+			audit = dto.AuditLogs{
+				OrganizationID: orgID,
+				Timestamp:      time.Now().UTC(),
+				UserID:         userID,
+				UserName:       email,
+				UserRole:       "User",
+				Activity:       "Created Project Docket",
+				ProjectDocket:  projectdocketName,
+				Dataset:        datasetName,
+				Details: map[string]string{
+					"form_id":   createdForm.ID.String(),
+					"form_type": fmt.Sprintf("%d", createdForm.Type),
+				},
+			}
+			go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 		}
-		audit = dto.AuditLogs{
-			OrganizationID: orgID,
-			Timestamp:      time.Now().UTC(),
-			UserID:         userID,
-			UserName:       email,
-			UserRole:       "User",
-			Activity:       "Created Project Docket",
-			ProjectDocket:  projectdocketName,
-			Dataset:        datasetName,
-			Details: map[string]string{
-				"form_id":   createdForm.ID.String(),
-				"form_type": fmt.Sprintf("%d", createdForm.Type),
-			},
-		}
-		go kafkas.PublishAuditLog(&audit, os.Getenv("KAFKA_BROKER_ADDRESS"), "audit-logs")
 	}
 
 	// Optional: Run async
