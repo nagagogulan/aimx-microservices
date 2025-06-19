@@ -94,6 +94,10 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 
 	} else if form.Type == 3 {
 		orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
+		userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+		if userID != "" {
+			form.UserID = userID
+		}
 		if orgID != "" {
 			orgsettings, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, orgID)
 			if err != nil {
@@ -521,7 +525,7 @@ func (s *service) UpdateFormStatus(ctx context.Context, id string, status string
 
 		// Step 4: Log or act on users
 		for _, user := range users {
-			sendEmail(user.Email, status)
+			go sendEmail(user.Email, status)
 		}
 	}
 
@@ -652,6 +656,25 @@ func sendEmail(receiverEmail string, status string) error {
 			"  </div>" +
 			"</body>" +
 			"</html>")
+	case "ADHOC_REQUEST":
+		message = []byte("From: SingHealth <" + from + ">\r\n" +
+			"To: " + receiverEmail + "\r\n" +
+			"Subject: New Ad-hoc Request Received\r\n" +
+			"Content-Type: text/html; charset=UTF-8\r\n" +
+			"\r\n" +
+			"<html>" +
+			"<body style='font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;'>" +
+			"  <div style='max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);'>" +
+			"    <h2 style='color: #2e6c8b;'>📌 Ad-hoc Request Notification</h2>" +
+			"    <p>Dear <strong>" + receiverEmail + "</strong>,</p>" +
+			"    <p>You have received a new <strong>ad-hoc request</strong> that requires your attention.</p>" +
+			"    <p>Please visit the site to view and resolve the request at your earliest convenience.</p>" +
+			"    <p>Thank you,<br><strong>SingHealth Team</strong></p>" +
+			"    <p style='color: #888888; font-size: 12px;'>This is an automated email. Please do not reply to this message.</p>" +
+			"  </div>" +
+			"</body>" +
+			"</html>")
+
 	}
 
 	// Send the email

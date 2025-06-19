@@ -154,26 +154,21 @@ func processDocketStatus(ctx context.Context, uuidStr string, status string, met
 		return nil, errcom.ErrUnabletoUpdate
 	}
 	if err == nil && formDTO != nil {
-		var email string
-		for _, field := range formDTO.Fields {
-			if field.Label == "Admin Email Address" {
-				fmt.Println("Found Admin Email Address field:")
-				fmt.Printf("ID: %d, Placeholder: %s, Value: %v\n", field.ID, field.Placeholder, field.Value)
+		userID, err := uuid.FromString(formDTO.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid user ID: %w", err)
+		}
 
-				// Type assertion
-				var ok bool
-				email, ok = field.Value.(string)
-				if !ok {
-					return nil, errcom.ErrInvalidEmail
-				}
-			}
+		userDetails, err := userRepo.GetUserByID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("error fetching user: %w", err)
 		}
 
 		// If status is a string constant, define it
 		status := "READY_FOR_REVIEW"
 
 		// Send email to extracted address
-		sendEmail(email, status)
+		sendEmail(userDetails.Email, status)
 	}
 
 	// Return whatever `docketStatus` is
@@ -195,22 +190,17 @@ func sendEmail(receiverEmail string, status string) error {
 	case "READY_FOR_REVIEW":
 		message = []byte("From: SingHealth <" + from + ">\r\n" +
 			"To: " + receiverEmail + "\r\n" +
-			"Subject: Action Required: Your Organization Is Ready for Review\r\n" +
+			"Subject: Project Ready for Review\r\n" +
 			"Content-Type: text/html; charset=UTF-8\r\n" +
 			"\r\n" +
 			"<html>" +
 			"<body style='font-family: Arial, sans-serif;'>" +
 			"  <div style='background-color: #f4f4f4; padding: 20px;'>" +
-			"    <h2 style='color: #2e6c8b;'>📋 Your Organization Is Ready for Review</h2>" +
+			"    <h2 style='color: #2e6c8b;'>Project Ready for Review</h2>" +
 			"    <p>Dear <strong>" + receiverEmail + "</strong>,</p>" +
-			"    <p>Your organization has completed the initial setup and is now <strong>ready for review</strong> by our team.</p>" +
-			"    <p>Next steps:</p>" +
-			"    <ul>" +
-			"      <li><strong>Review</strong> your submitted information for accuracy.</li>" +
-			"      <li><strong>Ensure</strong> that all required documents are uploaded.</li>" +
-			"      <li><strong>Wait</strong> for our approval notification via email.</li>" +
-			"    </ul>" +
-			"    <p>We appreciate your cooperation and will get back to you as soon as the review is complete.</p>" +
+			"    <p>We’re excited to let you know that your project is now <strong>ready for review</strong>!</p>" +
+			"    <p>You can now view the results and explore the output at your convenience.</p>" +
+			"    <p>Thank you for your continued efforts!</p>" +
 			"    <p>Best regards,</p>" +
 			"    <p><strong>SingHealth Team</strong></p>" +
 			"    <p style='color: #888;'>This is an automated email, please do not reply.</p>" +
