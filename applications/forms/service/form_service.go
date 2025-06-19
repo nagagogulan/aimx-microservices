@@ -497,6 +497,34 @@ func (s *service) UpdateFormStatus(ctx context.Context, id string, status string
 		return nil, err
 	}
 
+	if updatedForm.Type == 3 && updatedForm.Status == 9 {
+		roleNames := []string{"SuperAdmin", "Collaborator"}
+
+		roles, err := s.roleRepo.GetRolesByNames(ctx, roleNames)
+		if err != nil {
+			log.Println("Error getting roles:", err)
+			return nil, errcom.ErrRecordNotFounds
+		}
+
+		// Step 2: Extract role IDs
+		var roleIDs []string
+		for _, role := range roles {
+			roleIDs = append(roleIDs, role.ID.String()) // assuming role.ID is string
+		}
+
+		// Step 3: Get users by role IDs
+		users, err := s.userRepo.GetUsersByRoleIDs(ctx, roleIDs)
+		if err != nil {
+			log.Println("Error getting users by role IDs:", err)
+			return nil, errcom.ErrRecordNotFounds
+		}
+
+		// Step 4: Log or act on users
+		for _, user := range users {
+			sendEmail(user.Email, status)
+		}
+	}
+
 	if updatedForm.Type == 3 {
 		var projectdocketName string
 		var datasetname string

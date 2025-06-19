@@ -58,15 +58,16 @@ type service struct {
 	userRepo          repository.UserCRUDService
 	docketStatusRepo  repository.DocketStatusRepositoryService
 	docketMetricsRepo repository.DocketMetricsRepository
+	roleRepo          repository.RoleRepositoryService
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
 	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, docketStatusRepo repository.DocketStatusRepositoryService, userRepo repository.UserCRUDService,
-	docketMetricsRepo repository.DocketMetricsRepository) Service {
+	docketMetricsRepo repository.DocketMetricsRepository, roleRepo repository.RoleRepositoryService) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
 		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, docketStatusRepo: docketStatusRepo,
-		userRepo: userRepo, docketMetricsRepo: docketMetricsRepo}
+		userRepo: userRepo, docketMetricsRepo: docketMetricsRepo, roleRepo: roleRepo}
 }
