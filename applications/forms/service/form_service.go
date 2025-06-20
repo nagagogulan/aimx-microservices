@@ -94,34 +94,7 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 
 	} else if form.Type == 3 {
 		orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
-		userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
-		userId, err := uuid.FromString(userID)
-		if err != nil {
-			return nil, errcom.ErrUserNotFound
-		}
-		userDetail, err := s.userRepo.GetUserByID(ctx, userId)
-		ctx = context.WithValue(ctx, "role", userDetail.Role.Name)
-		userrole, _ := ctx.Value("role").(string)
-		fmt.Println("Role", userrole)
-		if userID != "" {
-			form.UserID = userID
-		}
-		if orgID != "" && (userrole == "SuperAdmin" || userrole == "Collaborator") {
-			settings, err := s.globalSettingRepo.GetAllGeneralSetting()
-			if err != nil {
-				return nil, errcom.ErrRecordNotFounds
-			}
-			typeTotal, err := s.formRepo.CountFormsByType(ctx, form.Type)
-			if err != nil {
-				return nil, err
-			}
-			if typeTotal > 0 && settings != nil {
-				if typeTotal >= int64(settings.MaxActiveProjects) {
-					return nil, errcom.ErrMaxActiveProjectReaxched
-				}
-			}
-		}
-		if orgID != "" && (userrole == "Admin" || userrole == "User") {
+		if orgID != "" {
 			orgsettings, err := s.orgSettingRepo.GetOrganizationSettingByOrgID(ctx, orgID)
 			if err != nil {
 				return nil, errcom.ErrRecordNotFounds
@@ -200,6 +173,10 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		} else {
 			return nil, fmt.Errorf("modelWeightUrl must contain either a non-empty path or link")
 		}
+	}
+	if form.Type == 2 {
+		userID, _ := ctx.Value(middleware.CtxUserIDKey).(string)
+		form.UserID = userID
 	}
 	orgID, _ := ctx.Value(middleware.CtxOrganizationIDKey).(string)
 	if form.Type != 1 {
