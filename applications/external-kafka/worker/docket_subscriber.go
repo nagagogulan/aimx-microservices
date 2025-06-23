@@ -154,21 +154,23 @@ func processDocketStatus(ctx context.Context, uuidStr string, status string, met
 		return nil, errcom.ErrUnabletoUpdate
 	}
 	if err == nil && formDTO != nil {
-		userID, err := uuid.FromString(formDTO.UserID)
-		if err != nil {
-			return nil, fmt.Errorf("invalid user ID: %w", err)
+
+		if formDTO.UserID != "" {
+			userID, err := uuid.FromString(formDTO.UserID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid user ID: %w", err)
+			}
+			userDetails, err := userRepo.GetUserByID(ctx, userID)
+			if err != nil {
+				return nil, fmt.Errorf("error fetching user: %w", err)
+			}
+
+			// If status is a string constant, define it
+			status := "READY_FOR_REVIEW"
+
+			// Send email to extracted address
+			sendEmail(userDetails.Email, status)
 		}
-
-		userDetails, err := userRepo.GetUserByID(ctx, userID)
-		if err != nil {
-			return nil, fmt.Errorf("error fetching user: %w", err)
-		}
-
-		// If status is a string constant, define it
-		status := "READY_FOR_REVIEW"
-
-		// Send email to extracted address
-		sendEmail(userDetails.Email, status)
 	}
 
 	// Return whatever `docketStatus` is
