@@ -106,7 +106,6 @@ func (s *service) CreateForm(ctx context.Context, form dto.FormDTO) (*dto.FormDT
 		if userID != "" {
 			form.UserID = userID
 		}
-		if orgID != "" {
 		if orgID != "" && (userrole == "SuperAdmin" || userrole == "Collaborator") {
 			settings, err := s.globalSettingRepo.GetAllGeneralSetting()
 			if err != nil {
