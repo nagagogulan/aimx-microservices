@@ -162,7 +162,7 @@ func main() {
 		Handler: http.TimeoutHandler(httpHandlers, time.Duration(common.ServerTimeout)*time.Millisecond, `{"Error":"Server Execution Timeout"}`),
 	}
 
-	fmt.Println("Info", "HTTP server started", "port", 8082)
+	fmt.Println("Info", "HTTP server started on", "port", 8082)
 	err = httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
