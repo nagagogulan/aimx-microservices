@@ -152,9 +152,10 @@ func main() {
 	userRepo := repository.NewUserCRUDRepository(DB)
 	metricsRepo := repository.NewDocketMetricsRepository(db)
 	roleRepo := repository.NewRoleRepositoryService(DB)
+	docketmetricsRepo := repository.NewDocketPayloadRepositoryService(DB)
 
 	s := service.NewService(templateRepo, formRepo, formTypeRepo, organizationRepo,
-		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo, docketStatusRepo, userRepo, metricsRepo, roleRepo)
+		commEventRepo, orgSettingRepo, globalSettingRepo, filterfieldRepo, docketStatusRepo, userRepo, metricsRepo, roleRepo, docketmetricsRepo)
 	httpHandlers := base.MakeHttpHandler(s)
 
 	httpServer := http.Server{

@@ -1368,3 +1368,10 @@ func (s *service) GetDocketMetrics(ctx context.Context, id string) (*dto.DocketM
 		DocketStatusID: metrics.DocketStatusID, // ✅ Correct field name
 	}, nil
 }
+func (s *service) GetAllDocketDetails(ctx context.Context) ([]entities.ModelConfig, error) {
+	entityList, err := s.docketmetricsRepo.GetAllDocketDetails(ctx)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+	return entityList, nil
+}

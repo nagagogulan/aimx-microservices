@@ -47,7 +47,8 @@ type Endpoints struct {
 	SendForEvaluationEndpoint endpoint.Endpoint
 	UpdateFormStatusEndpoint  endpoint.Endpoint
 
-	GetDocketMetrics endpoint.Endpoint
+	GetDocketMetrics    endpoint.Endpoint
+	GetAllDocketMetrics endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -78,7 +79,8 @@ func NewEndpoint(s service.Service) Endpoints {
 		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
 
-		GetDocketMetrics: Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
+		GetDocketMetrics:    Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
+		GetAllDocketMetrics: Middleware(makeGetAllDocketDetailsEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -400,5 +402,25 @@ func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 		return metrics, nil
+	}
+}
+func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Type assert request
+		_, ok := request.(model.GetAllDocketDetailsRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid request format")
+		}
+
+		modelConfigs, err := s.GetAllDocketDetails(ctx)
+		if err != nil {
+			return model.GetAllDocketDetailsResponse{
+				Error: err.Error(),
+			}, nil
+		}
+
+		return model.GetAllDocketDetailsResponse{
+			Data: modelConfigs,
+		}, nil
 	}
 }

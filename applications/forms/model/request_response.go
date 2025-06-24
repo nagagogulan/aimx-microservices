@@ -111,3 +111,9 @@ type CreateFormRequestWithCtx struct {
 	Ctx  context.Context
 	Form *dto.FormDTO
 }
+type GetAllDocketDetailsResponse struct {
+	Data  []entity.ModelConfig `json:"docketMetrics,omitempty"`
+	Error string               `json:"error,omitempty"`
+}
+
+type GetAllDocketDetailsRequest struct{}

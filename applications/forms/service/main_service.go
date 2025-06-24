@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/PecozQ/aimx-library/domain/dto"
+	"github.com/PecozQ/aimx-library/domain/entities"
 	entity "github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kitlog "github.com/go-kit/log"
@@ -43,6 +44,7 @@ type Service interface {
 	TestKong(ctx context.Context) (*model.Response, error)
 
 	GetDocketMetrics(ctx context.Context, id string) (*dto.DocketMetricsDTO, error)
+	GetAllDocketDetails(ctx context.Context) ([]entities.ModelConfig, error)
 }
 
 type service struct {
@@ -59,15 +61,16 @@ type service struct {
 	docketStatusRepo  repository.DocketStatusRepositoryService
 	docketMetricsRepo repository.DocketMetricsRepository
 	roleRepo          repository.RoleRepositoryService
+	docketmetricsRepo repository.DocketPayloadRepositoryService
 }
 
 func NewService(templateRepo repository.TemplateRepositoryService, formRepo repository.FormRepositoryService, formTypeRepo repository.FormTypeRepositoryService,
 	organizationRepo repository.OrganizationRepositoryService, commEventRepo repository.CommEventRepositoryService, orgSettingRepo repository.OrganizationSettingRepository,
 	globalSettingRepo repository.GeneralSettingRepository, filterfieldRepo repository.AddSearchfilterService, docketStatusRepo repository.DocketStatusRepositoryService, userRepo repository.UserCRUDService,
-	docketMetricsRepo repository.DocketMetricsRepository, roleRepo repository.RoleRepositoryService) Service {
+	docketMetricsRepo repository.DocketMetricsRepository, roleRepo repository.RoleRepositoryService, docketmetricsRepo repository.DocketPayloadRepositoryService) Service {
 	fmt.Println("db interface connected")
 	return &service{templateRepo: templateRepo, formRepo: formRepo, formTypeRepo: formTypeRepo,
 		organizationRepo: organizationRepo, commEventRepo: commEventRepo,
 		orgSettingRepo: orgSettingRepo, globalSettingRepo: globalSettingRepo, filterfieldRepo: filterfieldRepo, docketStatusRepo: docketStatusRepo,
-		userRepo: userRepo, docketMetricsRepo: docketMetricsRepo, roleRepo: roleRepo}
+		userRepo: userRepo, docketMetricsRepo: docketMetricsRepo, roleRepo: roleRepo, docketmetricsRepo: docketmetricsRepo}
 }

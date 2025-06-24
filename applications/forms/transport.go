@@ -216,6 +216,13 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	router.GET("/getdocketMetrics/", gin.WrapF(httptransport.NewServer(
+		endpoints.GetAllDocketMetrics,
+		DecodeGetAllDocketDetailsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -701,4 +708,12 @@ func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 	return idStr, nil
+}
+
+func DecodeGetAllDocketDetailsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	return nil, nil // no payload expected
 }
