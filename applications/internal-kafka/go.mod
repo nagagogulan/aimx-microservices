@@ -5,10 +5,9 @@ go 1.23.1
 toolchain go1.24.2
 
 require (
-	github.com/PecozQ/aimx-library v0.0.546
+	github.com/PecozQ/aimx-library v0.0.548
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
-	github.com/joho/godotenv v1.5.1
 	github.com/segmentio/kafka-go v0.4.48
 	go.mongodb.org/mongo-driver v1.17.3
 	go.temporal.io/sdk v1.34.0
@@ -46,6 +45,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
