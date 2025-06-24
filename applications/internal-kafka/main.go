@@ -7,11 +7,14 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"video-subscriber/service" // Use your local service package instead
+	"video-subscriber/worker"
 
+	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	"github.com/PecozQ/aimx-library/kafka"
 	kafkas "github.com/segmentio/kafka-go"
@@ -222,15 +225,49 @@ func main() {
 
 	fmt.Println("Successfully connected to MongoDB!")
 
+	dbPortStr := os.Getenv("DBPORT")
+	if dbPortStr == "" {
+		log.Println("⚠️ DBPORT not set, defaulting to 5432")
+		dbPortStr = "5432"
+	}
+
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		log.Fatalf("Invalid DBPORT value: %v", err)
+	}
+	DB, err := pgsql.InitDB(&pgsql.Config{
+		DBHost:     os.Getenv("DBHOST"),
+		DBPort:     dbPort,
+		DBUser:     os.Getenv("DBUSER"),
+		DBPassword: os.Getenv("DBPASSWORD"),
+		DBName:     os.Getenv("DBNAME"),
+	})
+	if err != nil {
+		log.Fatalf("Error initializing PostgreSQL DB: %v", err)
+	}
+
+	// Ping to verify connection
+	sqlDB, err := DB.DB()
+	if err != nil {
+		log.Fatalf("Error getting raw SQL DB instance: %v", err)
+	}
+
+	if err = sqlDB.Ping(); err != nil {
+		log.Fatalf("Failed to ping PostgreSQL database: %v", err)
+	} else {
+		log.Println("✅ PostgreSQL database connection successful!")
+	}
+
 	// Get a handle to the database
 	db := mongoClient.Database(mongoDBName)
 	formRepo := repository.NewFormRepository(db)
+	docketPayloadRepo := repository.NewDocketPayloadRepositoryService(DB)
 	defer func() {
 		if err := mongoClient.Disconnect(context.Background()); err != nil {
 			log.Printf("Error disconnecting from MongoDB: %v", err)
 		}
 	}()
-
+	go worker.StartDocketPayloadSubscriber(docketPayloadRepo)
 	// Initialize the forms service
 	formsService := service.NewFormsService(formRepo)
 
