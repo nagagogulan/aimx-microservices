@@ -406,12 +406,6 @@ func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
 }
 func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		// Type assert request
-		_, ok := request.(model.GetAllDocketDetailsRequest)
-		if !ok {
-			return nil, fmt.Errorf("invalid request format")
-		}
-
 		modelConfigs, err := s.GetAllDocketDetails(ctx)
 		if err != nil {
 			return model.GetAllDocketDetailsResponse{
