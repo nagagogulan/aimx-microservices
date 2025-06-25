@@ -96,7 +96,7 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 		log.Printf("❌ Failed to unmarshal payload to dto.ModelConfig: %v", err)
 		return err
 	}
-
+	fmt.Println("check payload contect", dtoModel)
 	googleID := googleuuid.MustParse(msg.UUID)
 	gofrsID, err := gofrsuuid.FromBytes(googleID[:])
 	if err != nil {
