@@ -96,6 +96,8 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 		log.Printf("❌ Failed to marshal payload: %v", err)
 		return err
 	}
+	fmt.Println("✅ ModelConfig to be saved:", string(metricsBytes))
+	fmt.Println("✅ ModelConfig to be saved:", string(payloadBytes))
 
 	// Step 2: Extract DatasetName and DocketName from payload JSON
 	var payloadStruct struct {
