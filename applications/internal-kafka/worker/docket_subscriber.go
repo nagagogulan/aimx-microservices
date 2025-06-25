@@ -106,15 +106,14 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 
 	// Convert dto to entity
 	entityModel := &entities.ModelConfig{
-		ID:                gofrsID,
-		DataType:          dtoModel.DataType,
-		ModelArchitecture: dtoModel.ModelArchitecture,
-		ModelFramework:    dtoModel.ModelFramework,
-		TaskType:          dtoModel.TaskType,
-		ModelDatasetUrl:   dtoModel.ModelDatasetUrl,
-		ModelWeightUrl:    dtoModel.ModelWeightUrl,
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
+		ID:          gofrsID,
+		Status:      dtoModel.Status,
+		DatasetName: dtoModel.DatasetName,
+		DocketName:  dtoModel.DocketName,
+		MetricsJSON: dtoModel.MetricsJSON,
+		PayloadJSON: dtoModel.PayloadJSON,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// Save using repository (expects entity not DTO)

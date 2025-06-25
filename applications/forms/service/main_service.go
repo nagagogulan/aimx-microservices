@@ -45,6 +45,7 @@ type Service interface {
 
 	GetDocketMetrics(ctx context.Context, id string) (*dto.DocketMetricsDTO, error)
 	GetAllDocketDetails(ctx context.Context) ([]entities.ModelConfig, error)
+	AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error)
 }
 
 type service struct {

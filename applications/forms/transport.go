@@ -222,6 +222,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.POST("/adddocketMetrics/", gin.WrapF(httptransport.NewServer(
+		endpoints.AddDocketMetrics,
+		decodeAddDocketRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -716,4 +722,12 @@ func DecodeGetAllDocketDetailsRequest(_ context.Context, r *http.Request) (inter
 		return nil, errorlib.ErrInvalidOrMissingJWT // 401
 	}
 	return nil, nil // no payload expected
+}
+func decodeAddDocketRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req entities.ModelConfig
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return &req, nil // 👈 FIX: return pointer
 }

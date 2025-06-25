@@ -115,5 +115,3 @@ type GetAllDocketDetailsResponse struct {
 	Data  []entity.ModelConfig `json:"docketMetrics,omitempty"`
 	Error string               `json:"error,omitempty"`
 }
-
-type GetAllDocketDetailsRequest struct{}

@@ -1375,3 +1375,6 @@ func (s *service) GetAllDocketDetails(ctx context.Context) ([]entities.ModelConf
 	}
 	return entityList, nil
 }
+func (s *service) AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error) {
+	return s.docketmetricsRepo.AddDocketDetails(ctx, req)
+}

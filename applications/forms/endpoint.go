@@ -49,6 +49,7 @@ type Endpoints struct {
 
 	GetDocketMetrics    endpoint.Endpoint
 	GetAllDocketMetrics endpoint.Endpoint
+	AddDocketMetrics    endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -81,6 +82,7 @@ func NewEndpoint(s service.Service) Endpoints {
 
 		GetDocketMetrics:    Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
 		GetAllDocketMetrics: Middleware(makeGetAllDocketDetailsEndpoint(s), commonlib.TimeoutMs),
+		AddDocketMetrics:    Middleware(makeAddDocketEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -416,5 +418,18 @@ func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
 		return model.GetAllDocketDetailsResponse{
 			Data: modelConfigs,
 		}, nil
+	}
+}
+func makeAddDocketEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(*entities.ModelConfig) // 👈 pointer!
+		if !ok || req == nil {
+			return nil, fmt.Errorf("invalid request payload: expected *entities.ModelConfig but got %T", request)
+		}
+
+		// Optional logging
+		fmt.Printf("📦 Received Docket: %+v\n", req)
+
+		return s.AddDocketDetails(ctx, req)
 	}
 }
