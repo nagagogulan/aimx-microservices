@@ -1,43 +1,23 @@
-image: golang:1.23
-
 stages:
-  - clone
-  - build
-  - push
-  - deploy
+  - build_all       # optional full build for all services
+  - detect          # detect changed microservices
+  - build           # build only changed services
+  - push            # push only changed images
+  - deploy          # deploy only changed services
 
 variables:
-  DOCKER_IMAGE_PREFIX: nagagogulan/aimx
-  GIT_REPO_URL: "https://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@github.com/PecozQ/aimx-library.git"
-  GIT_BRANCH: "dev"
-  DOCKER_DRIVER: overlay2
+  IMAGE_PREFIX: nagagogulan/aimx-int-
+  DOCKER_HOST: tcp://docker:2375/
   DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: unix:///var/run/docker.sock
 
-clone:
-  image: alpine:latest
-  stage: clone
-<<<<<<< HEAD
-  tags:
-    - docker-go
-=======
->>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
-  script:
-    - apk update && apk add git
-    - echo "Cloning repository..."
-    - git clone -b "$GIT_BRANCH" "$GIT_REPO_URL" source
-<<<<<<< HEAD
-
+# 📦 1. Build ALL services via docker-compose-ext.yml
 build-all-services:
-  stage: build
+  stage: build_all
   image: docker:latest
   services:
     - docker:dind
   tags:
     - docker-go
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk add --no-cache git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
@@ -46,87 +26,75 @@ build-all-services:
   script:
     - docker-compose -f docker-compose-ext.yml build
 
-push-images:
-  stage: push
-  image: golang:1.23
-  services:
-    - docker:dind
-  tags:
-    - docker-go
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
-=======
+# 🕵️ 2. Detect which microservices changed (Git diff)
+detect_changed:
+  stage: detect
+  image: alpine:latest
+  script:
+    - apk add --no-cache git
+    - |
+      echo "🔍 Detecting changed services..."
+      export CHANGED_SERVICES=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | \
+        grep '^applications/' | cut -d '/' -f 2 | sort -u | xargs)
+      echo "Detected: $CHANGED_SERVICES"
+      echo "$CHANGED_SERVICES" > changed_services.txt
+  artifacts:
+    paths:
+      - changed_services.txt
 
-build-all-services:
+# 🛠️ 3. Build only the changed microservices
+build:
   stage: build
   image: docker:latest
   services:
     - docker:dind
-  variables:
-    DOCKER_HOST: unix:///var/run/docker.sock
-    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - apk add --no-cache git
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-   
-   
-  script: |-
-    cd applications
-    for d in */; do
-      echo "Processing $d"
-      cd "$d"
-      if [ -f go.mod ]; then
-        go mod tidy
-        go mod vendor
-      else
-        echo "No go.mod in $d, skipping..."
-      fi
-      cd ..
-    done
-    docker-compose -f docker-compose-ext.yml up -d --build
-
-push-images:
-  stage: push
-  image: golang:1.23
-  services:
-    - docker:dind
-
->>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
-  before_script:
-    - apk add --no-cache git docker
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+  dependencies:
+    - detect_changed
   script:
-    - cd source
-    - go mod tidy
-    - go mod vendor
     - |
-      for service in identity forms roles dataset profile user_management request_management system external-kafka; do
-        IMAGE_NAME="backend_ext-$service"
-        TAGGED_NAME="$DOCKER_IMAGE_PREFIX-ext-$service:latest"
-        docker tag $IMAGE_NAME:latest $TAGGED_NAME
-        docker push $TAGGED_NAME
+      for service in $(cat changed_services.txt); do
+        echo "🔧 Building $service..."
+        docker build -t $IMAGE_PREFIX$service:latest applications/$service/
       done
 
-deploy-to-ec2:
+# 📤 4. Push only changed Docker images to registry
+push:
+  stage: push
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  dependencies:
+    - build
+  script:
+    - |
+      for service in $(cat changed_services.txt); do
+        echo "📤 Pushing $service..."
+        docker push $IMAGE_PREFIX$service:latest
+      done
+
+# 🚀 5. Deploy only changed containers on the server
+deploy:
   stage: deploy
   image: alpine:latest
-<<<<<<< HEAD
-  tags:
-    - docker-go
-=======
->>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
-  only:
-    - main
+  dependencies:
+    - push
   before_script:
     - apk add --no-cache openssh
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts
   script:
-    - echo "$SSH_PRIVATE_KEY" > key.pem
-    - chmod 600 key.pem
-<<<<<<< HEAD
-    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "cd /path/to/your/project && git pull origin $GIT_BRANCH && docker-compose -f docker-compose-ext-server.yml up -d --build"
-=======
-    - ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "docker-compose -f docker-compose-ext-server.yml up -d --build"
->>>>>>> abdc49b57879d0f8b11d79ca09c7ae863e6c7514
+    - |
+      for service in $(cat changed_services.txt); do
+        echo "🚀 Deploying $service to server..."
+        ssh $DEPLOY_SERVER <<EOF
+          cd int-backend
+          docker pull $IMAGE_PREFIX$service:latest
+          docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service
+EOF
+      done
