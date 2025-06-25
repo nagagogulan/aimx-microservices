@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"video-subscriber/service" // Use your local service package instead
-	"video-subscriber/worker"
 
 	"github.com/PecozQ/aimx-library/database/pgsql"
 	"github.com/PecozQ/aimx-library/domain/repository"
@@ -261,13 +260,13 @@ func main() {
 	// Get a handle to the database
 	db := mongoClient.Database(mongoDBName)
 	formRepo := repository.NewFormRepository(db)
-	docketPayloadRepo := repository.NewDocketPayloadRepositoryService(DB)
+	//docketPayloadRepo := repository.NewDocketPayloadRepositoryService(DB)
 	defer func() {
 		if err := mongoClient.Disconnect(context.Background()); err != nil {
 			log.Printf("Error disconnecting from MongoDB: %v", err)
 		}
 	}()
-	go worker.StartDocketPayloadSubscriber(docketPayloadRepo)
+	//go worker.StartDocketPayloadSubscriber(docketPayloadRepo)
 	// Initialize the forms service
 	formsService := service.NewFormsService(formRepo)
 
