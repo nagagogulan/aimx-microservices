@@ -91,7 +91,7 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 		return err
 	}
 
-	var dtoModel dto.ModelConfig
+	var dtoModel entities.ModelConfig
 	if err := json.Unmarshal(payloadBytes, &dtoModel); err != nil {
 		log.Printf("❌ Failed to unmarshal payload to dto.ModelConfig: %v", err)
 		return err
