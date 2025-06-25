@@ -115,7 +115,7 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-
+	fmt.Println("check payload contect entityModel", entityModel)
 	// Save using repository (expects entity not DTO)
 	_, err = DocketPayloadRepo.AddDocketDetails(ctx, entityModel)
 	if err != nil {
