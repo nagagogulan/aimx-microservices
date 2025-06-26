@@ -113,6 +113,15 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 	if err := json.Unmarshal(payloadBytes, &payloadStruct); err != nil {
 		log.Printf("❌ Failed to unmarshal payload fields: %v", err)
 	}
+	var datasetname string
+	var docketname string
+	if msg.DatasetName != "" {
+		datasetname = msg.DatasetName
+	}
+
+	if msg.DocketName != "" {
+		docketname = msg.DatasetName
+	}
 	// Step 3: Convert UUID
 	googleID := googleuuid.MustParse(msg.UUID)
 	gofrsID, err := gofrsuuid.FromBytes(googleID[:])
@@ -126,6 +135,8 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 	entityModel := &entities.ModelConfig{
 		ID:          gofrsID,
 		Status:      msg.Status,
+		DatasetName: datasetname,
+		DocketName:  docketname,
 		MetricsJSON: metricsJSON,
 		PayloadJSON: payloadJSON,
 		CreatedAt:   time.Now(),

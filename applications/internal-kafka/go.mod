@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.24.2
 
 require (
-	github.com/PecozQ/aimx-library v0.0.554
+	github.com/PecozQ/aimx-library v0.0.556
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/segmentio/kafka-go v0.4.48
