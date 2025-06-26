@@ -739,7 +739,7 @@ func DecodeGetAllDocketDetailsRequest(_ context.Context, r *http.Request) (inter
 
 	search := r.URL.Query().Get("search")
 	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
-	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("pageSize"))
 	var page int
 	var limit int
 	// Convert page and limit to int with default fallback
