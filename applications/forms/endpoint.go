@@ -408,7 +408,22 @@ func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
 }
 func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		modelConfigs, err := s.GetAllDocketDetails(ctx)
+		req := request.(map[string]interface{})
+
+		search, _ := req["search"].(string)
+
+		// Type assertion and fallback for pagination
+		page := 1
+		if p, ok := req["page"].(int); ok && p > 0 {
+			page = p
+		}
+
+		limit := 10
+		if l, ok := req["limit"].(int); ok && l >= 0 {
+			limit = l
+		}
+
+		response, err := s.GetAllDocketDetails(ctx, search, page, limit)
 		if err != nil {
 			return model.GetAllDocketDetailsResponse{
 				Error: err.Error(),
@@ -416,10 +431,12 @@ func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return model.GetAllDocketDetailsResponse{
-			Data: modelConfigs,
+			Data:       response.Data,
+			PagingInfo: response.PagingInfo,
 		}, nil
 	}
 }
+
 func makeAddDocketEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(*entities.ModelConfig) // 👈 pointer!

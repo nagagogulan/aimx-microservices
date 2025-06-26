@@ -5,12 +5,13 @@ go 1.23.1
 toolchain go1.24.2
 
 require (
-	github.com/PecozQ/aimx-library v0.0.549
+	github.com/PecozQ/aimx-library v0.0.550
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/segmentio/kafka-go v0.4.48
 	go.mongodb.org/mongo-driver v1.17.3
 	go.temporal.io/sdk v1.34.0
+	gorm.io/datatypes v1.2.5
 )
 
 require (
@@ -81,7 +82,6 @@ require (
 	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/datatypes v1.2.5 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/gorm v1.25.11 // indirect

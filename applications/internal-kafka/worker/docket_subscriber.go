@@ -16,6 +16,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
+	"gorm.io/datatypes"
 )
 
 var DocketPayloadRepo repository.DocketPayloadRepositoryService
@@ -83,43 +84,69 @@ func StartDocketPayloadSubscriber(payloadRepo repository.DocketPayloadRepository
 
 func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) error {
 	log.Printf("🔍 Saving payload to DB for UUID: %s", msg.UUID)
-
 	// Step 1: Convert msg.Payload (interface{}) to map JSON
+	metricsBytes, err := json.Marshal(msg.Metrics)
+	if err != nil {
+		log.Printf("❌ Failed to marshal metrics: %v", err)
+		return err
+	}
+
 	payloadBytes, err := json.Marshal(msg.Payload)
 	if err != nil {
 		log.Printf("❌ Failed to marshal payload: %v", err)
 		return err
 	}
 
-	var dtoModel entities.ModelConfig
-	if err := json.Unmarshal(payloadBytes, &dtoModel); err != nil {
-		log.Printf("❌ Failed to unmarshal payload to dto.ModelConfig: %v", err)
-		return err
+	fmt.Println("✅ ModelConfig to be saved:", string(metricsBytes))
+	fmt.Println("✅ ModelConfig to be saved:", string(payloadBytes))
+
+	// Step 2: Extract DatasetName and DocketName from payload JSON
+	var payloadStruct struct {
+		ModelDatasetUrl []struct {
+			Key   string `json:"Key"`
+			Value string `json:"Value"`
+		} `json:"modelDatasetUrl"`
+		ModelWeightUrl struct {
+			Path string `json:"path"`
+		} `json:"modelWeightUrl"`
 	}
-	fmt.Println("check payload contect", dtoModel)
+
+	if err := json.Unmarshal(payloadBytes, &payloadStruct); err != nil {
+		log.Printf("❌ Failed to unmarshal payload fields: %v", err)
+	}
+	datasetName := ""
+	if len(payloadStruct.ModelDatasetUrl) > 0 {
+		datasetName = payloadStruct.ModelDatasetUrl[0].Value
+	}
+	docketName := payloadStruct.ModelWeightUrl.Path
+
+	// Step 3: Convert UUID
 	googleID := googleuuid.MustParse(msg.UUID)
 	gofrsID, err := gofrsuuid.FromBytes(googleID[:])
 	if err != nil {
 		log.Printf("❌ Failed to convert UUID: %v", err)
 		return err
 	}
-
-	// Convert dto to entity
+	metricsJSON := datatypes.JSON(metricsBytes)
+	payloadJSON := datatypes.JSON(payloadBytes)
+	// Step 4: Construct final ModelConfig entity
 	entityModel := &entities.ModelConfig{
 		ID:          gofrsID,
-		Status:      dtoModel.Status,
-		DatasetName: dtoModel.DatasetName,
-		DocketName:  dtoModel.DocketName,
-		MetricsJSON: dtoModel.MetricsJSON,
-		PayloadJSON: dtoModel.PayloadJSON,
+		Status:      msg.Status,
+		DatasetName: datasetName,
+		DocketName:  docketName,
+		MetricsJSON: metricsJSON,
+		PayloadJSON: payloadJSON,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	fmt.Println("check payload contect entityModel", entityModel)
-	// Save using repository (expects entity not DTO)
+
+	fmt.Println("✅ ModelConfig to be saved:", entityModel)
+
+	// Step 5: Save to database
 	_, err = DocketPayloadRepo.AddDocketDetails(ctx, entityModel)
 	if err != nil {
-		log.Printf("❌ Failed to save payload to DB: %v", err)
+		log.Printf("❌ Failed to save ModelConfig to DB: %v", err)
 		return err
 	}
 

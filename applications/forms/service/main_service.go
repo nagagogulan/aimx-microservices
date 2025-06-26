@@ -44,7 +44,7 @@ type Service interface {
 	TestKong(ctx context.Context) (*model.Response, error)
 
 	GetDocketMetrics(ctx context.Context, id string) (*dto.DocketMetricsDTO, error)
-	GetAllDocketDetails(ctx context.Context) ([]entities.ModelConfig, error)
+	GetAllDocketDetails(ctx context.Context, search string, page, limit int) (*model.GetAllDocketDetailsResponse, error)
 	AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error)
 }
 

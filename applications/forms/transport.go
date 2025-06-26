@@ -721,8 +721,27 @@ func DecodeGetAllDocketDetailsRequest(_ context.Context, r *http.Request) (inter
 	if err != nil {
 		return nil, errorlib.ErrInvalidOrMissingJWT // 401
 	}
-	return nil, nil // no payload expected
+
+	search := r.URL.Query().Get("search")
+	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
+	var page int
+	var limit int
+	// Convert page and limit to int with default fallback
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+
+	return map[string]interface{}{
+		"page":   page,
+		"limit":  limit,
+		"search": search,
+	}, nil
 }
+
 func decodeAddDocketRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req entities.ModelConfig
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

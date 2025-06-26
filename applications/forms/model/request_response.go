@@ -112,6 +112,7 @@ type CreateFormRequestWithCtx struct {
 	Form *dto.FormDTO
 }
 type GetAllDocketDetailsResponse struct {
-	Data  []entity.ModelConfig `json:"docketMetrics,omitempty"`
-	Error string               `json:"error,omitempty"`
+	Data       []entity.ModelConfig `json:"docketMetrics,omitempty"`
+	PagingInfo PagingInfo           `json:"pagination"`
+	Error      string               `json:"error,omitempty"`
 }

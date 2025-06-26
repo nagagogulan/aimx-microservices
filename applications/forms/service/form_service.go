@@ -1368,12 +1368,34 @@ func (s *service) GetDocketMetrics(ctx context.Context, id string) (*dto.DocketM
 		DocketStatusID: metrics.DocketStatusID, // ✅ Correct field name
 	}, nil
 }
-func (s *service) GetAllDocketDetails(ctx context.Context) ([]entities.ModelConfig, error) {
-	entityList, err := s.docketmetricsRepo.GetAllDocketDetails(ctx)
+func (s *service) GetAllDocketDetails(ctx context.Context, search string, page, limit int) (*model.GetAllDocketDetailsResponse, error) {
+
+	entityList, total, err := s.docketmetricsRepo.GetAllDocketDetails(ctx, search, page, limit)
 	if err != nil {
+		return nil, fmt.Errorf("service error: %w", err)
+	}
+	if len(entityList) == 0 {
 		return nil, errcom.ErrRecordNotFounds
 	}
-	return entityList, nil
+
+	// Calculate total pages
+	totalPages := 0
+	if total > 0 && limit > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	// Return data and paging info
+	response := &model.GetAllDocketDetailsResponse{
+		Data: entityList,
+		PagingInfo: model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
+	}
+
+	return response, nil
 }
 func (s *service) AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error) {
 	return s.docketmetricsRepo.AddDocketDetails(ctx, req)
