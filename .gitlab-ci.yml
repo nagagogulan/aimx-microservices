@@ -16,8 +16,7 @@ build-all-services:
   image: docker:latest
   services:
     - docker:dind
-  tags:
-    - docker-go
+  
   before_script:
     - apk add --no-cache git
     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
@@ -92,9 +91,5 @@ deploy:
     - |
       for service in $(cat changed_services.txt); do
         echo "🚀 Deploying $service to server..."
-        ssh $DEPLOY_SERVER <<EOF
-          cd int-backend
-          docker pull $IMAGE_PREFIX$service:latest
-          docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service
-EOF
+        ssh $DEPLOY_SERVER "cd int-backend && docker pull $IMAGE_PREFIX$service:latest && docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service"
       done
