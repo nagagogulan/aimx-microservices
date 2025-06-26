@@ -1285,6 +1285,8 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 
 	// Add the docket UUID to the metadata
 	metadata["uuid"] = CreateDocketStatus.ID
+	fmt.Println("add dcket id in metadata")
+	metadata["docket_uuid"] = docketUUID
 
 	// Publish metadata to Kafka
 	err = publishDocketMetadata(metadata)
