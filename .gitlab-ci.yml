@@ -92,9 +92,5 @@ deploy:
     - |
       for service in $(cat changed_services.txt); do
         echo "🚀 Deploying $service to server..."
-        ssh $DEPLOY_SERVER <<EOF
-          cd int-backend
-          docker pull $IMAGE_PREFIX$service:latest
-          docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service
-EOF
+        ssh $DEPLOY_SERVER "cd int-backend && docker pull $IMAGE_PREFIX$service:latest && docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service"
       done
