@@ -229,6 +229,21 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	router.GET("/getform/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormByIdEndpoint,
+		DecodeGetFormByIDRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Update Template
+	router.PUT("/updateform", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateFormByIdEndpoint,
+		DecodeUpdateFormByIdRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -749,4 +764,29 @@ func decodeAddDocketRequest(_ context.Context, r *http.Request) (interface{}, er
 	}
 
 	return &req, nil // 👈 FIX: return pointer
+}
+
+func DecodeGetFormByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	//This assumes path ends with /:id
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	idStr := parts[len(parts)-1]
+	return idStr, nil // ← string is passed to endpoint
+}
+func DecodeUpdateFormByIdRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	var req dto.FormDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, fmt.Errorf("invalid request body: %w", err)
+	}
+	return req, nil
 }

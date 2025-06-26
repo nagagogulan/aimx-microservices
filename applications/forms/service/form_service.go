@@ -1400,3 +1400,16 @@ func (s *service) GetAllDocketDetails(ctx context.Context, search string, page, 
 func (s *service) AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error) {
 	return s.docketmetricsRepo.AddDocketDetails(ctx, req)
 }
+
+func (s *service) GetFormByID(ctx context.Context, id string) (*dto.FormDTO, error) {
+	form, err := s.formRepo.GetFormById(ctx, id)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+
+	// Return the full DTO directly
+	return form, nil
+}
+func (s *service) UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
+	return s.formRepo.UpdateFormById(ctx, form)
+}

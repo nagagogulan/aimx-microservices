@@ -12,7 +12,6 @@ import (
 	gofrsuuid "github.com/gofrs/uuid"
 	googleuuid "github.com/google/uuid"
 
-	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/entities"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
@@ -68,7 +67,7 @@ func StartDocketPayloadSubscriber(payloadRepo repository.DocketPayloadRepository
 				continue
 			}
 
-			var payloadMsg dto.IncomingDocketPayload
+			var payloadMsg entities.IncomingDocketPayload
 
 			if err := json.Unmarshal(m.Value, &payloadMsg); err != nil {
 				log.Printf("❌ Error unmarshalling docket-payload message: %v", err)
@@ -82,7 +81,7 @@ func StartDocketPayloadSubscriber(payloadRepo repository.DocketPayloadRepository
 	}
 }
 
-func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) error {
+func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayload) error {
 	log.Printf("🔍 Saving payload to DB for UUID: %s", msg.UUID)
 	// Step 1: Convert msg.Payload (interface{}) to map JSON
 	metricsBytes, err := json.Marshal(msg.Metrics)
@@ -114,12 +113,6 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 	if err := json.Unmarshal(payloadBytes, &payloadStruct); err != nil {
 		log.Printf("❌ Failed to unmarshal payload fields: %v", err)
 	}
-	datasetName := ""
-	if len(payloadStruct.ModelDatasetUrl) > 0 {
-		datasetName = payloadStruct.ModelDatasetUrl[0].Value
-	}
-	docketName := payloadStruct.ModelWeightUrl.Path
-
 	// Step 3: Convert UUID
 	googleID := googleuuid.MustParse(msg.UUID)
 	gofrsID, err := gofrsuuid.FromBytes(googleID[:])
@@ -133,8 +126,6 @@ func processDocketPayload(ctx context.Context, msg dto.IncomingDocketPayload) er
 	entityModel := &entities.ModelConfig{
 		ID:          gofrsID,
 		Status:      msg.Status,
-		DatasetName: datasetName,
-		DocketName:  docketName,
 		MetricsJSON: metricsJSON,
 		PayloadJSON: payloadJSON,
 		CreatedAt:   time.Now(),

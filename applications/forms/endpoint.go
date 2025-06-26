@@ -47,9 +47,11 @@ type Endpoints struct {
 	SendForEvaluationEndpoint endpoint.Endpoint
 	UpdateFormStatusEndpoint  endpoint.Endpoint
 
-	GetDocketMetrics    endpoint.Endpoint
-	GetAllDocketMetrics endpoint.Endpoint
-	AddDocketMetrics    endpoint.Endpoint
+	GetDocketMetrics       endpoint.Endpoint
+	GetAllDocketMetrics    endpoint.Endpoint
+	AddDocketMetrics       endpoint.Endpoint
+	GetFormByIdEndpoint    endpoint.Endpoint
+	UpdateFormByIdEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -80,9 +82,11 @@ func NewEndpoint(s service.Service) Endpoints {
 		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
 
-		GetDocketMetrics:    Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
-		GetAllDocketMetrics: Middleware(makeGetAllDocketDetailsEndpoint(s), commonlib.TimeoutMs),
-		AddDocketMetrics:    Middleware(makeAddDocketEndpoint(s), commonlib.TimeoutMs),
+		GetDocketMetrics:       Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
+		GetAllDocketMetrics:    Middleware(makeGetAllDocketDetailsEndpoint(s), commonlib.TimeoutMs),
+		AddDocketMetrics:       Middleware(makeAddDocketEndpoint(s), commonlib.TimeoutMs),
+		GetFormByIdEndpoint:    Middleware(makeGetFormByIDEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormByIdEndpoint: Middleware(makeUpdateFormByIdEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -448,5 +452,28 @@ func makeAddDocketEndpoint(s service.Service) endpoint.Endpoint {
 		fmt.Printf("📦 Received Docket: %+v\n", req)
 
 		return s.AddDocketDetails(ctx, req)
+	}
+}
+func makeGetFormByIDEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		idStr, ok := request.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid ID format")
+		}
+
+		return s.GetFormByID(ctx, idStr)
+
+	}
+}
+func makeUpdateFormByIdEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(dto.FormDTO)
+
+		updated, err := s.UpdateFormById(ctx, req)
+		if err != nil {
+			return nil, errcom.ErrUnabletoUpdate
+		}
+
+		return updated, nil
 	}
 }
