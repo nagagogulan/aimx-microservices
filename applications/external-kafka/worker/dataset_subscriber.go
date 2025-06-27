@@ -235,7 +235,9 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 			if err != nil {
 				log.Printf("Error creating form: %v", err)
 			}
+			fmt.Println("check msg in value", createdForm)
 			if createdForm != nil && createdForm.UserID != "" {
+				fmt.Println("start send audit logs")
 				var audit dto.AuditLogs
 				var datasetName string
 				//var email string
