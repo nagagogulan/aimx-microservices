@@ -236,12 +236,11 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				log.Printf("Error creating form: %v", err)
 			}
 			fmt.Println("check msg in value", createdForm)
-			if createdForm != nil && createdForm.UserID != "" {
+			if createdForm != nil && msg.UserId != "" {
 				fmt.Println("start send audit logs")
 				var audit dto.AuditLogs
-				var datasetName string
 				//var email string
-				id, err := uuid.FromString(createdForm.UserID)
+				id, err := uuid.FromString(msg.UserId)
 				if err != nil {
 					log.Printf("Invalid UserID format: %v", err)
 				}
@@ -256,20 +255,12 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				}
 
 				if createdForm.Type == 2 {
-					for _, field := range createdForm.Fields {
-						if field.Label == "Dataset Name" {
-							if val, ok := field.Value.(string); ok {
-								datasetName = val
-								break
-							}
-						}
-					}
 					audit = dto.AuditLogs{
 						Timestamp: time.Now().UTC(),
 						UserName:  msg.UserName,
 						UserID:    msg.UserId,
 						Activity:  "Created Dataset",
-						Dataset:   datasetName,
+						Dataset:   msg.Name,
 						UserRole:  res.Name,
 						Details: map[string]string{
 							"form_id":   createdForm.ID.String(),
