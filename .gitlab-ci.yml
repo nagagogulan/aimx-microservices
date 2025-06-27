@@ -1,95 +1,95 @@
-stages:
-  - build_all       # optional full build for all services
-  - detect          # detect changed microservices
-  - build           # build only changed services
-  - push            # push only changed images
-  - deploy          # deploy only changed services
+# stages:
+#   - build_all       # optional full build for all services
+#   - detect          # detect changed microservices
+#   - build           # build only changed services
+#   - push            # push only changed images
+#   - deploy          # deploy only changed services
 
-variables:
-  IMAGE_PREFIX: nagagogulan/aimx-int-
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_TLS_CERTDIR: ""
+# variables:
+#   IMAGE_PREFIX: nagagogulan/aimx-int-
+#   DOCKER_HOST: tcp://docker:2375/
+#   DOCKER_TLS_CERTDIR: ""
 
-# 📦 1. Build ALL services via docker-compose-ext.yml
-build-all-services:
-  stage: build_all
-  image: docker:latest
-  services:
-    - docker:dind
+# # 📦 1. Build ALL services via docker-compose-ext.yml
+# build-all-services:
+#   stage: build_all
+#   image: docker:latest
+#   services:
+#     - docker:dind
   
-  before_script:
-    - apk add --no-cache git
-    - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
-    - cd source
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - docker-compose -f docker-compose-ext.yml build
+#   before_script:
+#     - apk add --no-cache git
+#     - git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+#     - cd source
+#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#   script:
+#     - docker-compose -f docker-compose-ext.yml build
 
-# 🕵️ 2. Detect which microservices changed (Git diff)
-detect_changed:
-  stage: detect
-  image: alpine:latest
-  script:
-    - apk add --no-cache git
-    - |
-      echo "🔍 Detecting changed services..."
-      export CHANGED_SERVICES=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | \
-        grep '^applications/' | cut -d '/' -f 2 | sort -u | xargs)
-      echo "Detected: $CHANGED_SERVICES"
-      echo "$CHANGED_SERVICES" > changed_services.txt
-  artifacts:
-    paths:
-      - changed_services.txt
+# # 🕵️ 2. Detect which microservices changed (Git diff)
+# detect_changed:
+#   stage: detect
+#   image: alpine:latest
+#   script:
+#     - apk add --no-cache git
+#     - |
+#       echo "🔍 Detecting changed services..."
+#       export CHANGED_SERVICES=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | \
+#         grep '^applications/' | cut -d '/' -f 2 | sort -u | xargs)
+#       echo "Detected: $CHANGED_SERVICES"
+#       echo "$CHANGED_SERVICES" > changed_services.txt
+#   artifacts:
+#     paths:
+#       - changed_services.txt
 
-# 🛠️ 3. Build only the changed microservices
-build:
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  dependencies:
-    - detect_changed
-  script:
-    - |
-      for service in $(cat changed_services.txt); do
-        echo "🔧 Building $service..."
-        docker build -t $IMAGE_PREFIX$service:latest applications/$service/
-      done
+# # 🛠️ 3. Build only the changed microservices
+# build:
+#   stage: build
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   before_script:
+#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#   dependencies:
+#     - detect_changed
+#   script:
+#     - |
+#       for service in $(cat changed_services.txt); do
+#         echo "🔧 Building $service..."
+#         docker build -t $IMAGE_PREFIX$service:latest applications/$service/
+#       done
 
-# 📤 4. Push only changed Docker images to registry
-push:
-  stage: push
-  image: docker:latest
-  services:
-    - docker:dind
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  dependencies:
-    - build
-  script:
-    - |
-      for service in $(cat changed_services.txt); do
-        echo "📤 Pushing $service..."
-        docker push $IMAGE_PREFIX$service:latest
-      done
+# # 📤 4. Push only changed Docker images to registry
+# push:
+#   stage: push
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   before_script:
+#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#   dependencies:
+#     - build
+#   script:
+#     - |
+#       for service in $(cat changed_services.txt); do
+#         echo "📤 Pushing $service..."
+#         docker push $IMAGE_PREFIX$service:latest
+#       done
 
-# 🚀 5. Deploy only changed containers on the server
-deploy:
-  stage: deploy
-  image: alpine:latest
-  dependencies:
-    - push
-  before_script:
-    - apk add --no-cache openssh
-    - mkdir -p ~/.ssh
-    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts
-  script:
-    - |
-      for service in $(cat changed_services.txt); do
-        echo "🚀 Deploying $service to server..."
-        ssh $DEPLOY_SERVER "cd int-backend && docker pull $IMAGE_PREFIX$service:latest && docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service"
-      done
+# # 🚀 5. Deploy only changed containers on the server
+# deploy:
+#   stage: deploy
+#   image: alpine:latest
+#   dependencies:
+#     - push
+#   before_script:
+#     - apk add --no-cache openssh
+#     - mkdir -p ~/.ssh
+#     - echo "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - ssh-keyscan -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts
+#   script:
+#     - |
+#       for service in $(cat changed_services.txt); do
+#         echo "🚀 Deploying $service to server..."
+#         ssh $DEPLOY_SERVER "cd int-backend && docker pull $IMAGE_PREFIX$service:latest && docker-compose -f docker-compose-int-server.yml up -d --no-deps int-$service"
+#       done
