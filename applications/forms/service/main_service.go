@@ -48,6 +48,7 @@ type Service interface {
 	AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error)
 	GetFormByID(ctx context.Context, id string) (*dto.FormDTO, error)
 	UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error)
+	GetDocketDetailByID(ctx context.Context, id uuid.UUID) (*entities.ModelConfig, error)
 }
 
 type service struct {

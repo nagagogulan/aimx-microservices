@@ -1415,3 +1415,6 @@ func (s *service) GetFormByID(ctx context.Context, id string) (*dto.FormDTO, err
 func (s *service) UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
 	return s.formRepo.UpdateFormById(ctx, form)
 }
+func (s *service) GetDocketDetailByID(ctx context.Context, id uuid.UUID) (*entities.ModelConfig, error) {
+	return s.docketmetricsRepo.GetDocketDetailByID(ctx, id)
+}

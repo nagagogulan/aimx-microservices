@@ -243,6 +243,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.GET("/getdocketmetric/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetDocketByIDEndpoint,
+		DecodeGetDocketByIDRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -789,4 +795,16 @@ func DecodeUpdateFormByIdRequest(_ context.Context, r *http.Request) (interface{
 		return nil, fmt.Errorf("invalid request body: %w", err)
 	}
 	return req, nil
+}
+func DecodeGetDocketByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	idStr := parts[len(parts)-1]
+	return idStr, nil
 }
