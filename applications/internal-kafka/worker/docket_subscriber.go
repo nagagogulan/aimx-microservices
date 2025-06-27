@@ -21,6 +21,7 @@ import (
 var DocketPayloadRepo repository.DocketPayloadRepositoryService
 
 func StartDocketPayloadSubscriber(payloadRepo repository.DocketPayloadRepositoryService) {
+	fmt.Println("docket-metrics subscribe start...")
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("❌ Recovered from panic in docket-payload subscriber: %v\n", r)
@@ -83,6 +84,7 @@ func StartDocketPayloadSubscriber(payloadRepo repository.DocketPayloadRepository
 
 func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayload) error {
 	log.Printf("🔍 Saving payload to DB for UUID: %s", msg.UUID)
+	fmt.Println("called processDocketPayload")
 	// Step 1: Convert msg.Payload (interface{}) to map JSON
 	metricsBytes, err := json.Marshal(msg.Metrics)
 	if err != nil {

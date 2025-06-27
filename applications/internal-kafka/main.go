@@ -223,7 +223,7 @@ func main() {
 		log.Fatalf("Could not ping to MongoDB: %v", err)
 	}
 
-	fmt.Println("Successfully connected to MongoDB!")
+	fmt.Println("Successfully connected to MongoDB!!")
 
 	dbPortStr := os.Getenv("DBPORT")
 	if dbPortStr == "" {
