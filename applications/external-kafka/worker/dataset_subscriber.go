@@ -13,7 +13,6 @@ import (
 	"github.com/PecozQ/aimx-library/domain/dto"
 	"github.com/PecozQ/aimx-library/domain/repository"
 	kafkas "github.com/PecozQ/aimx-library/kafka"
-	"github.com/gofrs/uuid"
 )
 
 // DatasetChunkMsg represents the structure of a message received from the sample-dataset-chunk topic
@@ -236,24 +235,23 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				log.Printf("Error creating form: %v", err)
 			}
 			fmt.Println("check msg in value", createdForm)
-			fmt.Println("user id get in msg", msg.UserId)
 			if createdForm != nil && msg.UserId != "" {
 				fmt.Println("start send audit logs")
 				var audit dto.AuditLogs
 				//var email string
-				id, err := uuid.FromString(msg.UserId)
-				if err != nil {
-					log.Printf("Invalid UserID format: %v", err)
-				}
+				// id, err := uuid.FromString(msg.UserId)
+				// if err != nil {
+				// 	log.Printf("Invalid UserID format: %v", err)
+				// }
 
-				user, err := userRepo.GetUserByID(context.Background(), id)
-				if err != nil {
-					log.Printf("Get user: %v", err)
-				}
-				res, err := rolerepo.GetRoleByID(context.Background(), user.Role.ID)
-				if err != nil {
-					log.Printf("Get user: %v", err)
-				}
+				// user, err := userRepo.GetUserByID(context.Background(), id)
+				// if err != nil {
+				// 	log.Printf("Get user: %v", err)
+				// }
+				// res, err := rolerepo.GetRoleByID(context.Background(), user.Role.ID)
+				// if err != nil {
+				// 	log.Printf("Get user: %v", err)
+				// }
 
 				if createdForm.Type == 2 {
 					audit = dto.AuditLogs{
@@ -262,7 +260,7 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 						UserID:    msg.UserId,
 						Activity:  "Created Dataset",
 						Dataset:   msg.Name,
-						UserRole:  res.Name,
+						UserRole:  "SuperAdmin",
 						Details: map[string]string{
 							"form_id":   createdForm.ID.String(),
 							"form_type": fmt.Sprintf("%d", createdForm.Type),
