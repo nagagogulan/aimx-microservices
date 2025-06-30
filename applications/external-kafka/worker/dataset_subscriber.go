@@ -257,7 +257,7 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 					audit = dto.AuditLogs{
 						Timestamp: time.Now().UTC(),
 						UserName:  msg.UserName,
-						UserID:    msg.UserId,
+						UserID:    "",
 						Activity:  "Created Dataset",
 						Dataset:   msg.Name,
 						UserRole:  "SuperAdmin",
