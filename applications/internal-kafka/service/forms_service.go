@@ -64,8 +64,18 @@ func (s *formsService) UpdateMetadataWithFormData(metadata map[string]interface{
 	// originalDataset, exists := metaData["originalDataset"]
 	// Update the modelDatasetUrl in metadata with the originalDataset value
 	metadata["modelDatasetUrl"] = form.SampleDataset
+	var targetColumnValue interface{}
 
-	log.Printf("updated metadata --- ", metadata)
+	for _, field := range form.Fields {
+		if field.Label == "Target column" {
+			targetColumnValue = field.Value
+			break
+		}
+	}
+
+	if targetColumnValue != nil {
+		metadata["target_column"] = targetColumnValue
+	}
 
 	return metadata, nil
 }
