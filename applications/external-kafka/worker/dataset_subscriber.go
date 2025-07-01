@@ -26,6 +26,7 @@ type DatasetChunkMsg struct {
 	FormData    dto.FormDTO `json:"formData"`
 	UserName    string      `json:"userName"`
 	UserId      string      `json:"userId"`
+	UserRole    string      `json:"userRole"`
 }
 
 // FileAssembler keeps track of chunks for a specific file
@@ -235,32 +236,16 @@ func processChunk(msg DatasetChunkMsg, outputDir string) {
 				log.Printf("Error creating form: %v", err)
 			}
 			fmt.Println("check msg in value", createdForm)
-			if createdForm != nil && msg.UserId != "" {
+			if createdForm != nil {
 				fmt.Println("start send audit logs")
 				var audit dto.AuditLogs
-				//var email string
-				// id, err := uuid.FromString(msg.UserId)
-				// if err != nil {
-				// 	log.Printf("Invalid UserID format: %v", err)
-				// }
-
-				// user, err := userRepo.GetUserByID(context.Background(), id)
-				// if err != nil {
-				// 	log.Printf("Get user: %v", err)
-				// }
-				// res, err := rolerepo.GetRoleByID(context.Background(), user.Role.ID)
-				// if err != nil {
-				// 	log.Printf("Get user: %v", err)
-				// }
-
 				if createdForm.Type == 2 {
 					audit = dto.AuditLogs{
 						Timestamp: time.Now().UTC(),
 						UserName:  msg.UserName,
-						UserID:    "",
 						Activity:  "Created Dataset",
 						Dataset:   msg.Name,
-						UserRole:  "SuperAdmin",
+						UserRole:  msg.UserRole,
 						Details: map[string]string{
 							"form_id":   createdForm.ID.String(),
 							"form_type": fmt.Sprintf("%d", createdForm.Type),

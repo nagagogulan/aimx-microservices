@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -37,11 +38,13 @@ type Service interface {
 
 type fileService struct {
 	sampleDatasetRepo repository.SampleDatasetRepositoryService
+	userRepo          repository.UserCRUDService
+	rolerepo          repository.RoleRepositoryService
 }
 
-func NewService(sampleDatasetRepo repository.SampleDatasetRepositoryService) Service {
+func NewService(sampleDatasetRepo repository.SampleDatasetRepositoryService, userRepo repository.UserCRUDService, rolerepo repository.RoleRepositoryService) Service {
 	return &fileService{
-		sampleDatasetRepo: sampleDatasetRepo,
+		sampleDatasetRepo: sampleDatasetRepo, userRepo: userRepo, rolerepo: rolerepo,
 	}
 }
 
@@ -341,6 +344,22 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 	}
 	if req.FormData.Type == 0 {
 		return nil, fmt.Errorf("formData cannot be nil")
+	}
+	if req.UserId == "" {
+		id, err := uuid.FromString(req.UserId)
+		if err != nil {
+			log.Printf("Invalid UserID format: %v", err)
+		}
+
+		user, err := s.userRepo.GetUserByID(context.Background(), id)
+		if err != nil {
+			log.Printf("Get user: %v", err)
+		}
+		res, err := s.rolerepo.GetRoleByID(context.Background(), user.Role.ID)
+		if err != nil {
+			log.Printf("Get user: %v", err)
+		}
+		req.UserRole = res.Name
 	}
 
 	// Verify that the file exists

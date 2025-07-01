@@ -75,9 +75,11 @@ func main() {
 
 	// Initialize the SampleDatasetRepositoryService
 	sampleDatasetRepo := repository.NewSampleDatasetRepository(DB)
+	userRepo := repository.NewUserCRUDRepository(DB)
+	roleRepo := repository.NewRoleRepositoryService(DB)
 
 	// Create service with dependencies
-	s := service.NewService(sampleDatasetRepo)
+	s := service.NewService(sampleDatasetRepo, userRepo, roleRepo)
 
 	// Start the dataset path worker (processes file paths and sends chunks)
 	go worker.StartDatasetPathWorker()
