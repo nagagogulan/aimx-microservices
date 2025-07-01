@@ -1285,6 +1285,8 @@ func (s *service) SendForEvaluation(ctx context.Context, docketUUID string) (*mo
 
 	// Add the docket UUID to the metadata
 	metadata["uuid"] = CreateDocketStatus.ID
+	fmt.Println("add dcket id in metadata")
+	metadata["docket_uuid"] = docketUUID
 
 	// Publish metadata to Kafka
 	err = publishDocketMetadata(metadata)
@@ -1367,4 +1369,52 @@ func (s *service) GetDocketMetrics(ctx context.Context, id string) (*dto.DocketM
 		UpdatedAt:      metrics.UpdatedAt,
 		DocketStatusID: metrics.DocketStatusID, // ✅ Correct field name
 	}, nil
+}
+func (s *service) GetAllDocketDetails(ctx context.Context, search string, page, limit int) (*model.GetAllDocketDetailsResponse, error) {
+
+	entityList, total, err := s.docketmetricsRepo.GetAllDocketDetails(ctx, search, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("service error: %w", err)
+	}
+	if len(entityList) == 0 {
+		return nil, errcom.ErrRecordNotFounds
+	}
+
+	// Calculate total pages
+	totalPages := 0
+	if total > 0 && limit > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	// Return data and paging info
+	response := &model.GetAllDocketDetailsResponse{
+		Data: entityList,
+		PagingInfo: model.PagingInfo{
+			TotalItems:  total,
+			CurrentPage: page,
+			TotalPage:   totalPages,
+			ItemPerPage: limit,
+		},
+	}
+
+	return response, nil
+}
+func (s *service) AddDocketDetails(ctx context.Context, req *entities.ModelConfig) (*entities.ModelConfig, error) {
+	return s.docketmetricsRepo.AddDocketDetails(ctx, req)
+}
+
+func (s *service) GetFormByID(ctx context.Context, id string) (*dto.FormDTO, error) {
+	form, err := s.formRepo.GetFormById(ctx, id)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+
+	// Return the full DTO directly
+	return form, nil
+}
+func (s *service) UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error) {
+	return s.formRepo.UpdateFormById(ctx, form)
+}
+func (s *service) GetDocketDetailByID(ctx context.Context, id uuid.UUID) (*entities.ModelConfig, error) {
+	return s.docketmetricsRepo.GetDocketDetailByID(ctx, id)
 }

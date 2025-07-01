@@ -30,6 +30,7 @@ type GetFileResponse struct {
 }
 
 type DeleteFileRequest struct {
+	FormType int    `json:"formType"`
 	FilePath string `json:"filePath"`
 }
 type DeleteFileResponse struct {

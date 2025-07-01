@@ -12,6 +12,7 @@ import (
 	"github.com/PecozQ/aimx-library/domain/entities"
 	middleware "github.com/PecozQ/aimx-library/middleware"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gofrs/uuid"
 	"whatsdare.com/fullstack/aimx/backend/service"
 
 	"errors"
@@ -47,7 +48,12 @@ type Endpoints struct {
 	SendForEvaluationEndpoint endpoint.Endpoint
 	UpdateFormStatusEndpoint  endpoint.Endpoint
 
-	GetDocketMetrics endpoint.Endpoint
+	GetDocketMetrics       endpoint.Endpoint
+	GetAllDocketMetrics    endpoint.Endpoint
+	AddDocketMetrics       endpoint.Endpoint
+	GetFormByIdEndpoint    endpoint.Endpoint
+	UpdateFormByIdEndpoint endpoint.Endpoint
+	GetDocketByIDEndpoint  endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -78,7 +84,12 @@ func NewEndpoint(s service.Service) Endpoints {
 		SendForEvaluationEndpoint: Middleware(makeSendForEvaluationEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormStatusEndpoint:  Middleware(makeUpdateFormStatusEndpoint(s), commonlib.TimeoutMs),
 
-		GetDocketMetrics: Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
+		GetDocketMetrics:       Middleware(makeGetDocketMetricsEndpoint(s), commonlib.TimeoutMs),
+		GetAllDocketMetrics:    Middleware(makeGetAllDocketDetailsEndpoint(s), commonlib.TimeoutMs),
+		AddDocketMetrics:       Middleware(makeAddDocketEndpoint(s), commonlib.TimeoutMs),
+		GetFormByIdEndpoint:    Middleware(makeGetFormByIDEndpoint(s), commonlib.TimeoutMs),
+		UpdateFormByIdEndpoint: Middleware(makeUpdateFormByIdEndpoint(s), commonlib.TimeoutMs),
+		GetDocketByIDEndpoint:  Middleware(makeGetDocketByIDEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -400,5 +411,86 @@ func makeGetDocketMetricsEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 		return metrics, nil
+	}
+}
+func makeGetAllDocketDetailsEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(map[string]interface{})
+
+		search, _ := req["search"].(string)
+
+		// Type assertion and fallback for pagination
+		page := 1
+		if p, ok := req["page"].(int); ok && p > 0 {
+			page = p
+		}
+
+		limit := 10
+		if l, ok := req["limit"].(int); ok && l >= 0 {
+			limit = l
+		}
+
+		response, err := s.GetAllDocketDetails(ctx, search, page, limit)
+		if err != nil {
+			return model.GetAllDocketDetailsResponse{
+				Error: err.Error(),
+			}, nil
+		}
+
+		return model.GetAllDocketDetailsResponse{
+			Data:       response.Data,
+			PagingInfo: response.PagingInfo,
+		}, nil
+	}
+}
+
+func makeAddDocketEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(*entities.ModelConfig) // 👈 pointer!
+		if !ok || req == nil {
+			return nil, fmt.Errorf("invalid request payload: expected *entities.ModelConfig but got %T", request)
+		}
+
+		// Optional logging
+		fmt.Printf("📦 Received Docket: %+v\n", req)
+
+		return s.AddDocketDetails(ctx, req)
+	}
+}
+func makeGetFormByIDEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		idStr, ok := request.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid ID format")
+		}
+
+		return s.GetFormByID(ctx, idStr)
+
+	}
+}
+func makeUpdateFormByIdEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(dto.FormDTO)
+
+		updated, err := s.UpdateFormById(ctx, req)
+		if err != nil {
+			return nil, errcom.ErrUnabletoUpdate
+		}
+
+		return updated, nil
+	}
+}
+func makeGetDocketByIDEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(string)
+		id, err := uuid.FromString(req)
+		if err != nil {
+			return nil, errcom.ErrInvalidType
+		}
+		model, err := s.GetDocketDetailByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return model, nil
 	}
 }

@@ -216,6 +216,40 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		options...,
 	).ServeHTTP))
 
+	router.GET("/getdocketMetrics/", gin.WrapF(httptransport.NewServer(
+		endpoints.GetAllDocketMetrics,
+		DecodeGetAllDocketDetailsRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	router.POST("/adddocketMetrics/", gin.WrapF(httptransport.NewServer(
+		endpoints.AddDocketMetrics,
+		decodeAddDocketRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	router.GET("/getform/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetFormByIdEndpoint,
+		DecodeGetFormByIDRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
+	// Update Template
+	router.PUT("/updateform", gin.WrapF(httptransport.NewServer(
+		endpoints.UpdateFormByIdEndpoint,
+		DecodeUpdateFormByIdRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+	router.GET("/getdocketmetric/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetDocketByIDEndpoint,
+		DecodeGetDocketByIDRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
+
 	return r
 }
 
@@ -700,5 +734,77 @@ func decodeUUIDParam(_ context.Context, r *http.Request) (interface{}, error) {
 		return nil, errcom.ErrInvalidOrMissingJWT
 	}
 	idStr := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+	return idStr, nil
+}
+
+func DecodeGetAllDocketDetailsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+
+	search := r.URL.Query().Get("search")
+	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("pageSize"))
+	var page int
+	var limit int
+	// Convert page and limit to int with default fallback
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+
+	return map[string]interface{}{
+		"page":   page,
+		"limit":  limit,
+		"search": search,
+	}, nil
+}
+
+func decodeAddDocketRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req entities.ModelConfig
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return &req, nil // 👈 FIX: return pointer
+}
+
+func DecodeGetFormByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	//This assumes path ends with /:id
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	idStr := parts[len(parts)-1]
+	return idStr, nil // ← string is passed to endpoint
+}
+func DecodeUpdateFormByIdRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	var req dto.FormDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, fmt.Errorf("invalid request body: %w", err)
+	}
+	return req, nil
+}
+func DecodeGetDocketByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	_, err := middleware.DecodeHeaderGetClaims(r)
+	if err != nil {
+		return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	}
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	idStr := parts[len(parts)-1]
 	return idStr, nil
 }

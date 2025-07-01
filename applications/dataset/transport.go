@@ -231,13 +231,15 @@ func decodeGetFileRequest(_ context.Context, r *http.Request) (interface{}, erro
 }
 
 func decodeDeleteFileRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	_, err := middleware.DecodeHeaderGetClaims(r)
-	if err != nil {
-		return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
-	}
 	var req model.DeleteFileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
+	}
+	if req.FormType != 1 {
+		_, err := middleware.DecodeHeaderGetClaims(r)
+		if err != nil {
+			return nil, errorlib.ErrInvalidOrMissingJWT // Unauthorized or invalid token
+		}
 	}
 	return req, nil
 }
