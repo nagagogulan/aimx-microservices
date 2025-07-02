@@ -115,6 +115,12 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 	if err := json.Unmarshal(payloadBytes, &payloadStruct); err != nil {
 		log.Printf("❌ Failed to unmarshal payload fields: %v", err)
 	}
+	if msg.DatasetName != "" {
+		fmt.Println("check dataset names ", msg.DatasetName)
+	}
+	if msg.DocketName != "" {
+		fmt.Println("check dataset names ", msg.DocketName)
+	}
 	var datasetname string
 	var docketname string
 	if msg.DatasetName != "" {
@@ -122,7 +128,7 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 	}
 
 	if msg.DocketName != "" {
-		docketname = msg.DatasetName
+		docketname = msg.DocketName
 	}
 	// Step 3: Convert UUID
 	googleID := googleuuid.MustParse(msg.UUID)
