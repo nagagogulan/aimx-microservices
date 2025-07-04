@@ -103,6 +103,8 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 
 	// Step 2: Extract DatasetName and DocketName from payload JSON
 	var payloadStruct struct {
+		DocketName      string `json:"docketname"`
+		DatasetName     string `json:"datasetName"`
 		ModelDatasetUrl []struct {
 			Key   string `json:"Key"`
 			Value string `json:"Value"`
@@ -117,12 +119,12 @@ func processDocketPayload(ctx context.Context, msg entities.IncomingDocketPayloa
 	}
 	var datasetname string
 	var docketname string
-	if msg.DatasetName != "" {
-		datasetname = msg.DatasetName
+	if payloadStruct.DatasetName != "" {
+		datasetname = payloadStruct.DatasetName
 	}
 
-	if msg.DocketName != "" {
-		docketname = msg.DatasetName
+	if payloadStruct.DocketName != "" {
+		docketname = payloadStruct.DocketName
 	}
 	// Step 3: Convert UUID
 	googleID := googleuuid.MustParse(msg.UUID)

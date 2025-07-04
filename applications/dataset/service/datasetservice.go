@@ -345,7 +345,7 @@ func (s *fileService) ChunkFileToKafka(ctx context.Context, req dto.ChunkFileReq
 	if req.FormData.Type == 0 {
 		return nil, fmt.Errorf("formData cannot be nil")
 	}
-	if req.UserId == "" {
+	if req.UserId != "" {
 		id, err := uuid.FromString(req.UserId)
 		if err != nil {
 			log.Printf("Invalid UserID format: %v", err)
