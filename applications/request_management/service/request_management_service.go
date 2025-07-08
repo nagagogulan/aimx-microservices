@@ -41,6 +41,9 @@ func (s *requestService) CreateRequest(ctx context.Context, req *dto.CreateReque
 		Status:                 common.ENUM_TO_HASH["RequestStatus"]["PENDING"],
 		CommandsByOrganization: req.Commands,
 	}
+	if req.ProjectDocketSizeUnit != "" {
+		rent.ProjectDocketSizeUnit = req.ProjectDocketSizeUnit
+	}
 	fmt.Println(rent)
 	return s.requestRepo.CreateRequest(rent)
 }
@@ -75,8 +78,9 @@ func (s *requestService) UpdateRequestStatus(ctx context.Context, id uuid.UUID, 
 		}
 
 		switch req.RequestType {
-		case common.ENUM_TO_HASH["RequestType"]["Increase in Storage Size"]:
+		case common.ENUM_TO_HASH["RequestType"]["Increase in File size limit"]:
 			setting.MaxProjectDocketSize += int64(req.Value)
+			setting.MaxProjectDocketSizeUnit = req.ProjectDocketSizeUnit
 		case common.ENUM_TO_HASH["RequestType"]["Increase in User Count"]:
 			setting.MaxUsersPerOrganization += req.Value
 		case common.ENUM_TO_HASH["RequestType"]["Increase in Number of active projects"]:
