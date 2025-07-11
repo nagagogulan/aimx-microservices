@@ -1418,3 +1418,17 @@ func (s *service) UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.Fo
 func (s *service) GetDocketDetailByID(ctx context.Context, id uuid.UUID) (*entities.ModelConfig, error) {
 	return s.docketmetricsRepo.GetDocketDetailByID(ctx, id)
 }
+
+func (s *service) GetOrgSummaryDetail(ctx context.Context, orgID string) (*dto.OrgSummaryDetails, error) {
+	result, err := s.formRepo.GetOrgSummaryDetails(ctx, orgID)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+	usercount, err := s.userRepo.GetUserCountByOrganisationID(ctx, orgID)
+	if err != nil {
+		return nil, errcom.ErrRecordNotFounds
+	}
+	result.TotalUsercount = usercount
+
+	return result, nil
+}

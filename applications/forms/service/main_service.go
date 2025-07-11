@@ -49,6 +49,7 @@ type Service interface {
 	GetFormByID(ctx context.Context, id string) (*dto.FormDTO, error)
 	UpdateFormById(ctx context.Context, form dto.FormDTO) (*dto.FormDTO, error)
 	GetDocketDetailByID(ctx context.Context, id uuid.UUID) (*entities.ModelConfig, error)
+	GetOrgSummaryDetail(ctx context.Context, orgID string) (*dto.OrgSummaryDetails, error)
 }
 
 type service struct {

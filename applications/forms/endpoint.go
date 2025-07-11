@@ -54,6 +54,7 @@ type Endpoints struct {
 	GetFormByIdEndpoint    endpoint.Endpoint
 	UpdateFormByIdEndpoint endpoint.Endpoint
 	GetDocketByIDEndpoint  endpoint.Endpoint
+	GetOrgSummaryEndpoint  endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service) Endpoints {
@@ -90,6 +91,7 @@ func NewEndpoint(s service.Service) Endpoints {
 		GetFormByIdEndpoint:    Middleware(makeGetFormByIDEndpoint(s), commonlib.TimeoutMs),
 		UpdateFormByIdEndpoint: Middleware(makeUpdateFormByIdEndpoint(s), commonlib.TimeoutMs),
 		GetDocketByIDEndpoint:  Middleware(makeGetDocketByIDEndpoint(s), commonlib.TimeoutMs),
+		GetOrgSummaryEndpoint:  Middleware(makeGetGetOrgSummaryEndpoint(s), commonlib.TimeoutMs),
 	}
 }
 
@@ -488,6 +490,17 @@ func makeGetDocketByIDEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errcom.ErrInvalidType
 		}
 		model, err := s.GetDocketDetailByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return model, nil
+	}
+}
+
+func makeGetGetOrgSummaryEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(string)
+		model, err := s.GetOrgSummaryDetail(ctx, req)
 		if err != nil {
 			return nil, err
 		}

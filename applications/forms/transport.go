@@ -249,6 +249,12 @@ func MakeHttpHandler(s service.Service) http.Handler {
 		encodeResponse,
 		options...,
 	).ServeHTTP))
+	router.GET("/getorgsummary/:id", gin.WrapF(httptransport.NewServer(
+		endpoints.GetOrgSummaryEndpoint,
+		DecodeGetOrgSummaryRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP))
 
 	return r
 }
@@ -807,4 +813,16 @@ func DecodeGetDocketByIDRequest(_ context.Context, r *http.Request) (interface{}
 	}
 	idStr := parts[len(parts)-1]
 	return idStr, nil
+}
+func DecodeGetOrgSummaryRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	// _, err := middleware.DecodeHeaderGetClaims(r)
+	// if err != nil {
+	// 	return nil, errorlib.ErrInvalidOrMissingJWT // 401
+	// }
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("invalid path")
+	}
+	orgid := parts[len(parts)-1]
+	return orgid, nil
 }
