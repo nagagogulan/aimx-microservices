@@ -290,7 +290,7 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID, orgID 
 
 	// Now based on role, return KPIs
 	switch role {
-	case "SuperAdmin", "Collaborator":
+	case "SuperAdmin":
 		orgs, total, lastMonth, thisYear, err := s.orgRepo.GetAllNonSingHealthOrganizationsWithCounts()
 		if err != nil {
 			return nil, errcom.ErrRecordNotFounds
@@ -322,6 +322,12 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID, orgID 
 				"last_month":  lastMonth,
 				"this_year":   thisYear,
 			},
+		}, nil
+
+	case "Collaborator":
+		return map[string]interface{}{
+			"dashboard": "Collaborator KPIs here",
+			"role":      role,
 		}, nil
 
 	case "Admin":
@@ -384,7 +390,7 @@ func (s *service) UploadProfileImage(ctx context.Context, userID uuid.UUID, file
 		return nil, fmt.Errorf("unsupported file type")
 	}
 	timestamp := time.Now().Format("20060102150405") // YYYYMMDDHHMMSS
-	filePath := fmt.Sprintf("profile/%s/", userID.String())
+	filePath := fmt.Sprintf("profileimages/%s/", userID.String())
 	newFileName := fmt.Sprintf("%s_%s%s", timestamp, userID.String(), fileHeader.Filename)
 	fullPath := filepath.Join(filePath, newFileName)
 
