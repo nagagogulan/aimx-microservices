@@ -290,7 +290,7 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID, orgID 
 
 	// Now based on role, return KPIs
 	switch role {
-	case "SuperAdmin":
+	case "SuperAdmin", "Collaborator":
 		orgs, total, lastMonth, thisYear, err := s.orgRepo.GetAllNonSingHealthOrganizationsWithCounts()
 		if err != nil {
 			return nil, errcom.ErrRecordNotFounds
@@ -324,11 +324,6 @@ func (s *service) GenerateOverview(ctx context.Context, userID uuid.UUID, orgID 
 			},
 		}, nil
 
-	case "Collaborator":
-		return map[string]interface{}{
-			"dashboard": "Collaborator KPIs here",
-			"role":      role,
-		}, nil
 	case "Admin":
 		totalCount, lastMonthCount, thisYearCount, userList, err := s.repo.GetActiveUserCounts(ctx, uuidToStringPtr(orgID))
 		if err != nil {
