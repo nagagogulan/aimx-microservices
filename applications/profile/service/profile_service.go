@@ -384,7 +384,7 @@ func (s *service) UploadProfileImage(ctx context.Context, userID uuid.UUID, file
 		return nil, fmt.Errorf("unsupported file type")
 	}
 	timestamp := time.Now().Format("20060102150405") // YYYYMMDDHHMMSS
-	filePath := fmt.Sprintf("profileimages/%s/", userID.String())
+	filePath := fmt.Sprintf("profile/%s/", userID.String())
 	newFileName := fmt.Sprintf("%s_%s%s", timestamp, userID.String(), fileHeader.Filename)
 	fullPath := filepath.Join(filePath, newFileName)
 
