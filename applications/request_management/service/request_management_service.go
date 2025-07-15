@@ -85,10 +85,6 @@ func (s *requestService) UpdateRequestStatus(ctx context.Context, id uuid.UUID, 
 			setting.MaxUsersPerOrganization += req.Value
 		case common.ENUM_TO_HASH["RequestType"]["Increase in Number of active projects"]:
 			setting.MaxActiveProjects += req.Value
-		case common.ENUM_TO_HASH["RequestType"]["Increase in Default delete days"]:
-			setting.DefaultDeletionDays += req.Value
-		case common.ENUM_TO_HASH["RequestType"]["Increase in Default Archiving days"]:
-			setting.DefaultArchivingDays += req.Value
 		case common.ENUM_TO_HASH["RequestType"]["Change in Scheduled TIme"]:
 			setting.ScheduledEvaluationTime = strconv.Itoa(req.Value) // or a proper formatted string like "04:00 PM"
 		default:
