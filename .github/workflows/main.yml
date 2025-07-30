@@ -1,4 +1,4 @@
-name: Detect Changed Services and Update Go Modules
+name: Detect and Update Changed Go Services
 
 on:
   push:
@@ -10,59 +10,51 @@ on:
 
 jobs:
   detect-and-update:
-    name: Detect Changed Services & Run Go Mod Commands
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Required for full git history
+          fetch-depth: 0  # Required to compare with base commits
 
-      - name: Set up Git info
-        id: git-info
+      - name: Set base and head SHAs
+        id: sha
         run: |
-          echo "Finding base and head commits..."
-          BASE_SHA=$(git merge-base origin/main HEAD || git rev-parse HEAD^)
-          HEAD_SHA=$(git rev-parse HEAD)
-
-          echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
-          echo "HEAD_SHA=$HEAD_SHA" >> $GITHUB_ENV
+          echo "BASE_SHA=$(git merge-base origin/main HEAD)" >> "$GITHUB_ENV"
+          echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Detect changed services
         id: detect
         run: |
-          echo "Changed folders:"
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA: $HEAD_SHA"
 
-          if ! git cat-file -e "$BASE_SHA"; then
-            echo "Invalid BASE_SHA: $BASE_SHA"
-            exit 0
-          fi
-
           changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u | uniq)
+          echo "Changed services:"
           echo "$changed"
 
-          echo "services<<EOF" >> $GITHUB_OUTPUT
-          echo "$changed" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Configure git to use token for private modules
-        run: |
-          git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+          {
+            echo "services<<EOF"
+            echo "$changed"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run go mod tidy and vendor
         run: |
-          echo "${{ steps.detect.outputs.services }}" | tr '\n' ' ' | xargs -n1 | while read service; do
+          echo "Services to process: ${{ steps.detect.outputs.services }}"
+          echo "${{ steps.detect.outputs.services }}" | xargs -n1 | while read service; do
             if [ -n "$service" ] && [ -d "applications/$service" ]; then
-              echo "🔧 Running go mod tidy and vendor for $service"
+              echo "🔧 Processing $service"
               cd "applications/$service"
               if [ -f "go.mod" ]; then
                 go mod tidy
                 go mod vendor
               else
-                echo "⚠️ Skipped $service — no go.mod found"
+                echo "⚠️ Skipping $service — no go.mod found"
               fi
               cd - > /dev/null
             fi
