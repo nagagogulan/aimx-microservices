@@ -42,22 +42,28 @@ jobs:
           fi
 
           changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u | uniq)
-          echo "Changed services:"
           echo "$changed"
-          
-          # Save to output
+
           echo "services<<EOF" >> $GITHUB_OUTPUT
           echo "$changed" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Configure git to use token for private modules
+        run: |
+          git config --global url."https://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@github.com/".insteadOf "https://github.com/"
+
       - name: Run go mod tidy and vendor
         run: |
-          echo "${{ steps.detect.outputs.services }}" | tr ' ' '\n' | while read service; do
-            if [ -d "applications/$service" ]; then
-              echo "Running go mod tidy and go mod vendor for $service"
+          echo "${{ steps.detect.outputs.services }}" | tr '\n' ' ' | xargs -n1 | while read service; do
+            if [ -n "$service" ] && [ -d "applications/$service" ]; then
+              echo "🔧 Running go mod tidy and vendor for $service"
               cd "applications/$service"
-              go mod tidy
-              go mod vendor
+              if [ -f "go.mod" ]; then
+                go mod tidy
+                go mod vendor
+              else
+                echo "⚠️ Skipped $service — no go.mod found"
+              fi
               cd - > /dev/null
             fi
           done
