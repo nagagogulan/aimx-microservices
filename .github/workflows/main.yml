@@ -1,4 +1,4 @@
-name: Detect Changed Services
+name: Detect Changed Services and Update Go Modules
 
 on:
   push:
@@ -9,15 +9,15 @@ on:
       - main
 
 jobs:
-  detect:
-    name: Detect Changed Services in applications/
+  detect-and-update:
+    name: Detect Changed Services & Run Go Mod Commands
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Important: needed for full git history
+          fetch-depth: 0  # Required for full git history
 
       - name: Set up Git info
         id: git-info
@@ -41,14 +41,23 @@ jobs:
             exit 0
           fi
 
-          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u)
-
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u | uniq)
+          echo "Changed services:"
           echo "$changed"
+          
+          # Save to output
           echo "services<<EOF" >> $GITHUB_OUTPUT
           echo "$changed" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Print changed services
+      - name: Run go mod tidy and vendor
         run: |
-          echo "Detected changes in:"
-          echo "${{ steps.detect.outputs.services }}"
+          echo "${{ steps.detect.outputs.services }}" | tr ' ' '\n' | while read service; do
+            if [ -d "applications/$service" ]; then
+              echo "Running go mod tidy and go mod vendor for $service"
+              cd "applications/$service"
+              go mod tidy
+              go mod vendor
+              cd - > /dev/null
+            fi
+          done
