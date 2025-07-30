@@ -7,7 +7,7 @@ on:
     paths:
       - 'applications/**'
       - '!**.md'
-  workflow_dispatch:    
+  workflow_dispatch:
 
 jobs:
   detect-and-build:
@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'  # adjust your Go version
+          go-version: '1.21'
 
       - name: Detect changed microservices
         id: detect
@@ -39,16 +39,12 @@ jobs:
           IFS=$'\n'
           for service in ${{ steps.detect.outputs.services }}; do
             echo "➡️ Processing $service..."
-
             cd applications/$service
-
             echo "🧹 Running go mod tidy & vendor..."
             go mod tidy
             go mod vendor
-
             echo "🐳 Building Docker image using docker-compose-ext-server.yml..."
             cd ../../
             docker-compose -f docker-compose-ext-server.yml build $service
-
             echo "✅ Done with $service"
           done
