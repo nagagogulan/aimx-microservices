@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/PecozQ/aimx-library v0.0.523 h1:SJwg3L8Hdho4aZcbcRPKng5A4bIwMYoZaod8XUGJvec=
-github.com/PecozQ/aimx-library v0.0.523/go.mod h1:sMEusRFHyT4V+WXtfjkR+e3DYFkhn34iabuM3l7q9Fc=
+github.com/PecozQ/aimx-library v0.0.566 h1:qYYCX8WjbN47mypcy0+G/I/DIfnKj5q+rJVNH3Y1ZOc=
+github.com/PecozQ/aimx-library v0.0.566/go.mod h1:sMEusRFHyT4V+WXtfjkR+e3DYFkhn34iabuM3l7q9Fc=
 github.com/bytedance/sonic v1.13.2 h1:8/H1FempDZqC4VqjptGo14QQlJx8VdZJegxs6wwfqpQ=
 github.com/bytedance/sonic v1.13.2/go.mod h1:o68xyaF9u2gvVBuGHPlUVCy+ZfmNNO5ETf1+KgkJhz4=
 github.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=
