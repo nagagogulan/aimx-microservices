@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'applications/microservices/**'
-    #   - '!**.md'
+    # paths:
+    #   - 'applications/microservices/**'
+    # #   - '!**.md'
   workflow_dispatch:
 
 jobs:
