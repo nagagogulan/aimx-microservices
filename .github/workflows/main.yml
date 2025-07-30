@@ -25,13 +25,13 @@ jobs:
         with:
           go-version: '1.23.1'
 
-      - name: Detect changed microservices
-        id: detect
-        run: |
-          echo "Changed folders:"
-          changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/microservices/' | cut -d '/' -f3 | sort -u)
-          echo "$changed"
-          echo "services=$changed" >> "$GITHUB_OUTPUT"
+      # - name: Detect changed microservices
+      #   id: detect
+      #   run: |
+      #     echo "Changed folders:"
+      #     changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/microservices/' | cut -d '/' -f3 | sort -u)
+      #     echo "$changed"
+      #     echo "services=$changed" >> "$GITHUB_OUTPUT"
 
       - name: Build changed microservices
         if: steps.detect.outputs.services != ''
