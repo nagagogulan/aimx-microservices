@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'applications/**'
+      - 'applications/microservices/**'
       - '!**.md'
   workflow_dispatch:
 
@@ -29,7 +29,7 @@ jobs:
         id: detect
         run: |
           echo "Changed folders:"
-          changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/' | cut -d '/' -f2 | sort -u)
+          changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/microservices/' | cut -d '/' -f3 | sort -u)
           echo "$changed"
           echo "services=$changed" >> "$GITHUB_OUTPUT"
 
@@ -39,12 +39,12 @@ jobs:
           IFS=$'\n'
           for service in ${{ steps.detect.outputs.services }}; do
             echo "➡️ Processing $service..."
-            cd applications/$service
+            cd applications/microservices/$service
             echo "🧹 Running go mod tidy & vendor..."
             go mod tidy
             go mod vendor
             echo "🐳 Building Docker image using docker-compose-ext-server.yml..."
-            cd ../../
+            cd ../../../
             docker-compose -f docker-compose-ext-server.yml build $service
             echo "✅ Done with $service"
           done
