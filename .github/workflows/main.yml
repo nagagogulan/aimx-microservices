@@ -1,42 +1,72 @@
-name: Build Updated Microservice Only
+name: Detect Changed Services & Build
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    paths:
+      - 'applications/**'
+      - '.github/workflows/github.yml'
 
 jobs:
-  build:
-    name: Build & Test Only Updated Microservice
+  detect-and-build:
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/PecozQ/*
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout repository with full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed microservice
+        id: detect
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          if [ -z "$BEFORE_SHA" ] || ! git rev-parse "$BEFORE_SHA" >/dev/null 2>&1; then
+            BEFORE_SHA=$(git rev-parse HEAD^)
+          fi
+          echo "Using BEFORE_SHA: $BEFORE_SHA"
+
+          CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
+          echo "Changed directory: $CHANGED_DIR"
+
+          if [ -n "$CHANGED_DIR" ]; then
+            echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
+          else
+            echo "No changes detected under applications/. Skipping build."
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21
+          go-version: '1.23.1'
 
-      - name: Set up SSH for GitHub
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: Set GOPRIVATE
+        run: echo "GOPRIVATE=github.com/PecozQ/*" >> $GITHUB_ENV
 
-      - name: Force Go to use SSH instead of HTTPS
-        run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
+      - name: Set up SSH for private repository access
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.AIMX_SSH_KEY }}
 
-      - name: Detect Changed Services & Run Go Mod Commands
+      - name: Configure Git to use SSH instead of HTTPS
+        run: git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Go mod tidy and vendor
+        if: steps.detect.outputs.changed_dir != ''
         run: |
-          changed_dirs=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | awk -F/ '{print $1}' | sort -u)
-          for dir in $changed_dirs; do
-            if [ -f "$dir/go.mod" ]; then
-              echo "Running go mod tidy in $dir"
-              (cd "$dir" && go mod tidy)
-            fi
-          done
+          cd applications/${{ steps.detect.outputs.changed_dir }}
+          go mod tidy
+          go mod vendor
+
+      - name: Docker build
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.detect.outputs.changed_dir }}
+          docker build -t $IMAGE_NAME:latest applications/${{ steps.detect.outputs.changed_dir }}
+
+      - name: Run docker-compose for the service
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          SERVICE_NAME=ext-${{ steps.detect.outputs.changed_dir }}
+          docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
