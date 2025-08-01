@@ -9,6 +9,8 @@ on:
 jobs:
   detect-and-build:
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/PecozQ/*
 
     steps:
       - name: Checkout repository with full history
@@ -38,14 +40,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.1' # use the latest stable version close to your project
+          go-version: '1.23.1'
 
-      - name: Authenticate to GitHub for Go modules
+      - name: Setup Git credentials for private Go modules
         if: steps.detect.outputs.changed_dir != ''
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
           go env -w GOPRIVATE=github.com/PecozQ/*
 
       - name: Go mod tidy and vendor
