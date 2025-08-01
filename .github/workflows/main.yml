@@ -24,16 +24,24 @@ jobs:
             BEFORE_SHA=$(git rev-parse HEAD^)
           fi
           echo "Using BEFORE_SHA: $BEFORE_SHA"
+
+          # Detect first changed directory under applications/
           CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
           echo "Changed directory: $CHANGED_DIR"
-          echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
+
+          if [ -n "$CHANGED_DIR" ]; then
+            echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
+          else
+            echo "No changes detected under applications/. Skipping build."
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.1'
+          go-version: '1.23.1' # use the latest stable version close to your project
 
       - name: Authenticate to GitHub for Go modules
+        if: steps.detect.outputs.changed_dir != ''
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
