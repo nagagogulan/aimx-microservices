@@ -19,14 +19,13 @@ jobs:
     - name: Detect changed microservice
       id: detect
       run: |
-        echo "BEFORE_SHA=${{ github.event.before }}"
-        if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
+        BEFORE_SHA="${{ github.event.before }}"
+        if [ -z "$BEFORE_SHA" ] || ! git rev-parse "$BEFORE_SHA" >/dev/null 2>&1; then
           BEFORE_SHA=$(git rev-parse HEAD^)
-        else
-          BEFORE_SHA=${{ github.event.before }}
         fi
-
+        echo "Using BEFORE_SHA: $BEFORE_SHA"
         CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
+        echo "Changed directory: $CHANGED_DIR"
         echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
 
     - name: Set up Go
