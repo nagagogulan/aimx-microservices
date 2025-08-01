@@ -19,7 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Required to compare with base commits
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch main branch
+        run: git fetch origin main
 
       - name: Set base and head SHAs
         id: sha
