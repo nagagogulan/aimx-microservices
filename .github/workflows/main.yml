@@ -11,50 +11,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository with full history
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Detect changed microservice
-      id: detect
-      run: |
-        BEFORE_SHA="${{ github.event.before }}"
-        if [ -z "$BEFORE_SHA" ] || ! git rev-parse "$BEFORE_SHA" >/dev/null 2>&1; then
-          BEFORE_SHA=$(git rev-parse HEAD^)
-        fi
-        echo "Using BEFORE_SHA: $BEFORE_SHA"
-        CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
-        echo "Changed directory: $CHANGED_DIR"
-        echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
+      - name: Detect changed microservice
+        id: detect
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          if [ -z "$BEFORE_SHA" ] || ! git rev-parse "$BEFORE_SHA" >/dev/null 2>&1; then
+            BEFORE_SHA=$(git rev-parse HEAD^)
+          fi
+          echo "Using BEFORE_SHA: $BEFORE_SHA"
+          CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
+          echo "Changed directory: $CHANGED_DIR"
+          echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.1'
 
-    - name: Authenticate to GitHub for Go modules
-      env:
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
-        go env -w GOPRIVATE=github.com/PecozQ/*
+      - name: Authenticate to GitHub for Go modules
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/PecozQ/*
 
-    - name: Go mod tidy and vendor
-      if: steps.detect.outputs.changed_dir != ''
-      run: |
-        cd applications/${{ steps.detect.outputs.changed_dir }}
-        go mod tidy
-        go mod vendor
+      - name: Go mod tidy and vendor
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          cd applications/${{ steps.detect.outputs.changed_dir }}
+          go mod tidy
+          go mod vendor
 
-    - name: Docker build
-      if: steps.detect.outputs.changed_dir != ''
-      run: |
-        IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.detect.outputs.changed_dir }}
-        docker build -t $IMAGE_NAME:latest applications/${{ steps.detect.outputs.changed_dir }}
+      - name: Docker build
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.detect.outputs.changed_dir }}
+          docker build -t $IMAGE_NAME:latest applications/${{ steps.detect.outputs.changed_dir }}
 
-    - name: Run docker-compose for the service
-      if: steps.detect.outputs.changed_dir != ''
-      run: |
-        SERVICE_NAME=ext-${{ steps.detect.outputs.changed_dir }}
-        docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
+      - name: Run docker-compose for the service
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          SERVICE_NAME=ext-${{ steps.detect.outputs.changed_dir }}
+          docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
