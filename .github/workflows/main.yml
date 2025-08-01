@@ -1,78 +1,48 @@
-name: Detect and Update Changed Go Services
+name: Detect Changed Services & Build Only That
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    paths:
+      - 'applications/**'
+      - '.github/workflows/build.yml'  # Optional, to trigger on pipeline updates
 
 jobs:
-  detect-and-update:
+  detect-and-build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
+        working-directory: .
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Fetch main branch
-        run: git fetch origin main
+    - name: Detect changed microservice
+      id: changed
+      run: |
+        CHANGED_DIR=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
+        echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
 
-      - name: Set base and head SHAs
-        id: sha
-        run: |
-          echo "BASE_SHA=$(git merge-base origin/main HEAD)" >> "$GITHUB_ENV"
-          echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
 
-      - name: Detect changed services
-        id: detect
-        run: |
-          echo "Base SHA: $BASE_SHA"
-          echo "Head SHA: $HEAD_SHA"
+    - name: Go mod tidy and vendor
+      if: steps.changed.outputs.changed_dir != ''
+      run: |
+        cd applications/${{ steps.changed.outputs.changed_dir }}
+        go mod tidy
+        go mod vendor
 
-          if [ "$BASE_SHA" = "$HEAD_SHA" ]; then
-            echo "⚠️ Base and head SHAs are the same. No changes to process."
-            echo "services=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+    - name: Docker build
+      if: steps.changed.outputs.changed_dir != ''
+      run: |
+        IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.changed.outputs.changed_dir }}
+        docker build -t $IMAGE_NAME:latest applications/${{ steps.changed.outputs.changed_dir }}
 
-          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u | uniq)
-          echo "Changed services:"
-          echo "$changed"
-
-          {
-            echo "services<<EOF"
-            echo "$changed"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Run go mod tidy and vendor
-        run: |
-          if [ -z "${{ steps.detect.outputs.services }}" ]; then
-            echo "✅ No changed services detected. Skipping go mod tidy and vendor."
-            exit 0
-          fi
-
-          echo "Services to process:"
-          echo "${{ steps.detect.outputs.services }}"
-
-          echo "${{ steps.detect.outputs.services }}" | xargs -n1 | while read service; do
-            if [ -n "$service" ] && [ -d "applications/$service" ]; then
-              echo "🔧 Processing $service"
-              cd "applications/$service"
-              if [ -f "go.mod" ]; then
-                go mod tidy
-                go mod vendor
-              else
-                echo "⚠️ Skipping $service — no go.mod found"
-              fi
-              cd - > /dev/null
-            fi
-          done
+    - name: Run docker-compose for the service
+      if: steps.changed.outputs.changed_dir != ''
+      run: |
+        SERVICE_NAME=ext-${{ steps.changed.outputs.changed_dir }}
+        docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
