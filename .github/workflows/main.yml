@@ -27,7 +27,6 @@ jobs:
           fi
           echo "Using BEFORE_SHA: $BEFORE_SHA"
 
-          # Detect first changed directory under applications/
           CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
           echo "Changed directory: $CHANGED_DIR"
 
@@ -42,11 +41,11 @@ jobs:
         with:
           go-version: '1.23.1'
 
-      - name: Setup Git credentials for private Go modules
-        if: steps.detect.outputs.changed_dir != ''
-        run: |
-          git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/PecozQ/*
+      - name: Set GOPRIVATE
+        run: echo "GOPRIVATE=github.com/PecozQ/*" >> $GITHUB_ENV
+
+      - name: Configure Git for private module access
+        run: git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Go mod tidy and vendor
         if: steps.detect.outputs.changed_dir != ''
