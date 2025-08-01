@@ -1,48 +1,47 @@
-name: Detect Changed Services & Build Only That
+name: Detect Changed Service & Build
 
 on:
   push:
     paths:
       - 'applications/**'
-      - '.github/workflows/build.yml'  # Optional, to trigger on pipeline updates
+      - '.github/workflows/build.yml'  # Optional: trigger on workflow file updates
 
 jobs:
   detect-and-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Detect changed microservice
-      id: changed
-      run: |
-        CHANGED_DIR=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1)
-        echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
+      - name: Detect changed microservice
+        id: detect
+        run: |
+          echo "Checking for changes in applications/..."
+          CHANGED_DIR=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1 || echo "")
+          echo "Detected changed directory: $CHANGED_DIR"
+          echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
 
-    - name: Go mod tidy and vendor
-      if: steps.changed.outputs.changed_dir != ''
-      run: |
-        cd applications/${{ steps.changed.outputs.changed_dir }}
-        go mod tidy
-        go mod vendor
+      - name: Go mod tidy and vendor
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          cd applications/${{ steps.detect.outputs.changed_dir }}
+          go mod tidy
+          go mod vendor
 
-    - name: Docker build
-      if: steps.changed.outputs.changed_dir != ''
-      run: |
-        IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.changed.outputs.changed_dir }}
-        docker build -t $IMAGE_NAME:latest applications/${{ steps.changed.outputs.changed_dir }}
+      - name: Docker build
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          IMAGE_NAME=nagagogulan/aimx-ext-${{ steps.detect.outputs.changed_dir }}
+          docker build -t $IMAGE_NAME:latest applications/${{ steps.detect.outputs.changed_dir }}
 
-    - name: Run docker-compose for the service
-      if: steps.changed.outputs.changed_dir != ''
-      run: |
-        SERVICE_NAME=ext-${{ steps.changed.outputs.changed_dir }}
-        docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
+      - name: Run docker-compose for service
+        if: steps.detect.outputs.changed_dir != ''
+        run: |
+          SERVICE_NAME=ext-${{ steps.detect.outputs.changed_dir }}
+          docker-compose -f docker-compose-ext-server.yml up -d $SERVICE_NAME
