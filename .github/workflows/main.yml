@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'applications/**'
-      - '.github/workflows/build.yml'  # Optional: trigger on workflow file updates
+      - '.github/workflows/build.yml'
 
 jobs:
   detect-and-build:
@@ -17,9 +17,14 @@ jobs:
       - name: Detect changed microservice
         id: detect
         run: |
-          echo "Checking for changes in applications/..."
-          CHANGED_DIR=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1 || echo "")
-          echo "Detected changed directory: $CHANGED_DIR"
+          BEFORE_SHA="${{ github.event.before }}"
+          if [ -z "$BEFORE_SHA" ] || ! git cat-file -e $BEFORE_SHA^{commit}; then
+            echo "No valid 'before' SHA, using HEAD~1 as fallback"
+            BEFORE_SHA=$(git rev-parse HEAD~1)
+          fi
+
+          CHANGED_DIR=$(git diff --name-only $BEFORE_SHA ${{ github.sha }} | grep '^applications/' | cut -d/ -f2 | sort -u | head -n 1 || echo "")
+          echo "Changed directory: $CHANGED_DIR"
           echo "changed_dir=$CHANGED_DIR" >> $GITHUB_OUTPUT
 
       - name: Set up Go
