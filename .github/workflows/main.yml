@@ -33,6 +33,12 @@ jobs:
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA: $HEAD_SHA"
 
+          if [ "$BASE_SHA" = "$HEAD_SHA" ]; then
+            echo "⚠️ Base and head SHAs are the same. No changes to process."
+            echo "services=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '^applications/' | cut -d '/' -f2 | sort -u | uniq)
           echo "Changed services:"
           echo "$changed"
@@ -45,7 +51,14 @@ jobs:
 
       - name: Run go mod tidy and vendor
         run: |
-          echo "Services to process: ${{ steps.detect.outputs.services }}"
+          if [ -z "${{ steps.detect.outputs.services }}" ]; then
+            echo "✅ No changed services detected. Skipping go mod tidy and vendor."
+            exit 0
+          fi
+
+          echo "Services to process:"
+          echo "${{ steps.detect.outputs.services }}"
+
           echo "${{ steps.detect.outputs.services }}" | xargs -n1 | while read service; do
             if [ -n "$service" ] && [ -d "applications/$service" ]; then
               echo "🔧 Processing $service"
